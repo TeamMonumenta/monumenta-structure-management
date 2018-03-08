@@ -1,0 +1,8 @@
+name: EpicStructures
+main: pe.epicstructures.Plugin
+version: 1.0
+commands:
+  loadSchematic:
+    permission: epicstructures.loadSchematic
+    description: WIP
+    usage: /loadSchematic ????
