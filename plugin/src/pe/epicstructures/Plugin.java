@@ -5,7 +5,7 @@ import org.bukkit.World;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import pe.epicstructures.commands.LoadSchematic;
+import pe.epicstructures.commands.LoadStructure;
 
 public class Plugin extends JavaPlugin {
 	public World mWorld;
@@ -17,7 +17,7 @@ public class Plugin extends JavaPlugin {
 
 		mWorld = Bukkit.getWorlds().get(0);
 
-		getCommand("loadSchematic").setExecutor(new LoadSchematic(this, mWorld));
+		getCommand("LoadStructure").setExecutor(new LoadStructure(this, mWorld));
 	}
 
 	//	Logic that is performed upon disabling the plugin.

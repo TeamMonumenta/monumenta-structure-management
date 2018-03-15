@@ -41,11 +41,11 @@ import com.sk89q.worldedit.function.visitor.EntityVisitor;
 
 import pe.epicstructures.Plugin;
 
-public class LoadSchematic implements CommandExecutor {
+public class LoadStructure implements CommandExecutor {
 	Plugin mPlugin;
 	org.bukkit.World mWorld;
 
-	public LoadSchematic(Plugin plugin, org.bukkit.World world) {
+	public LoadStructure(Plugin plugin, org.bukkit.World world) {
 		mPlugin = plugin;
 		mWorld = world;
 	}
