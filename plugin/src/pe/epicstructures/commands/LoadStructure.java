@@ -1,12 +1,12 @@
 package pe.epicstructures.commands;
 
+import java.io.File;
 import java.util.List;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 
 import com.boydti.fawe.object.clipboard.FaweClipboard;
 import com.boydti.fawe.object.schematic.Schematic;
@@ -18,6 +18,7 @@ import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.blocks.BaseBlock;
 import com.sk89q.worldedit.extent.Extent;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
+import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.regions.AbstractRegion;
 import com.sk89q.worldedit.regions.CuboidRegion;
@@ -40,6 +41,8 @@ import com.sk89q.worldedit.command.util.CreatureButcher;
 import com.sk89q.worldedit.function.visitor.EntityVisitor;
 
 import pe.epicstructures.Plugin;
+import pe.epicstructures.utils.CommandUtils;
+import pe.epicstructures.utils.MessagingUtils;
 
 public class LoadStructure implements CommandExecutor {
 	Plugin mPlugin;
@@ -52,47 +55,76 @@ public class LoadStructure implements CommandExecutor {
 
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String arg2, String[] arg3) {
-		sender.sendMessage(ChatColor.RED + "I am a potato");
-
-		if (!(sender instanceof Player)) {
+		if (arg3.length != 4) {
+			sender.sendMessage(ChatColor.RED + "This command requires exactly four arguments");
 			return false;
 		}
 
-		Player player = (Player)sender;
-		if (!player.getName().equals("Combustible")) {
-			sender.sendMessage(ChatColor.RED + "No potato for you");
+		// Parse the coordinates to load the structure
+		Vector loadLocation;
+		try {
+			loadLocation = new Vector(CommandUtils.parseIntFromString(sender, arg3[1]),
+			                          CommandUtils.parseIntFromString(sender, arg3[2]),
+			                          CommandUtils.parseIntFromString(sender, arg3[3]));
+		} catch (Exception e) {
 			return false;
 		}
 
-		sender.sendMessage(ChatColor.RED + "Found Combustible");
+		Schematic schem;
+		try {
+			schem = loadSchematic(arg3[0]);
+		} catch (Exception e) {
+			mPlugin.getLogger().severe("Caught exception: " + e);
+			e.printStackTrace();
+
+			if (sender != null) {
+				sender.sendMessage(ChatColor.RED + "Failed to load structure");
+				MessagingUtils.sendStackTrace(sender, e);
+			}
+			return false;
+		}
 
 		EditSession copyWorld = new EditSessionBuilder(mWorld.getName()).autoQueue(false).build();
-		Vector pos1 = new Vector(-1073, 130, -1376);
-		Vector pos2 = new Vector(-1168, 41, -1249);
-		CuboidRegion copyRegion = new CuboidRegion(pos1, pos2);
 
-		BlockArrayClipboard lazyCopy = copyWorld.lazyCopy(copyRegion);
-
-		Schematic schem = new Schematic(lazyCopy);
 		boolean pasteAir = true;
-		Vector to = new Vector(-968, 41, -1249);
-		_paste(schem.getClipboard(), copyWorld, to, pasteAir, player);
+		_paste(schem.getClipboard(), copyWorld, loadLocation, pasteAir);
+
+		// TODO: Is this needed?
 		copyWorld.flushQueue();
+
+		sender.sendMessage("Loaded structure '" + arg3[0] + "' at " + loadLocation);
 
 		return true;
 	}
+
+	// TODO: Probably need a cache here
+	Schematic loadSchematic(String baseName) throws Exception {
+		if (baseName == null || baseName.isEmpty()) {
+			throw new Exception("Structure name is empty!");
+		}
+
+		final String fileName = mPlugin.getDataFolder() + File.separator + "structures" + File.separator + baseName + ".schematic";
+
+		File file = new File(fileName);
+		if (!file.exists()) {
+			throw new Exception("Structure '" + baseName + "' does not exist");
+		}
+
+		return ClipboardFormat.SCHEMATIC.load(file);
+	}
+
 
 	// Custom paste function copied and modified from
 	// FastAsyncWorldedit/core/src/main/java/com/boydti/fawe/object/schematic/Schematic.java
 	//
 	// Ignores structure blocks, leaving the original block in place
-    public void _paste(Clipboard clipboard, EditSession extent, Vector to, final boolean pasteAir, Player player) {
-        Region sourceRegion = clipboard.getRegion().clone();
-        Region destRegion = new CuboidRegion(to, new Vector(to).add(sourceRegion.getMaximumPoint()).subtract(sourceRegion.getMinimumPoint()));
+	public void _paste(Clipboard clipboard, EditSession extent, Vector to, final boolean pasteAir) {
+		Region sourceRegion = clipboard.getRegion().clone();
+		Region destRegion = new CuboidRegion(to, new Vector(to).add(sourceRegion.getMaximumPoint()).subtract(sourceRegion.getMinimumPoint()));
 		final Vector destBot = destRegion.getMinimumPoint();
-        final int maxY = extent.getMaximumPoint().getBlockY();
-        final Vector bot = clipboard.getMinimumPoint();
-        final Vector origin = clipboard.getOrigin();
+		final int maxY = extent.getMaximumPoint().getBlockY();
+		final Vector bot = clipboard.getMinimumPoint();
+		final Vector origin = clipboard.getOrigin();
 
 		// ******************************** Blocks *************************************** //
 		final int relx = to.getBlockX() - origin.getBlockX();
@@ -113,14 +145,16 @@ public class LoadStructure implements CommandExecutor {
 				if ((!pasteAir && block.getId() == 0) || block.getId() == 217) {
 					return false;
 				}
-		//		if (extent.getBlock(xx, yy, zz).hasNbtData()) {
-		//			extent.setBlock(xx, yy, zz, FaweCache.getBlock(0, 0));
-		//		} else {
-					extent.setBlock(xx, yy, zz, block);
-		//		}
+				//      if (extent.getBlock(xx, yy, zz).hasNbtData()) {
+				//          extent.setBlock(xx, yy, zz, FaweCache.getBlock(0, 0));
+				//      } else {
+				extent.setBlock(xx, yy, zz, block);
+				//      }
 				return false;
 			}
-		}, (HasFaweQueue) (null));
+		}, (HasFaweQueue)(null));
+
+		// TODO: Make this run async (completeSmart)
 		Operations.completeBlindly(regionVisitor);
 
 
@@ -130,9 +164,9 @@ public class LoadStructure implements CommandExecutor {
 		 * be removed when a POI resets
 		 */
 		EntityFunction removeFunc = new EntityFunction() {
-            @Override
-            public boolean apply(Entity entity) throws WorldEditException {
-                EntityType type = entity.getFacet(EntityType.class);
+			@Override
+			public boolean apply(Entity entity) throws WorldEditException {
+				EntityType type = entity.getFacet(EntityType.class);
 				Vector loc = entity.getLocation().toVector();
 
 				// Don't remove entities in parts of the POI that don't reset
@@ -140,33 +174,33 @@ public class LoadStructure implements CommandExecutor {
 					return false;
 				}
 
-                if (type == null ||
-						type.isPlayerDerived() ||
-						type.isAnimal() ||
-						type.isTamed() ||
-						type.isGolem() ||
-						type.isNPC() ||
-						type.isArmorStand()) {
-                    return false;
-                }
+				if (type == null ||
+				type.isPlayerDerived() ||
+				type.isAnimal() ||
+				type.isTamed() ||
+				type.isGolem() ||
+				type.isNPC() ||
+				type.isArmorStand()) {
+					return false;
+				}
 
-                if (type.isLiving() ||
-						type.isItem() ||
-						type.isProjectile() ||
-						type.isFallingBlock() ||
-						type.isBoat() ||
-						type.isTNT() ||
-						type.isExperienceOrb()) {
+				if (type.isLiving() ||
+				type.isItem() ||
+				type.isProjectile() ||
+				type.isFallingBlock() ||
+				type.isBoat() ||
+				type.isTNT() ||
+				type.isExperienceOrb()) {
 					entity.remove();
 					return true;
-                }
+				}
 
-                return false;
-            }
-        };
+				return false;
+			}
+		};
 
 		// Get the currently loaded entities in the destination region
-		List<? extends Entity> entities = extent.getEntities(destRegion);
+		List <? extends Entity > entities = extent.getEntities(destRegion);
 		// Visit those entities and when visited, remove them
 		EntityVisitor EntityVisitor = new EntityVisitor(entities.iterator(), removeFunc);
 
@@ -174,13 +208,11 @@ public class LoadStructure implements CommandExecutor {
 
 		// Run the visit/remover
 		try {
+			// TODO: Make this run async (completeSmart)
 			Operations.completeLegacy(EntityVisitor);
 		} catch (WorldEditException e) {};
 
-
-
-
-		// Flush the queue - maybe not necessary?
+		// TODO: Is this needed?
 		extent.flushQueue();
-    }
+	}
 }
