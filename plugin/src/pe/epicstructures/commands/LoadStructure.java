@@ -188,7 +188,7 @@ public class LoadStructure implements CommandExecutor {
 				}
 
 				if (type.isLiving() ||
-				type.isItem() ||
+				//type.isItem() ||
 				type.isProjectile() ||
 				type.isFallingBlock() ||
 				type.isBoat() ||
