@@ -74,7 +74,7 @@ public class LoadStructure implements CommandExecutor {
 
 		Schematic schem;
 		try {
-			schem = loadSchematic(arg3[0]);
+			schem = mPlugin.mStructureManager.loadSchematic(arg3[0]);
 		} catch (Exception e) {
 			mPlugin.getLogger().severe("Caught exception: " + e);
 			e.printStackTrace();
@@ -98,23 +98,6 @@ public class LoadStructure implements CommandExecutor {
 
 		return true;
 	}
-
-	// TODO: Probably need a cache here
-	Schematic loadSchematic(String baseName) throws Exception {
-		if (baseName == null || baseName.isEmpty()) {
-			throw new Exception("Structure name is empty!");
-		}
-
-		final String fileName = mPlugin.getDataFolder() + File.separator + "structures" + File.separator + baseName + ".schematic";
-
-		File file = new File(fileName);
-		if (!file.exists()) {
-			throw new Exception("Structure '" + baseName + "' does not exist");
-		}
-
-		return ClipboardFormat.SCHEMATIC.load(file);
-	}
-
 
 	// Custom paste function copied and modified from
 	// FastAsyncWorldedit/core/src/main/java/com/boydti/fawe/object/schematic/Schematic.java

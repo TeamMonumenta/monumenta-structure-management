@@ -66,7 +66,7 @@ public class SaveStructure implements CommandExecutor {
 
 		// Save it
 		try {
-			_saveSchematic(arg3[0], minpos, maxpos);
+			mPlugin.mStructureManager.saveSchematic(arg3[0], minpos, maxpos);
 		} catch (Exception e) {
 			mPlugin.getLogger().severe("Caught exception: " + e);
 			e.printStackTrace();
@@ -79,36 +79,5 @@ public class SaveStructure implements CommandExecutor {
 		sender.sendMessage("Saved structure '" + arg3[0] + "'");
 
 		return true;
-	}
-
-	// TODO: Probably need to update the cache here if present
-	// This code adapted from forum post here: https://www.spigotmc.org/threads/saving-schematics-to-file-with-worldedit-api.276078/
-	public void _saveSchematic(String baseName, Vector minpos, Vector maxpos) throws Exception {
-		if (baseName == null || baseName.isEmpty()) {
-			throw new Exception("Structure name is empty!");
-		}
-
-		final String fileName = mPlugin.getDataFolder() + File.separator + "structures" + File.separator + baseName + ".schematic";
-
-		File file = new File(fileName);
-		if (!file.exists()) {
-			file.getParentFile().mkdirs();
-			file.createNewFile();
-		}
-
-		World world = new BukkitWorld(mWorld);
-		WorldData worldData = world.getWorldData();
-		CuboidRegion cReg = new CuboidRegion(world, minpos, maxpos);
-
-		BlockArrayClipboard clipboard = new BlockArrayClipboard(cReg);
-		Extent source = WorldEdit.getInstance().getEditSessionFactory().getEditSession(world, -1);
-		Extent destination = clipboard;
-		ForwardExtentCopy copy = new ForwardExtentCopy(source, cReg, clipboard.getOrigin(), destination, minpos);
-		copy.setSourceMask(new ExistingBlockMask(source));
-
-		// TODO: Make this run async (completeSmart)
-		Operations.completeLegacy(copy);
-
-		ClipboardFormat.SCHEMATIC.getWriter(new FileOutputStream(file)).write(clipboard, worldData);
 	}
 }
