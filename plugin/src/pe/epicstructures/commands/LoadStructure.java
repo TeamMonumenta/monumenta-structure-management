@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.List;
 
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -26,7 +27,6 @@ import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.world.AbstractWorld;
 import com.sk89q.worldedit.world.World;
 
-import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.boydti.fawe.object.HasFaweQueue;
 import com.sk89q.worldedit.MutableBlockVector2D;
@@ -61,12 +61,14 @@ public class LoadStructure implements CommandExecutor {
 		}
 
 		// Parse the coordinates to load the structure
-		Vector loadLocation;
+		Vector loadPos;
 		try {
-			loadLocation = new Vector(CommandUtils.parseIntFromString(sender, arg3[1]),
-			                          CommandUtils.parseIntFromString(sender, arg3[2]),
-			                          CommandUtils.parseIntFromString(sender, arg3[3]));
+			Location loadLoc = CommandUtils.parseLocationFromString(sender, mWorld, arg3[1], arg3[2], arg3[3]);
+
+			loadPos = new Vector(loadLoc.getBlockX(), loadLoc.getBlockY(), loadLoc.getBlockZ());
 		} catch (Exception e) {
+			sender.sendMessage(ChatColor.RED + "Failed to parse coordinates");
+			MessagingUtils.sendStackTrace(sender, e);
 			return false;
 		}
 
@@ -87,12 +89,12 @@ public class LoadStructure implements CommandExecutor {
 		EditSession copyWorld = new EditSessionBuilder(mWorld.getName()).autoQueue(false).build();
 
 		boolean pasteAir = true;
-		_paste(schem.getClipboard(), copyWorld, loadLocation, pasteAir);
+		_paste(schem.getClipboard(), copyWorld, loadPos, pasteAir);
 
 		// TODO: Is this needed?
 		copyWorld.flushQueue();
 
-		sender.sendMessage("Loaded structure '" + arg3[0] + "' at " + loadLocation);
+		sender.sendMessage("Loaded structure '" + arg3[0] + "' at " + loadPos);
 
 		return true;
 	}
@@ -120,7 +122,8 @@ public class LoadStructure implements CommandExecutor {
 	// Ignores structure blocks, leaving the original block in place
 	public void _paste(Clipboard clipboard, EditSession extent, Vector to, final boolean pasteAir) {
 		Region sourceRegion = clipboard.getRegion().clone();
-		Region destRegion = new CuboidRegion(to, new Vector(to).add(sourceRegion.getMaximumPoint()).subtract(sourceRegion.getMinimumPoint()));
+		Region destRegion = new CuboidRegion(to,
+		                                     new Vector(to).add(sourceRegion.getMaximumPoint()).subtract(sourceRegion.getMinimumPoint()));
 		final Vector destBot = destRegion.getMinimumPoint();
 		final int maxY = extent.getMaximumPoint().getBlockY();
 		final Vector bot = clipboard.getMinimumPoint();
