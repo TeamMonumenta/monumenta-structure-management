@@ -4,26 +4,22 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.util.HashMap;
 
-import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
-import com.sk89q.worldedit.WorldEdit;
-import com.sk89q.worldedit.extent.Extent;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
-import com.sk89q.worldedit.EditSession;
-import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
+import com.sk89q.worldedit.extent.Extent;
+import com.sk89q.worldedit.function.mask.ExistingBlockMask;
+import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
+import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.regions.CuboidRegion;
+import com.sk89q.worldedit.Vector;
+import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldedit.world.registry.WorldData;
-import com.sk89q.worldedit.function.mask.ExistingBlockMask;
-import com.sk89q.worldedit.function.operation.Operations;
 
-import com.boydti.fawe.object.clipboard.FaweClipboard;
 import com.boydti.fawe.object.schematic.Schematic;
 
 import pe.epicstructures.Plugin;
-import pe.epicstructures.utils.CommandUtils;
-import pe.epicstructures.utils.MessagingUtils;
 
 public class StructureManager {
 	private HashMap<String, Schematic> mSchematics = new HashMap<String, Schematic>();
@@ -81,8 +77,7 @@ public class StructureManager {
 
 		BlockArrayClipboard clipboard = new BlockArrayClipboard(cReg);
 		Extent source = WorldEdit.getInstance().getEditSessionFactory().getEditSession(world, -1);
-		Extent destination = clipboard;
-		ForwardExtentCopy copy = new ForwardExtentCopy(source, cReg, clipboard.getOrigin(), destination, minpos);
+		ForwardExtentCopy copy = new ForwardExtentCopy(source, cReg, clipboard.getOrigin(), clipboard, minpos);
 		copy.setSourceMask(new ExistingBlockMask(source));
 
 		// TODO: Make this run async (completeSmart)
@@ -97,5 +92,4 @@ public class StructureManager {
 	private String _getFileName(String baseName) {
 		return mPlugin.getDataFolder() + File.separator + "structures" + File.separator + baseName + ".schematic";
 	}
-
 }

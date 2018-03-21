@@ -1,6 +1,5 @@
 package pe.epicstructures.commands;
 
-import java.io.File;
 import java.util.List;
 
 import org.bukkit.ChatColor;
@@ -9,36 +8,25 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
-import com.boydti.fawe.object.clipboard.FaweClipboard;
-import com.boydti.fawe.object.schematic.Schematic;
-import com.boydti.fawe.util.EditSessionBuilder;
-
-import com.sk89q.worldedit.EditSession;
-import com.sk89q.worldedit.WorldEditException;
-import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.blocks.BaseBlock;
-import com.sk89q.worldedit.extent.Extent;
-import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
+import com.sk89q.worldedit.EditSession;
+import com.sk89q.worldedit.entity.Entity;
+import com.sk89q.worldedit.entity.metadata.EntityType;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
-import com.sk89q.worldedit.regions.AbstractRegion;
+import com.sk89q.worldedit.function.EntityFunction;
+import com.sk89q.worldedit.function.operation.Operations;
+import com.sk89q.worldedit.function.RegionFunction;
+import com.sk89q.worldedit.function.visitor.EntityVisitor;
+import com.sk89q.worldedit.function.visitor.RegionVisitor;
+import com.sk89q.worldedit.MutableBlockVector2D;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.regions.Region;
-import com.sk89q.worldedit.world.AbstractWorld;
-import com.sk89q.worldedit.world.World;
+import com.sk89q.worldedit.Vector;
+import com.sk89q.worldedit.WorldEditException;
 
-import com.sk89q.worldedit.function.operation.Operations;
 import com.boydti.fawe.object.HasFaweQueue;
-import com.sk89q.worldedit.MutableBlockVector2D;
-import com.sk89q.worldedit.entity.Entity;
-import com.sk89q.worldedit.function.visitor.RegionVisitor;
-import com.sk89q.worldedit.function.RegionFunction;
-
-import com.sk89q.worldedit.entity.metadata.EntityType;
-import com.sk89q.worldedit.function.EntityFunction;
-import com.sk89q.worldedit.command.util.EntityRemover;
-import com.sk89q.worldedit.command.util.CreatureButcher;
-import com.sk89q.worldedit.function.visitor.EntityVisitor;
+import com.boydti.fawe.object.schematic.Schematic;
+import com.boydti.fawe.util.EditSessionBuilder;
 
 import pe.epicstructures.Plugin;
 import pe.epicstructures.utils.CommandUtils;
@@ -107,9 +95,6 @@ public class LoadStructure implements CommandExecutor {
 		Region sourceRegion = clipboard.getRegion().clone();
 		Region destRegion = new CuboidRegion(to,
 		                                     new Vector(to).add(sourceRegion.getMaximumPoint()).subtract(sourceRegion.getMinimumPoint()));
-		final Vector destBot = destRegion.getMinimumPoint();
-		final int maxY = extent.getMaximumPoint().getBlockY();
-		final Vector bot = clipboard.getMinimumPoint();
 		final Vector origin = clipboard.getOrigin();
 
 		// ******************************** Blocks *************************************** //
