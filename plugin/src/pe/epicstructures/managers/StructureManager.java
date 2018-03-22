@@ -86,6 +86,7 @@ public class StructureManager {
 		ClipboardFormat.SCHEMATIC.getWriter(new FileOutputStream(file)).write(clipboard, worldData);
 
 		// Re-load the schematic from disk into the cache
+		mSchematics.remove(baseName);
 		loadSchematic(baseName);
 	}
 
