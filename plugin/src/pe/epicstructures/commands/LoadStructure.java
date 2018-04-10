@@ -74,12 +74,13 @@ public class LoadStructure implements CommandExecutor {
 			return false;
 		}
 
-		EditSession copyWorld = new EditSessionBuilder(mWorld.getName()).autoQueue(false).build();
+		// TODO: Whatever is going on here... entities are broken IF:
+		// fastmode = true (regardless of combine stages setting)
+		// fastmode = false AND combineStages = true
+		EditSession copyWorld = new EditSessionBuilder(mWorld.getName()).autoQueue(true).fastmode(false).combineStages(false).build();
 
-		boolean pasteAir = true;
-		_paste(schem.getClipboard(), copyWorld, loadPos, pasteAir);
+		_paste(schem.getClipboard(), copyWorld, loadPos);
 
-		// TODO: Is this needed?
 		copyWorld.flushQueue();
 
 		sender.sendMessage("Loaded structure '" + arg3[0] + "' at " + loadPos);
@@ -91,10 +92,9 @@ public class LoadStructure implements CommandExecutor {
 	// FastAsyncWorldedit/core/src/main/java/com/boydti/fawe/object/schematic/Schematic.java
 	//
 	// Ignores structure blocks, leaving the original block in place
-	public void _paste(Clipboard clipboard, EditSession extent, Vector to, final boolean pasteAir) {
+	public void _paste(Clipboard clipboard, EditSession extent, Vector to) {
 		Region sourceRegion = clipboard.getRegion().clone();
-		Region destRegion = new CuboidRegion(to,
-		                                     new Vector(to).add(sourceRegion.getMaximumPoint()).subtract(sourceRegion.getMinimumPoint()));
+		Region destRegion = new CuboidRegion(to, new Vector(to).add(sourceRegion.getMaximumPoint()).subtract(sourceRegion.getMinimumPoint()));
 		final Vector origin = clipboard.getOrigin();
 
 		// ******************************** Blocks *************************************** //
@@ -113,21 +113,18 @@ public class LoadStructure implements CommandExecutor {
 				int xx = mutable.getBlockX() + relx;
 				int yy = mutable.getBlockY() + rely;
 				int zz = mutable.getBlockZ() + relz;
-				if ((!pasteAir && block.getId() == 0) || block.getId() == 217) {
+
+				// Don't paste in structure void
+				if (block.getId() == 217) {
 					return false;
 				}
-				//      if (extent.getBlock(xx, yy, zz).hasNbtData()) {
-				//          extent.setBlock(xx, yy, zz, FaweCache.getBlock(0, 0));
-				//      } else {
+
 				extent.setBlock(xx, yy, zz, block);
-				//      }
 				return false;
 			}
-		}, (HasFaweQueue)(null));
+		}, extent);
 
-		// TODO: Make this run async (completeSmart)
 		Operations.completeBlindly(regionVisitor);
-
 
 		// ******************************** Entities *************************************** //
 		/*
@@ -146,22 +143,22 @@ public class LoadStructure implements CommandExecutor {
 				}
 
 				if (type == null ||
-				type.isPlayerDerived() ||
-				type.isAnimal() ||
-				type.isTamed() ||
-				type.isGolem() ||
-				type.isNPC() ||
-				type.isArmorStand()) {
+					type.isPlayerDerived() ||
+					type.isAnimal() ||
+					type.isTamed() ||
+					type.isGolem() ||
+					type.isNPC() ||
+					type.isArmorStand()) {
 					return false;
 				}
 
 				if (type.isLiving() ||
-				//type.isItem() ||
-				type.isProjectile() ||
-				type.isFallingBlock() ||
-				type.isBoat() ||
-				type.isTNT() ||
-				type.isExperienceOrb()) {
+					//type.isItem() ||
+					type.isProjectile() ||
+					type.isFallingBlock() ||
+					type.isBoat() ||
+					type.isTNT() ||
+					type.isExperienceOrb()) {
 					entity.remove();
 					return true;
 				}
@@ -172,18 +169,10 @@ public class LoadStructure implements CommandExecutor {
 
 		// Get the currently loaded entities in the destination region
 		List <? extends Entity > entities = extent.getEntities(destRegion);
+
 		// Visit those entities and when visited, remove them
 		EntityVisitor EntityVisitor = new EntityVisitor(entities.iterator(), removeFunc);
 
-		//mPlugin.getLogger().info("Got " + entities.size() + " entities in " + destRegion.toString());
-
-		// Run the visit/remover
-		try {
-			// TODO: Make this run async (completeSmart)
-			Operations.completeLegacy(EntityVisitor);
-		} catch (WorldEditException e) {};
-
-		// TODO: Is this needed?
-		extent.flushQueue();
+		Operations.completeBlindly(EntityVisitor);
 	}
 }
