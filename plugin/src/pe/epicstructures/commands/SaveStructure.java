@@ -28,6 +28,11 @@ public class SaveStructure implements CommandExecutor {
 			return false;
 		}
 
+		if (arg3[0].contains("..")) {
+			sender.sendMessage(ChatColor.RED + "Paths containing '..' are not allowed");
+			return false;
+		}
+
 		// Parse the coordinates of the structure to save
 		Vector minpos;
 		Vector maxpos;
@@ -48,7 +53,7 @@ public class SaveStructure implements CommandExecutor {
 
 		// Save it
 		try {
-			mPlugin.mStructureManager.saveSchematic(arg3[0], minpos, maxpos);
+			mPlugin.mStructureManager.saveSchematic("structures", arg3[0], minpos, maxpos);
 		} catch (Exception e) {
 			mPlugin.getLogger().severe("Caught exception: " + e);
 			e.printStackTrace();

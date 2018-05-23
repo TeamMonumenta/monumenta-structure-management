@@ -2,6 +2,7 @@ package pe.epicstructures.managers;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.nio.file.Paths;
 import java.util.HashMap;
 
 import com.sk89q.worldedit.bukkit.BukkitWorld;
@@ -31,17 +32,17 @@ public class StructureManager {
 		mWorld = world;
 	}
 
-	public Schematic loadSchematic(String baseName) throws Exception {
-		if (baseName == null || baseName.isEmpty()) {
+	public Schematic loadSchematic(String baseFolderName, String baseName) throws Exception {
+		if (baseFolderName == null || baseFolderName.isEmpty() || baseName == null || baseName.isEmpty()) {
 			throw new Exception("Structure name is empty!");
 		}
 
 		Schematic schem;
-		schem = mSchematics.get(baseName);
+		schem = mSchematics.get(baseFolderName + baseName);
 		if (schem == null) {
 			// Schematic not already loaded - need to read it from disk and load it into RAM
 
-			final String fileName = _getFileName(baseName);
+			final String fileName = _getFileName(baseFolderName, baseName);
 
 			File file = new File(fileName);
 			if (!file.exists()) {
@@ -51,19 +52,19 @@ public class StructureManager {
 			schem = ClipboardFormat.SCHEMATIC.load(file);
 
 			// Cache the schematic for fast access later
-			mSchematics.put(baseName, schem);
+			mSchematics.put(baseFolderName + baseName, schem);
 		}
 
 		return schem;
 	}
 
 	// This code adapted from forum post here: https://www.spigotmc.org/threads/saving-schematics-to-file-with-worldedit-api.276078/
-	public void saveSchematic(String baseName, Vector minpos, Vector maxpos) throws Exception {
-		if (baseName == null || baseName.isEmpty()) {
+	public void saveSchematic(String baseFolderName, String baseName, Vector minpos, Vector maxpos) throws Exception {
+		if (baseFolderName == null || baseFolderName.isEmpty() || baseName == null || baseName.isEmpty()) {
 			throw new Exception("Structure name is empty!");
 		}
 
-		final String fileName = _getFileName(baseName);
+		final String fileName = _getFileName(baseFolderName, baseName);
 
 		File file = new File(fileName);
 		if (!file.exists()) {
@@ -80,17 +81,16 @@ public class StructureManager {
 		ForwardExtentCopy copy = new ForwardExtentCopy(source, cReg, clipboard.getOrigin(), clipboard, minpos);
 		copy.setSourceMask(new ExistingBlockMask(source));
 
-		// TODO: Make this run async (completeSmart)
 		Operations.completeLegacy(copy);
 
 		ClipboardFormat.SCHEMATIC.getWriter(new FileOutputStream(file)).write(clipboard, worldData);
 
 		// Re-load the schematic from disk into the cache
-		mSchematics.remove(baseName);
-		loadSchematic(baseName);
+		mSchematics.remove(baseFolderName + baseName);
+		loadSchematic(baseFolderName, baseName);
 	}
 
-	private String _getFileName(String baseName) {
-		return mPlugin.getDataFolder() + File.separator + "structures" + File.separator + baseName + ".schematic";
+	private String _getFileName(String baseFolderName, String baseName) {
+		return Paths.get(mPlugin.getDataFolder().toString(), baseFolderName, baseName + ".schematic").toString();
 	}
 }

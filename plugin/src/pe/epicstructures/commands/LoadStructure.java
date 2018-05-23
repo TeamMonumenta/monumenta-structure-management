@@ -48,6 +48,11 @@ public class LoadStructure implements CommandExecutor {
 			return false;
 		}
 
+		if (arg3[0].contains("..")) {
+			sender.sendMessage(ChatColor.RED + "Paths containing '..' are not allowed");
+			return false;
+		}
+
 		// Parse the coordinates to load the structure
 		Vector loadPos;
 		try {
@@ -62,7 +67,7 @@ public class LoadStructure implements CommandExecutor {
 
 		Schematic schem;
 		try {
-			schem = mPlugin.mStructureManager.loadSchematic(arg3[0]);
+			schem = mPlugin.mStructureManager.loadSchematic("structures", arg3[0]);
 		} catch (Exception e) {
 			mPlugin.getLogger().severe("Caught exception: " + e);
 			e.printStackTrace();
