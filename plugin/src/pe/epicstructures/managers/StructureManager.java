@@ -59,7 +59,7 @@ public class StructureManager {
 	}
 
 	// This code adapted from forum post here: https://www.spigotmc.org/threads/saving-schematics-to-file-with-worldedit-api.276078/
-	public void saveSchematic(String baseFolderName, String baseName, Vector minpos, Vector maxpos) throws Exception {
+	public void saveSchematic(String baseFolderName, String baseName, Vector minpos, Vector maxpos, Runnable whenDone) throws Exception {
 		if (baseFolderName == null || baseFolderName.isEmpty() || baseName == null || baseName.isEmpty()) {
 			throw new Exception("Structure name is empty!");
 		}
@@ -81,7 +81,8 @@ public class StructureManager {
 		ForwardExtentCopy copy = new ForwardExtentCopy(source, cReg, clipboard.getOrigin(), clipboard, minpos);
 		copy.setSourceMask(new ExistingBlockMask(source));
 
-		Operations.completeLegacy(copy);
+		// FAWE will accept null whenDone just fine. Last argument does nothing.
+		Operations.completeSmart(copy, whenDone, false);
 
 		ClipboardFormat.SCHEMATIC.getWriter(new FileOutputStream(file)).write(clipboard, worldData);
 

@@ -120,10 +120,18 @@ public class UserStructure {
 
 		/* Save the player's schematic */
 		try {
-			mPlugin.mStructureManager.saveSchematic("user_structures", mPlayer.getUniqueId().toString() + "_" + mType, mMinPos, mMaxPos);
+			mPlugin.mStructureManager.saveSchematic("user_structures",
+			                                        mPlayer.getUniqueId().toString() + "_" + mType,
+			                                        mMinPos, mMaxPos,
+			                                        new Runnable() {
+			                                            public void run() {
+			                                                /* Load the empty schematic now that the player has left */
+			                                                StructureUtils.paste(emptySchem.getClipboard(), mPlayer.getWorld(), mMinPos);
+			                                            }
+			                                        });
 		} catch (Exception e) {
 			mPlayer.sendMessage(ChatColor.RED + "Failed to save your room! This is a serious problem. Please hover your mouse over the " +
-			                   "exception below, take a screenshot, and report this to a moderator.");
+			                    "exception below, take a screenshot, and report this to a moderator.");
 			mPlugin.getLogger().severe("Caught exception: " + e);
 			e.printStackTrace();
 
@@ -132,10 +140,5 @@ public class UserStructure {
 			/* Better to not overwrite? No good option here */
 			return;
 		}
-
-		// TODO: Need a callabck from saving the schematic to invoke the paste overwrite that removes this from the list.
-
-		/* Load the empty schematic now that the player has left */
-		StructureUtils.paste(emptySchem.getClipboard(), mPlayer.getWorld(), mMinPos);
 	}
 }

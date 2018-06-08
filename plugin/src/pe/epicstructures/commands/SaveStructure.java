@@ -53,7 +53,7 @@ public class SaveStructure implements CommandExecutor {
 
 		// Save it
 		try {
-			mPlugin.mStructureManager.saveSchematic("structures", arg3[0], minpos, maxpos);
+			mPlugin.mStructureManager.saveSchematic("structures", arg3[0], minpos, maxpos, null);
 		} catch (Exception e) {
 			mPlugin.getLogger().severe("Caught exception: " + e);
 			e.printStackTrace();
