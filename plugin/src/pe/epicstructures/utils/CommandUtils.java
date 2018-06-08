@@ -25,6 +25,26 @@ public class CommandUtils {
 		return value;
 	}
 
+	public static CommandSender getProxiedSender(CommandSender sender, boolean callee) throws Exception {
+		if (sender == null) {
+			throw new Exception("sender is null!");
+		}
+
+		if (sender instanceof Entity) {
+			return sender;
+		} else if (sender instanceof BlockCommandSender) {
+			return sender;
+		} else if (sender instanceof ProxiedCommandSender) {
+			if (callee) {
+				return getProxiedSender(((ProxiedCommandSender)sender).getCallee(), callee);
+			} else {
+				return getProxiedSender(((ProxiedCommandSender)sender).getCaller(), callee);
+			}
+		}
+
+		throw new Exception("Unknown sender type!");
+	}
+
 	public static Location getLocation(CommandSender sender) throws Exception {
 		if (sender == null) {
 			throw new Exception("sender is null!");
