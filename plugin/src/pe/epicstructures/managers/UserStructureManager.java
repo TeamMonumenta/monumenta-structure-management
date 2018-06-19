@@ -4,8 +4,6 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.Queue;
 
-import org.bukkit.scheduler.BukkitRunnable;
-
 import pe.epicstructures.Plugin;
 
 public class UserStructureManager {
