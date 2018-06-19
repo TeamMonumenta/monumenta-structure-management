@@ -10,32 +10,35 @@ import pe.epicstructures.Plugin;
 
 public class UserStructureManager {
 	private Queue<UserStructure> mLoadedStructures;
+	private int mTaskId;
 
 	public UserStructureManager(Plugin plugin) {
 		mLoadedStructures = new ConcurrentLinkedQueue<UserStructure>();
 
-		new BukkitRunnable() {
+		mTaskId = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
 			@Override
 			public void run() {
 				Iterator<UserStructure> iter = mLoadedStructures.iterator();
 				while (iter.hasNext()) {
 					UserStructure struct = iter.next();
 					if (!struct.playerInStructure()) {
-						struct.finalize();
+						struct.saveAndCleanup();
 						iter.remove();
 					}
 				}
 			}
-		}.runTaskTimer(plugin, 0, 15);
+		}, 0L, 10L);
 	}
 
 	public void add(UserStructure structure) {
 		mLoadedStructures.add(structure);
 	}
 
-	public void unloadAll() {
+	public void unloadAll(Plugin plugin) {
+		plugin.getServer().getScheduler().cancelTask(mTaskId);
+
 		for (UserStructure structure : mLoadedStructures) {
-			structure.finalize();
+			structure.saveAndCleanup();
 		}
 		mLoadedStructures.clear();
 	}

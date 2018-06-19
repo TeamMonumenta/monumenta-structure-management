@@ -114,7 +114,7 @@ public class UserStructure {
 		return _playerInStructure(mPlayer);
 	}
 
-	public void finalize() {
+	public void saveAndCleanup() {
 		// TODO: Remove this debug
 		mPlayer.sendMessage("Finalizing!");
 

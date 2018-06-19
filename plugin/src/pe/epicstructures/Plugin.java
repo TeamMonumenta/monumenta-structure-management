@@ -33,6 +33,6 @@ public class Plugin extends JavaPlugin {
 	public void onDisable() {
 		getServer().getScheduler().cancelTasks(this);
 
-		mUserStructureManager.unloadAll();
+		mUserStructureManager.unloadAll(this);
 	}
 }
