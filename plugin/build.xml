@@ -13,7 +13,7 @@
         <pathelement location="bin"/>
         <pathelement location="api/gson-2.8.1.jar"/>
         <pathelement location="api/spigot-api-1.12-R0.1-SNAPSHOT-shaded.jar"/>
-		<pathelement location="api/FastAsyncWorldEdit-bukkit-17.11.13-12580b5-945-18.0.2.jar"/>
+		<pathelement location="api/FastAsyncWorldEdit-bukkit-18.07.21-a00345f-1159-20.4.0.jar"/>
 		<pathelement location="api/worldedit-bukkit-6.1.9-SNAPSHOT-dist.jar"/>
     </path>
 
