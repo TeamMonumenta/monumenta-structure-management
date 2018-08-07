@@ -11,8 +11,10 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.build.timestamp.format>yyyyMMdd-HHmmss</maven.build.timestamp.format>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <minecraft.server.version>1.12.2-R0.1-SNAPSHOT</minecraft.server.version>
     </properties>
 
     <repositories>
@@ -34,7 +36,7 @@
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.12.2-R0.1-SNAPSHOT</version>
+            <version>${minecraft.server.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -59,6 +61,8 @@
     </dependencies>
 
     <build>
+        <finalName>EpicStructureManagement_1.12.2_${project.version}_${maven.build.timestamp}</finalName>
+        <!--<finalName>${project.artifactId}_${minecraft.server.version}_${project.version}_${maven.build.timestamp}</finalName>-->
         <pluginManagement>
             <plugins>
                 <plugin>
