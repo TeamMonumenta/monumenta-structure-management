@@ -2,12 +2,16 @@ package pe.epicstructures.managers;
 
 import com.boydti.fawe.object.schematic.Schematic;
 
-import com.sk89q.worldedit.Vector;
+import com.sk89q.worldedit.extent.clipboard.Clipboard;
+import com.sk89q.worldedit.regions.Region;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.Location;
+import org.bukkit.util.Vector;
+import org.bukkit.World;
 
 import pe.epicstructures.Plugin;
 import pe.epicstructures.utils.MessagingUtils;
@@ -18,65 +22,107 @@ public class RespawningStructure {
 		public Vector mLowerCorner;
 		public Vector mUpperCorner;
 
-		public AreaBounds(String name, Vector lowerCorner, Vector upperCorner) {
-			mInnerLowerCorner = Vector.getMinimum(lowerCorner, upperCorner);
-			mInnerUpperCorner = Vector.getMaximum(lowerCorner, upperCorner);
+		public StructureBounds(Vector lowerCorner, Vector upperCorner) {
+			mLowerCorner = Vector.getMinimum(lowerCorner, upperCorner);
+			mUpperCorner = Vector.getMaximum(lowerCorner, upperCorner);
 		}
 
 		public boolean within(Vector vec) {
-			return vec.x >= mInnerLowerCorner.x && vec.x <= mInnerUpperCorner.x &&
-			       vec.y >= mInnerLowerCorner.y && vec.y <= mInnerUpperCorner.y &&
-			       vec.z >= mInnerLowerCorner.z && vec.z <= mInnerUpperCorner.z;
+			return vec.getX() >= mLowerCorner.getX() && vec.getX() <= mUpperCorner.getX() &&
+			       vec.getY() >= mLowerCorner.getY() && vec.getY() <= mUpperCorner.getY() &&
+			       vec.getZ() >= mLowerCorner.getZ() && vec.getZ() <= mUpperCorner.getZ();
 		}
 	}
 
 	private Plugin mPlugin;
 	private World mWorld;
-	private Clipboard mClipboard; // The structure itself
+	private Clipboard mClipboard;         // The structure itself
+	private String mName;                 // What the pretty name of the structure is
+	private String mPath;                 // Path where the structure should load from
+	private Vector mLoadPos;              // Where it will be loaded
 	private StructureBounds mInnerBounds; // The bounding box for the structure itself
 	private StructureBounds mOuterBounds; // The bounding box for the nearby area around the structure
-	private int mTicksLeft; // How many ticks remaining until respawn
-	private int mRespawnTime; // How many ticks between respawns
+	private int mTicksLeft;               // How many ticks remaining until respawn
+	private int mRespawnTime;             // How many ticks between respawns
 
-	public RespawningStructure(Plugin plugin, World world, CONFIG) throws Exception {
+	public RespawningStructure(Plugin plugin, World world, int extraRadius,
+	                           String configLabel, ConfigurationSection config) throws Exception {
 		mPlugin = plugin;
 		mWorld = world;
 
-		//TODO parse load coord from string
-		Location loadLoc = CommandUtils.parseLocationFromString(sender, mWorld, arg3[1], arg3[2], arg3[3]);
-		loadPos = new Vector(loadLoc.getBlockX(), loadLoc.getBlockY(), loadLoc.getBlockZ());
-
-		//TODO: Load structure w/ debug
-		try {
-			schem = mPlugin.mStructureManager.loadSchematic("structures", arg3[0]);
-		} catch (Exception e) {
-			mPlugin.getLogger().severe("Caught exception: " + e);
-			e.printStackTrace();
-
-			if (sender != null) {
-				sender.sendMessage(ChatColor.RED + "Failed to load structure");
-				MessagingUtils.sendStackTrace(sender, e);
-			}
-			return false;
+		if (!config.isString("name")) {
+			throw new Exception("Invalid name");
+		} else if (!config.isString("path")) {
+			throw new Exception("Invalid path");
+		} else if (!config.isInt("x")) {
+			throw new Exception("Invalid x value");
+		} else if (!config.isInt("y")) {
+			throw new Exception("Invalid y value");
+		} else if (!config.isInt("z")) {
+			throw new Exception("Invalid z value");
+		} else if (!config.isInt("delay")) {
+			throw new Exception("Invalid delay value");
 		}
 
-		// TODO parse structure dimensions from structure
+		mName = config.getString("name");
+		mPath = config.getString("path");
+		mLoadPos = new Vector(config.getInt("x"), config.getInt("y"), config.getInt("z"));
+		mRespawnTime = config.getInt("delay");
 
-		// TODO create bounding box
-		mInnerBounds = new StructureBounds(POS, POS);
-		mOuterBounds = new StructureBounds(mInnerBounds.mLowerCorner.clone().subtract(RADIUS, RADIUS, RADIUS),
-		                                   mInnerBounds.mUpperCorner.clone().add(RADIUS, RADIUS, RADIUS));
+		if (mRespawnTime < 200) {
+			throw new Exception("Minimum delay value is 200 ticks");
+		}
+
+		// Load the structure
+		mClipboard = mPlugin.mStructureManager.loadSchematic("structures",
+		                                                     config.getString("path")).getClipboard();
+
+		// Determine structure size
+		Region clipboardRegion = mClipboard.getRegion().clone();
+		com.sk89q.worldedit.Vector structureSize =
+			clipboardRegion.getMaximumPoint().subtract(clipboardRegion.getMinimumPoint());
+
+		// Create a bounding box for the structure itself, plus a slightly larger box to notify nearby players
+		mInnerBounds = new StructureBounds(mLoadPos, mLoadPos.clone().add(new Vector(structureSize.getX(),
+		                                                                             structureSize.getY(),
+		                                                                             structureSize.getZ())));
+		Vector extraRadiusVec = new Vector(extraRadius, extraRadius, extraRadius);
+		mOuterBounds = new StructureBounds(mInnerBounds.mLowerCorner.clone().subtract(extraRadiusVec),
+		                                   mInnerBounds.mUpperCorner.clone().add(extraRadiusVec));
 	}
 
+	public String getInfoString() {
+		return "'{}': ({} {} {}) path={} period={} ticksleft={}".format(mName, mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ(), mPath, mRespawnTime, mTicksLeft);
+	}
 
 	public void Respawn() {
-		StructureUtils.paste(mClipboard, mWorld, mPos);
+		StructureUtils.paste(mClipboard, mWorld,
+		                     new com.sk89q.worldedit.Vector(mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ()));
 		mTicksLeft = mRespawnTime;
 	}
 
 	public void TellRespawnTime(Player player) {
-		//TODO
-		player.sendMessage(STUFF);
+		int minutes = mTicksLeft / (60 * 20);
+		int seconds = mTicksLeft / 20;
+		String message = mName + " is respawning in ";
+		String color = ChatColor.GREEN + "" + ChatColor.BOLD;
+
+		if (mTicksLeft <= 2400) {
+			color = ChatColor.RED + "" + ChatColor.BOLD;
+		}
+
+		if (minutes > 1) {
+			message += Integer.toString(minutes) + " minutes";
+		} else if (minutes == 1) {
+			message += "1 minute";
+		}
+
+		if (seconds > 1) {
+			message += " and " + Integer.toString(seconds) + " seconds";
+		} else if (seconds == 1) {
+			message += " and 1 second";
+		}
+		player.sendMessage(color + message);
 	}
 
 	public void TellRespawnTimeIfNearby(Player player) {

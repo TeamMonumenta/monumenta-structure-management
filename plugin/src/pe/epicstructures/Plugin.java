@@ -1,19 +1,28 @@
 package pe.epicstructures;
 
+import java.io.File;
+import java.io.IOException;
+
+import java.util.logging.Level;
+
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.World;
 
 import pe.epicstructures.commands.LoadStructure;
 import pe.epicstructures.commands.SaveStructure;
+import pe.epicstructures.managers.RespawnManager;
 import pe.epicstructures.managers.StructureManager;
 
 public class Plugin extends JavaPlugin {
 	public World mWorld;
 	public StructureManager mStructureManager;
 
+	public RespawnManager mRespawnManager = null;
+
 	private File mConfigFile;
-	private FileConfiguration mConfig;
+	private YamlConfiguration mConfig;
 
 	//	Logic that is performed upon enabling the plugin.
 	@Override
@@ -27,6 +36,7 @@ public class Plugin extends JavaPlugin {
 		//TODO: Command for force-loading structure
 		//TODO: Command to add a structure to the config
 		//TODO: Command to reload structures from config file
+		//TODO: Command to get structure debug info
 
 		//TODO: Compass listener for telling players how long is left
 	}
@@ -46,7 +56,7 @@ public class Plugin extends JavaPlugin {
 
 		mConfig = YamlConfiguration.loadConfiguration(mConfigFile);
 
-		mRespawnManager = new RespawnManager(this, mConfig);
+		mRespawnManager = new RespawnManager(this, mWorld, mConfig);
 	}
 
 	private void _saveConfig() {

@@ -1,36 +1,82 @@
 package pe.epicstructures.managers;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.nio.file.Paths;
-import java.util.HashMap;
-
-import com.sk89q.worldedit.bukkit.BukkitWorld;
-import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
-import com.sk89q.worldedit.extent.Extent;
-import com.sk89q.worldedit.function.mask.ExistingBlockMask;
-import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
-import com.sk89q.worldedit.function.operation.Operations;
-import com.sk89q.worldedit.regions.CuboidRegion;
-import com.sk89q.worldedit.Vector;
-import com.sk89q.worldedit.WorldEdit;
-import com.sk89q.worldedit.world.World;
-import com.sk89q.worldedit.world.registry.WorldData;
-
 import com.boydti.fawe.object.schematic.Schematic;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.Set;
+
+import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.World;
 
 import pe.epicstructures.Plugin;
 
 public class RespawnManager {
 	Plugin mPlugin;
 
-	List<RespawningStructure> mRespawns = new ArrayList<RespawningStructure>();
+	List<RespawningStructure> mRespawns = null;
 
-	public RespawnManager(Plugin plugin, CONFIG) {
+	public RespawnManager(Plugin plugin, World world, YamlConfiguration config) {
 		mPlugin = plugin;
 
-		// load config
+		// Load the respawning structures configuration section
+		if (!config.isConfigurationSection("respawning_structures")) {
+			plugin.getLogger().log(Level.INFO, "No respawning structures defined");
+			return;
+		}
+		ConfigurationSection respawnSection = config.getConfigurationSection("respawning_structures");
+
+		// Load the extra radius where players are determined to be near a structure
+		int extraRadius;
+		if (!config.isInt("extra_detection_radius")) {
+			plugin.getLogger().log(Level.WARNING, "No extra_detection_radius setting specified - using default 32");
+			extraRadius = 32;
+		} else {
+			extraRadius = config.getInt("extra_detection_radius");
+		}
+
+		// Load the frequency that the plugin should check for respawning structures
+		int tickPeriod;
+		if (!config.isInt("check_respawn_period")) {
+			plugin.getLogger().log(Level.WARNING, "No check_respawn_period setting specified - using default 20");
+			tickPeriod = 32;
+		} else {
+			tickPeriod = config.getInt("check_respawn_period");
+		}
+
+		// Preallocate an arraylist with enough entries to hold all the respawning structure entries
+		Set<String> keys = respawnSection.getKeys(false);
+		List<RespawningStructure> mRespawns = new ArrayList<RespawningStructure>(keys.size());
+
+		// Iterate over all the respawning entries (shallow list at this level)
+		for (String key : keys) {
+			if (!respawnSection.isConfigurationSection(key)) {
+				plugin.getLogger().log(Level.WARNING, "respawning_structures entry '" + key + "' is not a configuration section!");
+				continue;
+			}
+
+			try {
+				mRespawns.add(new RespawningStructure(plugin, world, extraRadius, key, respawnSection.getConfigurationSection(key)));
+			} catch (Exception e) {
+				plugin.getLogger().log(Level.WARNING, "Failed to load respawning structure entry'" + key + "': ", e);
+				continue;
+			}
+		}
+
 		// create sync task that counts down and loads
+	}
+
+	public void dumpInfo(CommandSender sender) {
+		for (RespawningStructure struct : mRespawns) {
+			sender.sendMessage(struct.getInfoString());
+		}
+	}
+
+	// TODO save config someplace?
+	public void onDisable() {
+
 	}
 }
