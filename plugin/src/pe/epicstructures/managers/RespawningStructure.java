@@ -103,13 +103,13 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		                     mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ(), mPath, mRespawnTime, mTicksLeft);
 	}
 
-	public void Respawn() {
+	public void respawn() {
 		StructureUtils.paste(mClipboard, mWorld,
 		                     new com.sk89q.worldedit.Vector(mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ()));
 		mTicksLeft = mRespawnTime;
 	}
 
-	public void TellRespawnTime(Player player) {
+	public void tellRespawnTime(Player player) {
 		int minutes = mTicksLeft / (60 * 20);
 		int seconds = mTicksLeft / 20;
 		String message = mName + " is respawning in ";
@@ -133,9 +133,17 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		player.sendMessage(color + message);
 	}
 
-	public void TellRespawnTimeIfNearby(Player player) {
+	public void tellRespawnTimeIfNearby(Player player) {
 		if (mOuterBounds.within(player.getLocation().toVector())) {
-			TellRespawnTime(player);
+			tellRespawnTime(player);
+		}
+	}
+
+	public void setRespawnTimer(int ticksUntilRespawn) {
+		if (ticksUntilRespawn < 0) {
+			respawn();
+		} else {
+			mTicksLeft = ticksUntilRespawn;
 		}
 	}
 
@@ -144,7 +152,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		    ((mTicksLeft >= 600) && ((mTicksLeft - ticks) < 600))) {
 			for (Player player : Bukkit.getOnlinePlayers()) {
 				if (mOuterBounds.within(player.getLocation().toVector())) {
-					TellRespawnTime(player);
+					tellRespawnTime(player);
 				}
 			}
 		}
@@ -154,7 +162,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		if (mTicksLeft < 0) {
 			for (Player player : Bukkit.getOnlinePlayers()) {
 				if (mOuterBounds.within(player.getLocation().toVector())) {
-					Respawn();
+					respawn();
 					break;
 				}
 			}

@@ -12,6 +12,7 @@ import org.bukkit.World;
 
 import pe.epicstructures.commands.LoadStructure;
 import pe.epicstructures.commands.SaveStructure;
+import pe.epicstructures.commands.RespawnStructure;
 import pe.epicstructures.managers.RespawnManager;
 import pe.epicstructures.managers.StructureManager;
 
@@ -33,7 +34,7 @@ public class Plugin extends JavaPlugin {
 
 		getCommand("LoadStructure").setExecutor(new LoadStructure(this, mWorld));
 		getCommand("SaveStructure").setExecutor(new SaveStructure(this, mWorld));
-		//TODO: Command for force-loading structure
+		getCommand("RespawnStructure").setExecutor(new RespawnStructure(this));
 		//TODO: Command to add a structure to the config
 		//TODO: Command to reload structures from config file
 		//TODO: Command to get structure debug info

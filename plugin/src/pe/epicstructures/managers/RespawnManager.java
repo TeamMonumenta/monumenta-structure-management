@@ -75,6 +75,14 @@ public class RespawnManager {
 		}
 	}
 
+	public void setTimer(String label, int ticksUntilRespawn) throws Exception {
+		RespawningStructure struct = mRespawns.get(label);
+		if (struct == null) {
+			throw new Exception("Structure '" + label + "' not found!");
+		}
+		struct.setRespawnTimer(ticksUntilRespawn);
+	}
+
 	// TODO save config someplace?
 	public void onDisable() {
 

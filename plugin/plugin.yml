@@ -10,7 +10,7 @@ commands:
     permission: epicstructures
     description: Saves the specified structure contained by the given coordinates
     usage: /saveStructure <name> <x1> <y1> <z1> <x2> <y2> <z2>
-  loadUserStructure:
+  respawnStructure:
     permission: epicstructures
-    description: Temporarily loads a structure bound to the user it is executed by
-    usage: /execute <player> ~ ~ ~ userstructure name <NONE|CLOCKWISE_90|CLOCKWISE_180|COUNTERCLOCKWISE_90> x1 y1 z1 x2 y2 z2 telex1 teley1 telez1
+    description: Sets the countdown timer on the specified structure
+    usage: /respawnStructure <name> [ticks=600]
