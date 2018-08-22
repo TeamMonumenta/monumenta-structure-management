@@ -17,7 +17,7 @@ import pe.epicstructures.Plugin;
 import pe.epicstructures.utils.MessagingUtils;
 import pe.epicstructures.utils.StructureUtils;
 
-public class RespawningStructure {
+public class RespawningStructure implements Comparable<RespawningStructure> {
 	public class StructureBounds {
 		public Vector mLowerCorner;
 		public Vector mUpperCorner;
@@ -37,6 +37,7 @@ public class RespawningStructure {
 	private Plugin mPlugin;
 	private World mWorld;
 	private Clipboard mClipboard;         // The structure itself
+	protected String mConfigLabel;          // The label used to modify this structure via commands
 	private String mName;                 // What the pretty name of the structure is
 	private String mPath;                 // Path where the structure should load from
 	private Vector mLoadPos;              // Where it will be loaded
@@ -45,10 +46,16 @@ public class RespawningStructure {
 	private int mTicksLeft;               // How many ticks remaining until respawn
 	private int mRespawnTime;             // How many ticks between respawns
 
+	@Override
+	public int compareTo(RespawningStructure other) {
+		return mConfigLabel.compareTo(other.mConfigLabel);
+	}
+
 	public RespawningStructure(Plugin plugin, World world, int extraRadius,
 	                           String configLabel, ConfigurationSection config) throws Exception {
 		mPlugin = plugin;
 		mWorld = world;
+		mConfigLabel = configLabel;
 
 		if (!config.isString("name")) {
 			throw new Exception("Invalid name");
@@ -92,7 +99,8 @@ public class RespawningStructure {
 	}
 
 	public String getInfoString() {
-		return "'{}': ({} {} {}) path={} period={} ticksleft={}".format(mName, mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ(), mPath, mRespawnTime, mTicksLeft);
+		return String.format("name='%s' pos=(%d %d %d) path=%s period=%d ticksleft=%d", mName,
+		                     mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ(), mPath, mRespawnTime, mTicksLeft);
 	}
 
 	public void Respawn() {

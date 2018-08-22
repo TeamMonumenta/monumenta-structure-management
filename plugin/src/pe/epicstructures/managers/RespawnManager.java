@@ -2,10 +2,11 @@ package pe.epicstructures.managers;
 
 import com.boydti.fawe.object.schematic.Schematic;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.TreeMap;
+import java.util.SortedMap;
 import java.util.logging.Level;
 import java.util.Set;
+import java.util.Map;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
@@ -17,7 +18,7 @@ import pe.epicstructures.Plugin;
 public class RespawnManager {
 	Plugin mPlugin;
 
-	List<RespawningStructure> mRespawns = null;
+	SortedMap<String, RespawningStructure> mRespawns = null;
 
 	public RespawnManager(Plugin plugin, World world, YamlConfiguration config) {
 		mPlugin = plugin;
@@ -47,9 +48,8 @@ public class RespawnManager {
 			tickPeriod = config.getInt("check_respawn_period");
 		}
 
-		// Preallocate an arraylist with enough entries to hold all the respawning structure entries
 		Set<String> keys = respawnSection.getKeys(false);
-		List<RespawningStructure> mRespawns = new ArrayList<RespawningStructure>(keys.size());
+		mRespawns = new TreeMap<String, RespawningStructure>();
 
 		// Iterate over all the respawning entries (shallow list at this level)
 		for (String key : keys) {
@@ -59,7 +59,7 @@ public class RespawnManager {
 			}
 
 			try {
-				mRespawns.add(new RespawningStructure(plugin, world, extraRadius, key, respawnSection.getConfigurationSection(key)));
+				mRespawns.put(key, new RespawningStructure(plugin, world, extraRadius, key, respawnSection.getConfigurationSection(key)));
 			} catch (Exception e) {
 				plugin.getLogger().log(Level.WARNING, "Failed to load respawning structure entry'" + key + "': ", e);
 				continue;
@@ -70,8 +70,8 @@ public class RespawnManager {
 	}
 
 	public void dumpInfo(CommandSender sender) {
-		for (RespawningStructure struct : mRespawns) {
-			sender.sendMessage(struct.getInfoString());
+		for (Map.Entry<String, RespawningStructure> entry : mRespawns.entrySet()) {
+			sender.sendMessage(String.format("%s : %s", entry.getKey(), entry.getValue().getInfoString()));
 		}
 	}
 
