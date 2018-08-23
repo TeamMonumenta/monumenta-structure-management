@@ -51,12 +51,8 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		return mConfigLabel.compareTo(other.mConfigLabel);
 	}
 
-	public RespawningStructure(Plugin plugin, World world, int extraRadius,
-	                           String configLabel, ConfigurationSection config) throws Exception {
-		mPlugin = plugin;
-		mWorld = world;
-		mConfigLabel = configLabel;
-
+	public static RespawningStructure fromConfig(Plugin plugin, World world, int extraRadius,
+	        String configLabel, ConfigurationSection config) throws Exception {
 		if (!config.isString("name")) {
 			throw new Exception("Invalid name");
 		} else if (!config.isString("path")) {
@@ -71,23 +67,34 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			throw new Exception("Invalid delay value");
 		}
 
-		mName = config.getString("name");
-		mPath = config.getString("path");
-		mLoadPos = new Vector(config.getInt("x"), config.getInt("y"), config.getInt("z"));
-		mRespawnTime = config.getInt("delay");
+		return new RespawningStructure(plugin, world, extraRadius, configLabel, config.getString("name"),
+		                               config.getString("path"),
+		                               new Vector(config.getInt("x"), config.getInt("y"), config.getInt("z")),
+		                               config.getInt("delay"));
+	}
+
+	public RespawningStructure(Plugin plugin, World world, int extraRadius,
+	                           String configLabel, String name, String path,
+	                           Vector loadPos, int respawnTime) throws Exception {
+		mPlugin = plugin;
+		mWorld = world;
+		mConfigLabel = configLabel;
+		mName = name;
+		mPath = path;
+		mLoadPos = loadPos;
+		mRespawnTime = respawnTime;
 
 		if (mRespawnTime < 200) {
 			throw new Exception("Minimum delay value is 200 ticks");
 		}
 
 		// Load the structure
-		mClipboard = mPlugin.mStructureManager.loadSchematic("structures",
-		                                                     config.getString("path")).getClipboard();
+		mClipboard = mPlugin.mStructureManager.loadSchematic("structures", path).getClipboard();
 
 		// Determine structure size
 		Region clipboardRegion = mClipboard.getRegion().clone();
 		com.sk89q.worldedit.Vector structureSize =
-			clipboardRegion.getMaximumPoint().subtract(clipboardRegion.getMinimumPoint());
+		    clipboardRegion.getMaximumPoint().subtract(clipboardRegion.getMinimumPoint());
 
 		// Create a bounding box for the structure itself, plus a slightly larger box to notify nearby players
 		mInnerBounds = new StructureBounds(mLoadPos, mLoadPos.clone().add(new Vector(structureSize.getX(),

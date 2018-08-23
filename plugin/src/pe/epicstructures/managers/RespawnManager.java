@@ -12,16 +12,19 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.World;
+import org.bukkit.util.Vector;
 
 import pe.epicstructures.Plugin;
 
 public class RespawnManager {
-	Plugin mPlugin;
+	private Plugin mPlugin;
+	private World mWorld;
 
-	SortedMap<String, RespawningStructure> mRespawns = null;
+	private SortedMap<String, RespawningStructure> mRespawns = null;
 
 	public RespawnManager(Plugin plugin, World world, YamlConfiguration config) {
 		mPlugin = plugin;
+		mWorld = world;
 
 		// Load the respawning structures configuration section
 		if (!config.isConfigurationSection("respawning_structures")) {
@@ -33,7 +36,8 @@ public class RespawnManager {
 		// Load the extra radius where players are determined to be near a structure
 		int extraRadius;
 		if (!config.isInt("extra_detection_radius")) {
-			plugin.getLogger().log(Level.WARNING, "No extra_detection_radius setting specified - using default 32");
+			plugin.getLogger().log(Level.WARNING,
+			                       "No extra_detection_radius setting specified - using default 32");
 			extraRadius = 32;
 		} else {
 			extraRadius = config.getInt("extra_detection_radius");
@@ -42,8 +46,9 @@ public class RespawnManager {
 		// Load the frequency that the plugin should check for respawning structures
 		int tickPeriod;
 		if (!config.isInt("check_respawn_period")) {
-			plugin.getLogger().log(Level.WARNING, "No check_respawn_period setting specified - using default 20");
-			tickPeriod = 32;
+			plugin.getLogger().log(Level.WARNING,
+			                       "No check_respawn_period setting specified - using default 20");
+			tickPeriod = 20;
 		} else {
 			tickPeriod = config.getInt("check_respawn_period");
 		}
@@ -54,12 +59,14 @@ public class RespawnManager {
 		// Iterate over all the respawning entries (shallow list at this level)
 		for (String key : keys) {
 			if (!respawnSection.isConfigurationSection(key)) {
-				plugin.getLogger().log(Level.WARNING, "respawning_structures entry '" + key + "' is not a configuration section!");
+				plugin.getLogger().log(Level.WARNING,
+				                       "respawning_structures entry '" + key + "' is not a configuration section!");
 				continue;
 			}
 
 			try {
-				mRespawns.put(key, new RespawningStructure(plugin, world, extraRadius, key, respawnSection.getConfigurationSection(key)));
+				mRespawns.put(key, RespawningStructure.fromConfig(plugin, world, extraRadius, key,
+				              respawnSection.getConfigurationSection(key)));
 			} catch (Exception e) {
 				plugin.getLogger().log(Level.WARNING, "Failed to load respawning structure entry'" + key + "': ", e);
 				continue;
@@ -67,6 +74,14 @@ public class RespawnManager {
 		}
 
 		// create sync task that counts down and loads
+	}
+
+	public void addStructure(int extraRadius, String configLabel, String name, String path,
+	                         Vector loadPos, int respawnTime) throws Exception {
+		mRespawns.put(configLabel, new RespawningStructure(mPlugin, mWorld, extraRadius, configLabel,
+		              name, path, loadPos, respawnTime));
+
+		//TODO: Save config here
 	}
 
 	public void dumpInfo(CommandSender sender) {
