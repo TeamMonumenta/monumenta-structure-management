@@ -92,9 +92,14 @@ public class RespawnManager {
 		//TODO: Save config here
 	}
 
-	public void dumpInfo(CommandSender sender) {
+	public void listStructures(CommandSender sender) {
+		boolean empty = true;
 		for (Map.Entry<String, RespawningStructure> entry : mRespawns.entrySet()) {
 			sender.sendMessage(String.format("%s : %s", entry.getKey(), entry.getValue().getInfoString()));
+			empty = false;
+		}
+		if (empty) {
+			sender.sendMessage("No respawning structures registered");
 		}
 	}
 

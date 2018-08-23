@@ -11,6 +11,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.World;
 
 import pe.epicstructures.commands.AddRespawningStructure;
+import pe.epicstructures.commands.ListRespawningStructures;
 import pe.epicstructures.commands.LoadStructure;
 import pe.epicstructures.commands.RemoveRespawningStructure;
 import pe.epicstructures.commands.RespawnStructure;
@@ -39,8 +40,8 @@ public class Plugin extends JavaPlugin {
 		getCommand("RespawnStructure").setExecutor(new RespawnStructure(this));
 		getCommand("AddRespawningStructure").setExecutor(new AddRespawningStructure(this, mWorld));
 		getCommand("RemoveRespawningStructure").setExecutor(new RemoveRespawningStructure(this));
+		getCommand("ListRespawningStructures").setExecutor(new ListRespawningStructures(this));
 		//TODO: Command to reload structures from config file
-		//TODO: Command to get structure debug info
 
 		//TODO: Compass listener for telling players how long is left
 	}

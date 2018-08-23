@@ -30,7 +30,7 @@ public class RemoveRespawningStructure implements CommandExecutor {
 			return false;
 		}
 
-		sender.sendMessage("Structure added successfully");
+		sender.sendMessage("Structure removed successfully");
 
 		return true;
 	}
