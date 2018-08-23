@@ -79,8 +79,16 @@ public class RespawnManager {
 	public void addStructure(int extraRadius, String configLabel, String name, String path,
 	                         Vector loadPos, int respawnTime) throws Exception {
 		mRespawns.put(configLabel, new RespawningStructure(mPlugin, mWorld, extraRadius, configLabel,
-		              name, path, loadPos, respawnTime));
+		              name, path, loadPos, respawnTime, respawnTime));
+		//TODO: Save config here
+	}
 
+	public void removeStructure(String configLabel) throws Exception {
+		if (!mRespawns.containsKey(configLabel)) {
+			throw new Exception("Structure '" + configLabel + "' does not exist");
+		}
+
+		mRespawns.remove(configLabel);
 		//TODO: Save config here
 	}
 

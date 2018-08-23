@@ -65,17 +65,19 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			throw new Exception("Invalid z value");
 		} else if (!config.isInt("delay")) {
 			throw new Exception("Invalid delay value");
+		} else if (!config.isInt("ticksLeft")) {
+			throw new Exception("Invalid delay value");
 		}
 
 		return new RespawningStructure(plugin, world, extraRadius, configLabel, config.getString("name"),
 		                               config.getString("path"),
 		                               new Vector(config.getInt("x"), config.getInt("y"), config.getInt("z")),
-		                               config.getInt("delay"));
+		                               config.getInt("delay"), config.getInt("ticksLeft"));
 	}
 
 	public RespawningStructure(Plugin plugin, World world, int extraRadius,
 	                           String configLabel, String name, String path,
-	                           Vector loadPos, int respawnTime) throws Exception {
+	                           Vector loadPos, int respawnTime, int ticksLeft) throws Exception {
 		mPlugin = plugin;
 		mWorld = world;
 		mConfigLabel = configLabel;
@@ -83,6 +85,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		mPath = path;
 		mLoadPos = loadPos;
 		mRespawnTime = respawnTime;
+		mTicksLeft = ticksLeft;
 
 		if (mRespawnTime < 200) {
 			throw new Exception("Minimum delay value is 200 ticks");

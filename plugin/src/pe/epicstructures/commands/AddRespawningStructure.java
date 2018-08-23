@@ -21,7 +21,6 @@ public class AddRespawningStructure implements CommandExecutor {
 
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String arg2, String[] arg3) {
-		// TODO
 		if (arg3.length >= 8) {
 			sender.sendMessage(ChatColor.RED + "Invalid number of parameters! Need at least 8");
 			return false;

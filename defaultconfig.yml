@@ -20,6 +20,9 @@ respawning_structures:
         # It will only respawn when a player is within extra_detection_radius of the structure
         delay: 6000
 
+        # How many ticks remaining before respawn
+        ticksLeft: 6000
+
 # How much extra space around a structure will be considered "nearby" for notifying players about respawn
 extra_detection_radius: 32
 
