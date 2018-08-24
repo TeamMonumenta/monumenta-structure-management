@@ -16,6 +16,7 @@ import pe.epicstructures.commands.LoadStructure;
 import pe.epicstructures.commands.RemoveRespawningStructure;
 import pe.epicstructures.commands.RespawnStructure;
 import pe.epicstructures.commands.SaveStructure;
+import pe.epicstructures.commands.SetPostRespawnCommand;
 import pe.epicstructures.managers.RespawnManager;
 import pe.epicstructures.managers.StructureManager;
 
@@ -41,6 +42,12 @@ public class Plugin extends JavaPlugin {
 		getCommand("AddRespawningStructure").setExecutor(new AddRespawningStructure(this, mWorld));
 		getCommand("RemoveRespawningStructure").setExecutor(new RemoveRespawningStructure(this));
 		getCommand("ListRespawningStructures").setExecutor(new ListRespawningStructures(this));
+		getCommand("SetPostRespawnCommand").setExecutor(new SetPostRespawnCommand(this));
+		//TODO: Command to add an alternate generic structure
+		//TODO: Command to add an alternate special structure
+		//TODO: Command to select an alternate special structure
+		//TODO: Command to set all timers to max ?
+
 		//TODO: Command to reload structures from config file
 		//TODO: Compass listener for telling players how long is left
 

@@ -49,6 +49,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	private int mExtraRadius;             // Radius around the structure that still gets messages
 	private int mTicksLeft;               // How many ticks remaining until respawn
 	private int mRespawnTime;             // How many ticks between respawns
+	private String mPostRespawnCommand;   // Command run via the console after respawning structure
 
 	@Override
 	public int compareTo(RespawningStructure other) {
@@ -75,15 +76,26 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			throw new Exception("Invalid extra_detection_radius value");
 		}
 
+		String postRespawnCommand = null;
+		if (config.isString("post_respawn_command")) {
+			postRespawnCommand = config.getString("post_respawn_command");
+		}
+
+		// TODO: Command to run after respawning
+		// TODO: Alternate regular variant
+		// TODO: Alternate selectable variant
+
 		return new RespawningStructure(plugin, world, config.getInt("extra_detection_radius"), configLabel,
 		                               config.getString("name"), config.getString("path"),
 		                               new Vector(config.getInt("x"), config.getInt("y"), config.getInt("z")),
-		                               config.getInt("respawn_period"), config.getInt("ticks_until_respawn"));
+		                               config.getInt("respawn_period"), config.getInt("ticks_until_respawn"),
+									   postRespawnCommand);
 	}
 
 	public RespawningStructure(Plugin plugin, World world, int extraRadius,
 	                           String configLabel, String name, String path,
-	                           Vector loadPos, int respawnTime, int ticksLeft) throws Exception {
+	                           Vector loadPos, int respawnTime, int ticksLeft,
+							   String postRespawnCommand) throws Exception {
 		mPlugin = plugin;
 		mWorld = world;
 		mConfigLabel = configLabel;
@@ -93,6 +105,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		mExtraRadius = extraRadius;
 		mRespawnTime = respawnTime;
 		mTicksLeft = ticksLeft;
+		mPostRespawnCommand = postRespawnCommand;
 
 		if (mRespawnTime < 200) {
 			throw new Exception("Minimum respawn_period value is 200 ticks");
@@ -119,12 +132,16 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		return "name='" + mName + "' pos=(" + Integer.toString((int)mLoadPos.getX()) + " " +
 		       Integer.toString((int)mLoadPos.getY()) + " " + Integer.toString((int)mLoadPos.getZ()) +
 			   ") path=" + mPath + " period=" + Integer.toString(mRespawnTime) + " ticksleft=" +
-			   Integer.toString(mTicksLeft);
+			   Integer.toString(mTicksLeft) +
+			   (mPostRespawnCommand == null ? "" : " respawnCmd='" + mPostRespawnCommand + "'");
 	}
 
 	public void respawn() {
 		StructureUtils.paste(mClipboard, mWorld,
 		                     new com.sk89q.worldedit.Vector(mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ()));
+		if (mPostRespawnCommand != null) {
+			Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), mPostRespawnCommand);
+		}
 		mTicksLeft = mRespawnTime;
 	}
 
@@ -170,6 +187,10 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		}
 	}
 
+	public void setPostRespawnCommand(String postRespawnCommand) {
+		mPostRespawnCommand = postRespawnCommand;
+	}
+
 	public Map<String, Object> getConfig() {
 		Map<String, Object> configMap = new LinkedHashMap<String, Object>();
 
@@ -181,6 +202,9 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		configMap.put("extra_detection_radius", mExtraRadius);
 		configMap.put("respawn_period", mRespawnTime);
 		configMap.put("ticks_until_respawn", mTicksLeft);
+		if (mPostRespawnCommand != null) {
+			configMap.put("post_respawn_command", mPostRespawnCommand);
+		}
 
 		return configMap;
 	}

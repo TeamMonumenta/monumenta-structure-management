@@ -26,3 +26,7 @@ commands:
     permission: epicstructures
     description: Lists automatically respawning structures
     usage: /listRespawningStructures
+  setPostRespawnCommand:
+    permission: epicstructures
+    description: Sets the command run after respawning a structure
+    usage: /setPostRespawnCommand <label> [command with spaces]

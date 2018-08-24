@@ -79,7 +79,7 @@ public class RespawnManager {
 	public void addStructure(int extraRadius, String configLabel, String name, String path,
 	                         Vector loadPos, int respawnTime) throws Exception {
 		mRespawns.put(configLabel, new RespawningStructure(mPlugin, mWorld, extraRadius, configLabel,
-		              name, path, loadPos, respawnTime, respawnTime));
+		              name, path, loadPos, respawnTime, respawnTime, null));
 		mPlugin.saveConfig();
 	}
 
@@ -109,6 +109,15 @@ public class RespawnManager {
 			throw new Exception("Structure '" + label + "' not found!");
 		}
 		struct.setRespawnTimer(ticksUntilRespawn);
+	}
+
+	public void setPostRespawnCommand(String label, String command) throws Exception {
+		RespawningStructure struct = mRespawns.get(label);
+		if (struct == null) {
+			throw new Exception("Structure '" + label + "' not found!");
+		}
+		struct.setPostRespawnCommand(command);
+		mPlugin.saveConfig();
 	}
 
 	public void cleanup() {

@@ -29,3 +29,7 @@ respawning_structures:
 
         # How many ticks remaining before respawn
         ticks_until_respawn: 6000
+
+        # Command to run after the structure respawns
+        # OPTIONAL
+        post_respawn_command: "say mystructure respawned!"
