@@ -40,7 +40,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	private Plugin mPlugin;
 	private World mWorld;
 	private Clipboard mClipboard;         // The structure itself
-	protected String mConfigLabel;          // The label used to modify this structure via commands
+	protected String mConfigLabel;        // The label used to modify this structure via commands
 	private String mName;                 // What the pretty name of the structure is
 	private String mPath;                 // Path where the structure should load from
 	private Vector mLoadPos;              // Where it will be loaded

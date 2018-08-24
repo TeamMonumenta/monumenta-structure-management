@@ -11,6 +11,7 @@ import java.util.TreeMap;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.bukkit.World;
 
@@ -22,6 +23,7 @@ public class RespawnManager {
 
 	private SortedMap<String, RespawningStructure> mRespawns = null;
 	private int mTickPeriod;
+	private BukkitRunnable mRunnable;
 
 	public RespawnManager(Plugin plugin, World world, YamlConfiguration config) {
 		mPlugin = plugin;
@@ -63,7 +65,18 @@ public class RespawnManager {
 			}
 		}
 
-		// TODO create sync task that counts down and loads
+		// Schedule a repeating task to trigger structure countdowns
+		mRunnable = new BukkitRunnable() {
+			@Override
+			public void run()
+			{
+				for (RespawningStructure struct : mRespawns.values()) {
+					struct.tick(mTickPeriod);
+				}
+			}
+		};
+
+		mRunnable.runTaskTimer(mPlugin, 0, mTickPeriod);
 	}
 
 	public void addStructure(int extraRadius, String configLabel, String name, String path,
@@ -102,7 +115,7 @@ public class RespawnManager {
 	}
 
 	public void cleanup() {
-		// TODO stop recurring task
+		mRunnable.cancel();
 		mRespawns.clear();
 	}
 
