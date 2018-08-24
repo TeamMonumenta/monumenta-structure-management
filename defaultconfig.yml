@@ -1,30 +1,31 @@
+# How frequently to check if players are in a respawning structure
+check_respawn_period: 20
+
+# The definitions for respawning structures
 respawning_structures:
     # Add more entries like this for your respawning structures
     mystructure:
+        # Name for respawn messages and when using the compass
+        name: "My Structure"
+
         # The path to the structure file to load - relative to the structures directory
         # Thus if the path to the file was:
         #   plugins/EpicStructureManagement/structures/mydir/mystructure.schematic
         # Then you would set path to 'mydir/mystructure'
         path: "mydir/mystructure"
 
-        # Name for respawn messages and when using the compass
-        name: "My Structure"
-
         # x y z location where the structure should be respawned. Spaces or comma separated (or both)
         x: 5
         y: 6
         z: 7
 
+        # How much extra space around a structure will be considered "nearby" for notifying players about respawn
+        extra_detection_radius: 32
+
         # How often the structure respawns (in ticks - 1/20th of a second).
         # For example, 5 minutes = 5 * 60 * 20 = 6000
         # It will only respawn when a player is within extra_detection_radius of the structure
-        delay: 6000
+        respawn_period: 6000
 
         # How many ticks remaining before respawn
-        ticksLeft: 6000
-
-# How much extra space around a structure will be considered "nearby" for notifying players about respawn
-extra_detection_radius: 32
-
-# How frequently to check if players are in a respawning structure
-check_respawn_period: 20
+        ticks_until_respawn: 6000

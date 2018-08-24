@@ -5,6 +5,9 @@ import com.boydti.fawe.object.schematic.Schematic;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.regions.Region;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
@@ -51,8 +54,8 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		return mConfigLabel.compareTo(other.mConfigLabel);
 	}
 
-	public static RespawningStructure fromConfig(Plugin plugin, World world, int extraRadius,
-	        String configLabel, ConfigurationSection config) throws Exception {
+	public static RespawningStructure fromConfig(Plugin plugin, World world, String configLabel,
+	        ConfigurationSection config) throws Exception {
 		if (!config.isString("name")) {
 			throw new Exception("Invalid name");
 		} else if (!config.isString("path")) {
@@ -63,16 +66,18 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			throw new Exception("Invalid y value");
 		} else if (!config.isInt("z")) {
 			throw new Exception("Invalid z value");
-		} else if (!config.isInt("delay")) {
-			throw new Exception("Invalid delay value");
-		} else if (!config.isInt("ticksLeft")) {
-			throw new Exception("Invalid delay value");
+		} else if (!config.isInt("respawn_period")) {
+			throw new Exception("Invalid respawn_period value");
+		} else if (!config.isInt("ticks_until_respawn")) {
+			throw new Exception("Invalid ticks_until_respawn value");
+		} else if (!config.isInt("extra_detection_radius")) {
+			throw new Exception("Invalid extra_detection_radius value");
 		}
 
-		return new RespawningStructure(plugin, world, extraRadius, configLabel, config.getString("name"),
-		                               config.getString("path"),
+		return new RespawningStructure(plugin, world, config.getInt("extra_detection_radius"), configLabel,
+		                               config.getString("name"), config.getString("path"),
 		                               new Vector(config.getInt("x"), config.getInt("y"), config.getInt("z")),
-		                               config.getInt("delay"), config.getInt("ticksLeft"));
+		                               config.getInt("respawn_period"), config.getInt("ticks_until_respawn"));
 	}
 
 	public RespawningStructure(Plugin plugin, World world, int extraRadius,
@@ -88,7 +93,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		mTicksLeft = ticksLeft;
 
 		if (mRespawnTime < 200) {
-			throw new Exception("Minimum delay value is 200 ticks");
+			throw new Exception("Minimum respawn_period value is 200 ticks");
 		}
 
 		// Load the structure
@@ -155,6 +160,21 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		} else {
 			mTicksLeft = ticksUntilRespawn;
 		}
+	}
+
+	public Map<String, Object> getConfig() {
+		Map<String, Object> configMap = new LinkedHashMap<String, Object>();
+
+		configMap.put("name", mName);
+		configMap.put("path", mPath);
+		configMap.put("x", (int)mLoadPos.getX());
+		configMap.put("y", (int)mLoadPos.getY());
+		configMap.put("z", (int)mLoadPos.getZ());
+		configMap.put("extra_detection_radius", mName);
+		configMap.put("respawn_period", mName);
+		configMap.put("ticks_until_respawn", mName);
+
+		return configMap;
 	}
 
 	public void tick(int ticks) {

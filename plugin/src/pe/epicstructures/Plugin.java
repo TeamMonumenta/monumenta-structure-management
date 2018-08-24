@@ -28,7 +28,7 @@ public class Plugin extends JavaPlugin {
 	private File mConfigFile;
 	private YamlConfiguration mConfig;
 
-	//	Logic that is performed upon enabling the plugin.
+	// Logic that is performed upon enabling the plugin.
 	@Override
 	public void onEnable() {
 		mWorld = Bukkit.getWorlds().get(0);
@@ -42,17 +42,34 @@ public class Plugin extends JavaPlugin {
 		getCommand("RemoveRespawningStructure").setExecutor(new RemoveRespawningStructure(this));
 		getCommand("ListRespawningStructures").setExecutor(new ListRespawningStructures(this));
 		//TODO: Command to reload structures from config file
-
 		//TODO: Compass listener for telling players how long is left
+
+		reloadConfig();
 	}
 
-	//	Logic that is performed upon disabling the plugin.
+	// Logic that is performed upon disabling the plugin.
 	@Override
 	public void onDisable() {
+		// Save current structure respawn times
+		saveConfig();
+
+		// Cancel structure respawning and clear list
+		if (mRespawnManager != null) {
+			mRespawnManager.cleanup();
+			mRespawnManager = null;
+		}
+
+		// Cancel any remaining tasks
 		getServer().getScheduler().cancelTasks(this);
 	}
 
-	private void _loadConfig() {
+	public void reloadConfig() {
+		// Do not save first
+		if (mRespawnManager != null) {
+			mRespawnManager.cleanup();
+			mRespawnManager = null;
+		}
+
 		if (mConfigFile == null) {
 			mConfigFile = new File(getDataFolder(), "config.yml");
 		}
@@ -64,11 +81,14 @@ public class Plugin extends JavaPlugin {
 		mRespawnManager = new RespawnManager(this, mWorld, mConfig);
 	}
 
-	private void _saveConfig() {
-		try {
-			mConfig.save(mConfigFile);
-		} catch (IOException ex) {
-			getLogger().log(Level.SEVERE, "Could not save config to " + mConfigFile, ex);
+	public void saveConfig() {
+		if (mRespawnManager != null) {
+			try {
+				mConfig = mRespawnManager.getConfig();
+				mConfig.save(mConfigFile);
+			} catch (IOException ex) {
+				getLogger().log(Level.SEVERE, "Could not save config to " + mConfigFile, ex);
+			}
 		}
 	}
 }

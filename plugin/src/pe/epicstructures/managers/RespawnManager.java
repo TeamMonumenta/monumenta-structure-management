@@ -2,17 +2,17 @@ package pe.epicstructures.managers;
 
 import com.boydti.fawe.object.schematic.Schematic;
 
-import java.util.TreeMap;
-import java.util.SortedMap;
 import java.util.logging.Level;
-import java.util.Set;
 import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.World;
 import org.bukkit.util.Vector;
+import org.bukkit.World;
 
 import pe.epicstructures.Plugin;
 
@@ -21,10 +21,20 @@ public class RespawnManager {
 	private World mWorld;
 
 	private SortedMap<String, RespawningStructure> mRespawns = null;
+	private int mTickPeriod;
 
 	public RespawnManager(Plugin plugin, World world, YamlConfiguration config) {
 		mPlugin = plugin;
 		mWorld = world;
+
+		// Load the frequency that the plugin should check for respawning structures
+		if (!config.isInt("check_respawn_period")) {
+			plugin.getLogger().log(Level.INFO,
+			                       "No check_respawn_period setting specified - using default 20");
+			mTickPeriod = 20;
+		} else {
+			mTickPeriod = config.getInt("check_respawn_period");
+		}
 
 		// Load the respawning structures configuration section
 		if (!config.isConfigurationSection("respawning_structures")) {
@@ -32,26 +42,6 @@ public class RespawnManager {
 			return;
 		}
 		ConfigurationSection respawnSection = config.getConfigurationSection("respawning_structures");
-
-		// Load the extra radius where players are determined to be near a structure
-		int extraRadius;
-		if (!config.isInt("extra_detection_radius")) {
-			plugin.getLogger().log(Level.WARNING,
-			                       "No extra_detection_radius setting specified - using default 32");
-			extraRadius = 32;
-		} else {
-			extraRadius = config.getInt("extra_detection_radius");
-		}
-
-		// Load the frequency that the plugin should check for respawning structures
-		int tickPeriod;
-		if (!config.isInt("check_respawn_period")) {
-			plugin.getLogger().log(Level.WARNING,
-			                       "No check_respawn_period setting specified - using default 20");
-			tickPeriod = 20;
-		} else {
-			tickPeriod = config.getInt("check_respawn_period");
-		}
 
 		Set<String> keys = respawnSection.getKeys(false);
 		mRespawns = new TreeMap<String, RespawningStructure>();
@@ -65,7 +55,7 @@ public class RespawnManager {
 			}
 
 			try {
-				mRespawns.put(key, RespawningStructure.fromConfig(plugin, world, extraRadius, key,
+				mRespawns.put(key, RespawningStructure.fromConfig(plugin, world, key,
 				              respawnSection.getConfigurationSection(key)));
 			} catch (Exception e) {
 				plugin.getLogger().log(Level.WARNING, "Failed to load respawning structure entry'" + key + "': ", e);
@@ -73,14 +63,14 @@ public class RespawnManager {
 			}
 		}
 
-		// create sync task that counts down and loads
+		// TODO create sync task that counts down and loads
 	}
 
 	public void addStructure(int extraRadius, String configLabel, String name, String path,
 	                         Vector loadPos, int respawnTime) throws Exception {
 		mRespawns.put(configLabel, new RespawningStructure(mPlugin, mWorld, extraRadius, configLabel,
 		              name, path, loadPos, respawnTime, respawnTime));
-		//TODO: Save config here
+		mPlugin.saveConfig();
 	}
 
 	public void removeStructure(String configLabel) throws Exception {
@@ -89,7 +79,7 @@ public class RespawnManager {
 		}
 
 		mRespawns.remove(configLabel);
-		//TODO: Save config here
+		mPlugin.saveConfig();
 	}
 
 	public void listStructures(CommandSender sender) {
@@ -111,8 +101,25 @@ public class RespawnManager {
 		struct.setRespawnTimer(ticksUntilRespawn);
 	}
 
-	// TODO save config someplace?
-	public void onDisable() {
+	public void cleanup() {
+		// TODO stop recurring task
+		mRespawns.clear();
+	}
 
+	public YamlConfiguration getConfig() {
+		// Create the top-level config to return
+		YamlConfiguration config = new YamlConfiguration();
+
+		// Add global config
+		config.set("check_respawn_period", mTickPeriod);
+
+		// Create the container for respawning structures and iterate over them
+		ConfigurationSection respawnConfig = config.createSection("respawning_structures");
+		for (Map.Entry<String, RespawningStructure> entry : mRespawns.entrySet()) {
+			// Create the container for this structure's data and load it with values
+			respawnConfig.createSection(entry.getKey(), entry.getValue().getConfig());
+		}
+
+		return config;
 	}
 }
