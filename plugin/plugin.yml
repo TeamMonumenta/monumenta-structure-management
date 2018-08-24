@@ -14,3 +14,15 @@ commands:
     permission: epicstructures
     description: Sets the countdown timer on the specified structure
     usage: /respawnStructure <name> [ticks=600]
+  addRespawningStructure:
+    permission: epicstructures
+    description: Adds a new automatically respawning structure
+    usage: /addRespawningStructure <label> <path> <x> <y> <z> <extraRadius> <respawnTime> <display name with spaces>
+  removeRespawningStructure:
+    permission: epicstructures
+    description: Removes an automatically respawning structure
+    usage: /removeRespawningStructure <label>
+  listRespawningStructures:
+    permission: epicstructures
+    description: Lists automatically respawning structures
+    usage: /listRespawningStructures

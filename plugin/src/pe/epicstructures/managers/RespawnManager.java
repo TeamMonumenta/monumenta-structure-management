@@ -21,9 +21,17 @@ public class RespawnManager {
 	private Plugin mPlugin;
 	private World mWorld;
 
-	private SortedMap<String, RespawningStructure> mRespawns = null;
+	private SortedMap<String, RespawningStructure> mRespawns = new TreeMap<String, RespawningStructure>();
 	private int mTickPeriod;
-	private BukkitRunnable mRunnable;
+	private BukkitRunnable mRunnable = new BukkitRunnable() {
+		@Override
+		public void run()
+		{
+			for (RespawningStructure struct : mRespawns.values()) {
+				struct.tick(mTickPeriod);
+			}
+		}
+	};
 
 	public RespawnManager(Plugin plugin, World world, YamlConfiguration config) {
 		mPlugin = plugin;
@@ -46,7 +54,6 @@ public class RespawnManager {
 		ConfigurationSection respawnSection = config.getConfigurationSection("respawning_structures");
 
 		Set<String> keys = respawnSection.getKeys(false);
-		mRespawns = new TreeMap<String, RespawningStructure>();
 
 		// Iterate over all the respawning entries (shallow list at this level)
 		for (String key : keys) {
@@ -60,22 +67,12 @@ public class RespawnManager {
 				mRespawns.put(key, RespawningStructure.fromConfig(plugin, world, key,
 				              respawnSection.getConfigurationSection(key)));
 			} catch (Exception e) {
-				plugin.getLogger().log(Level.WARNING, "Failed to load respawning structure entry'" + key + "': ", e);
+				plugin.getLogger().log(Level.WARNING, "Failed to load respawning structure entry '" + key + "': ", e);
 				continue;
 			}
 		}
 
 		// Schedule a repeating task to trigger structure countdowns
-		mRunnable = new BukkitRunnable() {
-			@Override
-			public void run()
-			{
-				for (RespawningStructure struct : mRespawns.values()) {
-					struct.tick(mTickPeriod);
-				}
-			}
-		};
-
 		mRunnable.runTaskTimer(mPlugin, 0, mTickPeriod);
 	}
 
@@ -98,7 +95,7 @@ public class RespawnManager {
 	public void listStructures(CommandSender sender) {
 		boolean empty = true;
 		for (Map.Entry<String, RespawningStructure> entry : mRespawns.entrySet()) {
-			sender.sendMessage(String.format("%s : %s", entry.getKey(), entry.getValue().getInfoString()));
+			sender.sendMessage(entry.getKey() + " : " + entry.getValue().getInfoString());
 			empty = false;
 		}
 		if (empty) {

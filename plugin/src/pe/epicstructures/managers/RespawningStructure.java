@@ -46,6 +46,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	private Vector mLoadPos;              // Where it will be loaded
 	private StructureBounds mInnerBounds; // The bounding box for the structure itself
 	private StructureBounds mOuterBounds; // The bounding box for the nearby area around the structure
+	private int mExtraRadius;             // Radius around the structure that still gets messages
 	private int mTicksLeft;               // How many ticks remaining until respawn
 	private int mRespawnTime;             // How many ticks between respawns
 
@@ -89,6 +90,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		mName = name;
 		mPath = path;
 		mLoadPos = loadPos;
+		mExtraRadius = extraRadius;
 		mRespawnTime = respawnTime;
 		mTicksLeft = ticksLeft;
 
@@ -114,8 +116,10 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public String getInfoString() {
-		return String.format("name='%s' pos=(%d %d %d) path=%s period=%d ticksleft=%d", mName,
-		                     mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ(), mPath, mRespawnTime, mTicksLeft);
+		return "name='" + mName + "' pos=(" + Integer.toString((int)mLoadPos.getX()) + " " +
+		       Integer.toString((int)mLoadPos.getY()) + " " + Integer.toString((int)mLoadPos.getZ()) +
+			   ") path=" + mPath + " period=" + Integer.toString(mRespawnTime) + " ticksleft=" +
+			   Integer.toString(mTicksLeft);
 	}
 
 	public void respawn() {
@@ -126,7 +130,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 	public void tellRespawnTime(Player player) {
 		int minutes = mTicksLeft / (60 * 20);
-		int seconds = mTicksLeft / 20;
+		int seconds = (mTicksLeft / 20) % 60;
 		String message = mName + " is respawning in ";
 		String color = ChatColor.GREEN + "" + ChatColor.BOLD;
 
@@ -140,10 +144,14 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			message += "1 minute";
 		}
 
+		if (minutes > 0 && seconds > 0) {
+			message += " and ";
+		}
+
 		if (seconds > 1) {
-			message += " and " + Integer.toString(seconds) + " seconds";
+			message += Integer.toString(seconds) + " seconds";
 		} else if (seconds == 1) {
-			message += " and 1 second";
+			message += "1 second";
 		}
 		player.sendMessage(color + message);
 	}
@@ -170,9 +178,9 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		configMap.put("x", (int)mLoadPos.getX());
 		configMap.put("y", (int)mLoadPos.getY());
 		configMap.put("z", (int)mLoadPos.getZ());
-		configMap.put("extra_detection_radius", mName);
-		configMap.put("respawn_period", mName);
-		configMap.put("ticks_until_respawn", mName);
+		configMap.put("extra_detection_radius", mExtraRadius);
+		configMap.put("respawn_period", mRespawnTime);
+		configMap.put("ticks_until_respawn", mTicksLeft);
 
 		return configMap;
 	}

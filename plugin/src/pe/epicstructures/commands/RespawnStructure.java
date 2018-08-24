@@ -27,7 +27,7 @@ public class RespawnStructure implements CommandExecutor {
 
 		if (arg3.length == 2) {
 			try {
-				CommandUtils.parseIntFromString(sender, arg3[1]);
+				ticksUntilRespawn = CommandUtils.parseIntFromString(sender, arg3[1]);
 			} catch (Exception e) {
 				return false;
 			}

@@ -16,7 +16,7 @@ public class RemoveRespawningStructure implements CommandExecutor {
 
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String arg2, String[] arg3) {
-		if (arg3.length == 1) {
+		if (arg3.length != 1) {
 			sender.sendMessage(ChatColor.RED + "Invalid number of parameters - expected 1");
 			return false;
 		}

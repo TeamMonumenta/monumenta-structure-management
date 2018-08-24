@@ -74,7 +74,19 @@ public class Plugin extends JavaPlugin {
 			mConfigFile = new File(getDataFolder(), "config.yml");
 		}
 
-		// TODO: Check file exists, if not create default one
+		if (!mConfigFile.exists()) {
+			try {
+				// Create parent directories if they do not exist
+				mConfigFile.getParentFile().mkdirs();
+
+				// Create the file if it does not exist
+				mConfigFile.createNewFile();
+			} catch (IOException ex) {
+				getLogger().log(Level.SEVERE, "Failed to create non-existent configuration file");
+			}
+
+			// TODO: Put sample config file in here also
+		}
 
 		mConfig = YamlConfiguration.loadConfiguration(mConfigFile);
 
