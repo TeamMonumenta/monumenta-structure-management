@@ -8,9 +8,11 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.bukkit.World;
@@ -118,6 +120,20 @@ public class RespawnManager {
 		}
 		struct.setPostRespawnCommand(command);
 		mPlugin.saveConfig();
+	}
+
+	public void tellNearbyRespawnTimes(Player player) {
+		boolean nearbyStruct = false;
+		for (RespawningStructure struct : mRespawns.values()) {
+			if (struct.isPlayerNearby(player)) {
+				struct.tellRespawnTime(player);
+				nearbyStruct = true;
+			}
+		}
+
+		if (!nearbyStruct) {
+			player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "You are not within range of a respawning area");
+		}
 	}
 
 	public void cleanup() {

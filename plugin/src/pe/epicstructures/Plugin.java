@@ -8,6 +8,7 @@ import java.util.logging.Level;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.World;
 
 import pe.epicstructures.commands.AddRespawningStructure;
@@ -17,6 +18,7 @@ import pe.epicstructures.commands.RemoveRespawningStructure;
 import pe.epicstructures.commands.RespawnStructure;
 import pe.epicstructures.commands.SaveStructure;
 import pe.epicstructures.commands.SetPostRespawnCommand;
+import pe.epicstructures.managers.EventListener;
 import pe.epicstructures.managers.RespawnManager;
 import pe.epicstructures.managers.StructureManager;
 
@@ -47,9 +49,10 @@ public class Plugin extends JavaPlugin {
 		//TODO: Command to add an alternate special structure
 		//TODO: Command to select an alternate special structure
 		//TODO: Command to set all timers to max ?
-
 		//TODO: Command to reload structures from config file
-		//TODO: Compass listener for telling players how long is left
+
+		PluginManager manager = getServer().getPluginManager();
+		manager.registerEvents(new EventListener(this), this);
 
 		reloadConfig();
 	}

@@ -151,7 +151,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		String message = mName + " is respawning in ";
 		String color = ChatColor.GREEN + "" + ChatColor.BOLD;
 
-		if (mTicksLeft <= 2400) {
+		if (mTicksLeft <= 600) {
 			color = ChatColor.RED + "" + ChatColor.BOLD;
 		}
 
@@ -170,11 +170,23 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		} else if (seconds == 1) {
 			message += "1 second";
 		}
+
+		if (mInnerBounds.within(player.getLocation().toVector())) {
+			message += " [within]";
+		}
+
 		player.sendMessage(color + message);
 	}
 
-	public void tellRespawnTimeIfNearby(Player player) {
+	public boolean isPlayerNearby(Player player) {
 		if (mOuterBounds.within(player.getLocation().toVector())) {
+			return true;
+		}
+		return false;
+	}
+
+	public void tellRespawnTimeIfNearby(Player player) {
+		if (isPlayerNearby(player)) {
 			tellRespawnTime(player);
 		}
 	}
