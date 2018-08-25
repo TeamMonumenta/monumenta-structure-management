@@ -42,7 +42,7 @@ public class SetPostRespawnCommand implements CommandExecutor {
 		try {
 			mPlugin.mRespawnManager.setPostRespawnCommand(label, postRespawnCommand);
 		} catch (Exception e) {
-			sender.sendMessage(ChatColor.RED + "Got error while attempting to respawn structure: " + e.getMessage());
+			sender.sendMessage(ChatColor.RED + "Got error while attempting to set post respawn command: " + e.getMessage());
 			return false;
 		}
 

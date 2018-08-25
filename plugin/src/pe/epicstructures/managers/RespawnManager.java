@@ -2,6 +2,7 @@ package pe.epicstructures.managers;
 
 import com.boydti.fawe.object.schematic.Schematic;
 
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.Map;
 import java.util.Set;
@@ -81,7 +82,7 @@ public class RespawnManager {
 	public void addStructure(int extraRadius, String configLabel, String name, String path,
 	                         Vector loadPos, int respawnTime) throws Exception {
 		mRespawns.put(configLabel, new RespawningStructure(mPlugin, mWorld, extraRadius, configLabel,
-		              name, path, loadPos, respawnTime, respawnTime, null));
+		              name, Arrays.asList(path), loadPos, respawnTime, respawnTime, null, null, null));
 		mPlugin.saveConfig();
 	}
 
@@ -94,10 +95,12 @@ public class RespawnManager {
 		mPlugin.saveConfig();
 	}
 
+	//TODO pages
 	public void listStructures(CommandSender sender) {
 		boolean empty = true;
 		for (Map.Entry<String, RespawningStructure> entry : mRespawns.entrySet()) {
-			sender.sendMessage(entry.getKey() + " : " + entry.getValue().getInfoString());
+			sender.sendMessage(ChatColor.GREEN + entry.getKey() + " : " + ChatColor.RESET +
+			                   entry.getValue().getInfoString());
 			empty = false;
 		}
 		if (empty) {
@@ -120,6 +123,14 @@ public class RespawnManager {
 		}
 		struct.setPostRespawnCommand(command);
 		mPlugin.saveConfig();
+	}
+
+	public void activateSpecialStructure(String label, String nextRespawnPath) throws Exception {
+		RespawningStructure struct = mRespawns.get(label);
+		if (struct == null) {
+			throw new Exception("Structure '" + label + "' not found!");
+		}
+		struct.activateSpecialStructure(nextRespawnPath);
 	}
 
 	public void tellNearbyRespawnTimes(Player player) {

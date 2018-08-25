@@ -5,8 +5,13 @@ import com.boydti.fawe.object.schematic.Schematic;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.regions.Region;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.logging.Level;
 import java.util.Map;
+import java.util.Random;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -39,10 +44,11 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 	private Plugin mPlugin;
 	private World mWorld;
-	private Clipboard mClipboard;         // The structure itself
+	private Random mRandom;
+
+	//TODO: Make this a map also
 	protected String mConfigLabel;        // The label used to modify this structure via commands
 	private String mName;                 // What the pretty name of the structure is
-	private String mPath;                 // Path where the structure should load from
 	private Vector mLoadPos;              // Where it will be loaded
 	private StructureBounds mInnerBounds; // The bounding box for the structure itself
 	private StructureBounds mOuterBounds; // The bounding box for the nearby area around the structure
@@ -50,6 +56,15 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	private int mTicksLeft;               // How many ticks remaining until respawn
 	private int mRespawnTime;             // How many ticks between respawns
 	private String mPostRespawnCommand;   // Command run via the console after respawning structure
+
+	// Path String -> Clipboard maps
+	private Map<String, Clipboard> mGenericVariants = new HashMap<String, Clipboard>();
+	private Map<String, Clipboard> mSpecialVariants = new HashMap<String, Clipboard>();
+
+	// Which structure will be spawned next
+	// If this is null, one of the genericVariants will be chosen randomly
+	// If this is a path, it must be one of mSpecialVariants (not in generic variants!)
+	private String mNextRespawnPath;
 
 	@Override
 	public int compareTo(RespawningStructure other) {
@@ -60,8 +75,8 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	        ConfigurationSection config) throws Exception {
 		if (!config.isString("name")) {
 			throw new Exception("Invalid name");
-		} else if (!config.isString("path")) {
-			throw new Exception("Invalid path");
+		} else if (!config.isList("structure_paths")) {
+			throw new Exception("Invalid structure_paths");
 		} else if (!config.isInt("x")) {
 			throw new Exception("Invalid x value");
 		} else if (!config.isInt("y")) {
@@ -81,26 +96,33 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			postRespawnCommand = config.getString("post_respawn_command");
 		}
 
-		// TODO: Command to run after respawning
-		// TODO: Alternate regular variant
-		// TODO: Alternate selectable variant
+		List<String> specialPaths = null;
+		if (config.isList("structure_special_paths")) {
+			specialPaths = config.getStringList("structure_special_paths");
+		}
+
+		String nextRespawnPath = null;
+		if (config.isString("next_respawn_path")) {
+			nextRespawnPath = config.getString("next_respawn_path");
+		}
 
 		return new RespawningStructure(plugin, world, config.getInt("extra_detection_radius"), configLabel,
-		                               config.getString("name"), config.getString("path"),
+		                               config.getString("name"), config.getStringList("structure_paths"),
 		                               new Vector(config.getInt("x"), config.getInt("y"), config.getInt("z")),
 		                               config.getInt("respawn_period"), config.getInt("ticks_until_respawn"),
-									   postRespawnCommand);
+									   postRespawnCommand, specialPaths, nextRespawnPath);
 	}
 
 	public RespawningStructure(Plugin plugin, World world, int extraRadius,
-	                           String configLabel, String name, String path,
+	                           String configLabel, String name, List<String> genericPaths,
 	                           Vector loadPos, int respawnTime, int ticksLeft,
-							   String postRespawnCommand) throws Exception {
+							   String postRespawnCommand, List<String> specialPaths,
+							   String nextRespawnPath) throws Exception {
 		mPlugin = plugin;
 		mWorld = world;
+		mRandom = new Random();
 		mConfigLabel = configLabel;
 		mName = name;
-		mPath = path;
 		mLoadPos = loadPos;
 		mExtraRadius = extraRadius;
 		mRespawnTime = respawnTime;
@@ -111,11 +133,30 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			throw new Exception("Minimum respawn_period value is 200 ticks");
 		}
 
-		// Load the structure
-		mClipboard = mPlugin.mStructureManager.loadSchematic("structures", path).getClipboard();
+		// Load all of the supplied structures
+		Clipboard clipboard = null;
+		for (String path : genericPaths) {
+			// TODO: This is a sloppy way to get the dimensions... falling through to the last one
+			clipboard = mPlugin.mStructureManager.loadSchematic("structures", path).getClipboard();
+			mGenericVariants.put(path, clipboard);
+		}
+		if (clipboard == null) {
+			throw new Exception("No structures specified for '" + mConfigLabel + "'");
+		}
+
+		if (specialPaths != null) {
+			for (String path : specialPaths) {
+				mSpecialVariants.put(path, mPlugin.mStructureManager.loadSchematic("structures", path).getClipboard());
+			}
+		}
+
+		// TODO: Add a check that these are all the same size
+
+		// Set the next respawn path (or not if null)
+		activateSpecialStructure(nextRespawnPath);
 
 		// Determine structure size
-		Region clipboardRegion = mClipboard.getRegion().clone();
+		Region clipboardRegion = clipboard.getRegion().clone();
 		com.sk89q.worldedit.Vector structureSize =
 		    clipboardRegion.getMaximumPoint().subtract(clipboardRegion.getMinimumPoint());
 
@@ -131,17 +172,48 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	public String getInfoString() {
 		return "name='" + mName + "' pos=(" + Integer.toString((int)mLoadPos.getX()) + " " +
 		       Integer.toString((int)mLoadPos.getY()) + " " + Integer.toString((int)mLoadPos.getZ()) +
-			   ") path=" + mPath + " period=" + Integer.toString(mRespawnTime) + " ticksleft=" +
+			   ") paths={" + String.join(" ", mGenericVariants.keySet()) + "} period=" + Integer.toString(mRespawnTime) + " ticksleft=" +
 			   Integer.toString(mTicksLeft) +
-			   (mPostRespawnCommand == null ? "" : " respawnCmd='" + mPostRespawnCommand + "'");
+			   (mPostRespawnCommand == null ? "" : " respawnCmd='" + mPostRespawnCommand + "'") +
+			   (mSpecialVariants.isEmpty() ? "" : " special_paths={" + String.join(" ", mSpecialVariants.keySet()) + "}");
+	}
+
+	public void activateSpecialStructure(String nextRespawnPath) throws Exception {
+		if (nextRespawnPath != null && !mSpecialVariants.containsKey(nextRespawnPath)) {
+			mSpecialVariants.put(nextRespawnPath, mPlugin.mStructureManager.loadSchematic("structures", nextRespawnPath).getClipboard());
+		}
+		//TODO: Check that this structure is the same size!
+
+		mNextRespawnPath = nextRespawnPath;
 	}
 
 	public void respawn() {
-		StructureUtils.paste(mClipboard, mWorld,
+		Clipboard clipboard;
+		if (mNextRespawnPath == null) {
+			// No specified next path - pick a generic one at random
+			List<Clipboard> valueList = new ArrayList<Clipboard>(mGenericVariants.values());
+			clipboard = valueList.get(mRandom.nextInt(valueList.size()));
+		} else {
+			// Next path was specified - use it
+			clipboard = mSpecialVariants.get(mNextRespawnPath);
+			if (clipboard == null) {
+				// This should not be possible because we check when setting mNextRespawnPath
+				mPlugin.getLogger().log(Level.SEVERE, "Tried to spawn nonexistent nextRespawnPath='" + mNextRespawnPath + "'");
+				return;
+			}
+			// Go back to generic versions after spawning this once
+			mNextRespawnPath = null;
+		}
+
+		// Load the structure
+		StructureUtils.paste(clipboard, mWorld,
 		                     new com.sk89q.worldedit.Vector(mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ()));
+
+		// If a command was specified to run after, run it
 		if (mPostRespawnCommand != null) {
 			Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), mPostRespawnCommand);
 		}
+
 		mTicksLeft = mRespawnTime;
 	}
 
@@ -206,8 +278,9 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	public Map<String, Object> getConfig() {
 		Map<String, Object> configMap = new LinkedHashMap<String, Object>();
 
+		//TODO: save the active structure path so it survives /reload
 		configMap.put("name", mName);
-		configMap.put("path", mPath);
+		configMap.put("structure_paths", new ArrayList<>(mGenericVariants.keySet()));
 		configMap.put("x", (int)mLoadPos.getX());
 		configMap.put("y", (int)mLoadPos.getY());
 		configMap.put("z", (int)mLoadPos.getZ());
@@ -216,6 +289,9 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		configMap.put("ticks_until_respawn", mTicksLeft);
 		if (mPostRespawnCommand != null) {
 			configMap.put("post_respawn_command", mPostRespawnCommand);
+		}
+		if (!mSpecialVariants.isEmpty()) {
+			configMap.put("structure_special_paths", new ArrayList<>(mSpecialVariants.keySet()));
 		}
 
 		return configMap;

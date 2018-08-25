@@ -8,11 +8,15 @@ respawning_structures:
         # Name for respawn messages and when using the compass
         name: "My Structure"
 
-        # The path to the structure file to load - relative to the structures directory
+        # The paths to the structure file to load - relative to the structures directory
         # Thus if the path to the file was:
         #   plugins/EpicStructureManagement/structures/mydir/mystructure.schematic
         # Then you would set path to 'mydir/mystructure'
-        path: "mydir/mystructure"
+        #
+        # Note that if you specify more than one list entry, a random choice will
+        # be selected
+        structure_paths:
+        - "mydir/mystructure"
 
         # x y z location where the structure should be respawned. Spaces or comma separated (or both)
         x: 5

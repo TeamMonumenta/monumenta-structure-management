@@ -11,6 +11,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.World;
 
+import pe.epicstructures.commands.ActivateSpecialStructure;
 import pe.epicstructures.commands.AddRespawningStructure;
 import pe.epicstructures.commands.ListRespawningStructures;
 import pe.epicstructures.commands.LoadStructure;
@@ -45,9 +46,8 @@ public class Plugin extends JavaPlugin {
 		getCommand("RemoveRespawningStructure").setExecutor(new RemoveRespawningStructure(this));
 		getCommand("ListRespawningStructures").setExecutor(new ListRespawningStructures(this));
 		getCommand("SetPostRespawnCommand").setExecutor(new SetPostRespawnCommand(this));
+		getCommand("ActivateSpecialStructure").setExecutor(new ActivateSpecialStructure(this));
 		//TODO: Command to add an alternate generic structure
-		//TODO: Command to add an alternate special structure
-		//TODO: Command to select an alternate special structure
 		//TODO: Command to set all timers to max ?
 		//TODO: Command to reload structures from config file
 
