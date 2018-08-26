@@ -1,5 +1,7 @@
 package com.playmonumenta.epicstructures.managers;
 
+import com.playmonumenta.epicstructures.Plugin;
+
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.Map;
@@ -15,8 +17,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.bukkit.World;
-
-import com.playmonumenta.epicstructures.Plugin;
 
 public class RespawnManager {
 	private Plugin mPlugin;
@@ -93,16 +93,32 @@ public class RespawnManager {
 		mPlugin.saveConfig();
 	}
 
-	//TODO pages
-	public void listStructures(CommandSender sender) {
-		boolean empty = true;
-		for (Map.Entry<String, RespawningStructure> entry : mRespawns.entrySet()) {
-			sender.sendMessage(ChatColor.GREEN + entry.getKey() + " : " + ChatColor.RESET +
-			                   entry.getValue().getInfoString());
-			empty = false;
-		}
-		if (empty) {
+	public void listStructures(CommandSender sender, int page) {
+		final int ITEMS_PER_PAGE = 5;
+		final int numPages = ((mRespawns.size() - 1) / ITEMS_PER_PAGE) + 1;
+
+		if (mRespawns.isEmpty()) {
 			sender.sendMessage("No respawning structures registered");
+			return;
+		}
+
+		sender.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + "Structure List (Page " + Integer.toString(page) +
+		                   " of " + Integer.toString(numPages) + ")");
+		boolean empty = true;
+		int skipped = 0;
+		int printed = 0;
+		for (Map.Entry<String, RespawningStructure> entry : mRespawns.entrySet()) {
+			if (skipped < (page - 1) * ITEMS_PER_PAGE) {
+				skipped++;
+			} else {
+				printed++;
+				sender.sendMessage(ChatColor.GREEN + entry.getKey() + " : " + ChatColor.RESET +
+								   entry.getValue().getInfoString());
+
+				if (printed >= ITEMS_PER_PAGE) {
+					return;
+				}
+			}
 		}
 	}
 
