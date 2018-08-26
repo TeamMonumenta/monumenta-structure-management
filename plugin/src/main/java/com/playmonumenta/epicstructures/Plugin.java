@@ -1,5 +1,18 @@
 package com.playmonumenta.epicstructures;
 
+import com.playmonumenta.epicstructures.commands.ActivateSpecialStructure;
+import com.playmonumenta.epicstructures.commands.AddRespawningStructure;
+import com.playmonumenta.epicstructures.commands.ListRespawningStructures;
+import com.playmonumenta.epicstructures.commands.LoadStructure;
+import com.playmonumenta.epicstructures.commands.ReloadStructures;
+import com.playmonumenta.epicstructures.commands.RemoveRespawningStructure;
+import com.playmonumenta.epicstructures.commands.RespawnStructure;
+import com.playmonumenta.epicstructures.commands.SaveStructure;
+import com.playmonumenta.epicstructures.commands.SetPostRespawnCommand;
+import com.playmonumenta.epicstructures.managers.EventListener;
+import com.playmonumenta.epicstructures.managers.RespawnManager;
+import com.playmonumenta.epicstructures.managers.StructureManager;
+
 import java.io.File;
 import java.io.IOException;
 
@@ -10,18 +23,6 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.World;
-
-import com.playmonumenta.epicstructures.commands.ActivateSpecialStructure;
-import com.playmonumenta.epicstructures.commands.AddRespawningStructure;
-import com.playmonumenta.epicstructures.commands.ListRespawningStructures;
-import com.playmonumenta.epicstructures.commands.LoadStructure;
-import com.playmonumenta.epicstructures.commands.RemoveRespawningStructure;
-import com.playmonumenta.epicstructures.commands.RespawnStructure;
-import com.playmonumenta.epicstructures.commands.SaveStructure;
-import com.playmonumenta.epicstructures.commands.SetPostRespawnCommand;
-import com.playmonumenta.epicstructures.managers.EventListener;
-import com.playmonumenta.epicstructures.managers.RespawnManager;
-import com.playmonumenta.epicstructures.managers.StructureManager;
 
 public class Plugin extends JavaPlugin {
 	public World mWorld;
@@ -47,9 +48,9 @@ public class Plugin extends JavaPlugin {
 		getCommand("ListRespawningStructures").setExecutor(new ListRespawningStructures(this));
 		getCommand("SetPostRespawnCommand").setExecutor(new SetPostRespawnCommand(this));
 		getCommand("ActivateSpecialStructure").setExecutor(new ActivateSpecialStructure(this));
+		getCommand("ReloadStructures").setExecutor(new ReloadStructures(this));
 		//TODO: Command to add an alternate generic structure
 		//TODO: Command to set all timers to max ?
-		//TODO: Command to reload structures from config file
 
 		PluginManager manager = getServer().getPluginManager();
 		manager.registerEvents(new EventListener(this), this);

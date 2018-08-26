@@ -34,3 +34,7 @@ commands:
     permission: epicstructures
     description: Sets the path of the next respawn of the structure.
     usage: /activateSpecialStructure <label> [path_to_special_structure]
+  reloadStructures:
+    permission: epicstructures
+    description: Reloads structures from config file, discarding current settings (including current times!)
+    usage: /reloadStructures
