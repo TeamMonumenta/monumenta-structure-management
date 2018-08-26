@@ -76,28 +76,28 @@ public class CommandUtils {
 			senderLoc = new Location(world, 0, 0, 0);
 		}
 
-		if (x.equals("~")) {
-			// Do nothing - already correct
-		} else if (x.startsWith("~")) {
-			senderLoc.add(Float.parseFloat(x.substring(1)), 0, 0);
-		} else {
-			senderLoc.setX(Float.parseFloat(x));
+		if (!x.equals("~")) {
+			if (x.startsWith("~")) {
+				senderLoc.add(Float.parseFloat(x.substring(1)), 0, 0);
+			} else {
+				senderLoc.setX(Float.parseFloat(x));
+			}
 		}
 
-		if (y.equals("~")) {
-			// Do nothing - already correct
-		} else if (y.startsWith("~")) {
-			senderLoc.add(0, Float.parseFloat(y.substring(1)), 0);
-		} else {
-			senderLoc.setY(Float.parseFloat(y));
+		if (!y.equals("~")) {
+			if (y.startsWith("~")) {
+				senderLoc.add(0, Float.parseFloat(y.substring(1)), 0);
+			} else {
+				senderLoc.setY(Float.parseFloat(y));
+			}
 		}
 
-		if (z.equals("~")) {
-			// Do nothing - already correct
-		} else if (z.startsWith("~")) {
-			senderLoc.add(0, 0, Float.parseFloat(z.substring(1)));
-		} else {
-			senderLoc.setZ(Float.parseFloat(z));
+		if (!z.equals("~")) {
+			if (z.startsWith("~")) {
+				senderLoc.add(0, 0, Float.parseFloat(z.substring(1)));
+			} else {
+				senderLoc.setZ(Float.parseFloat(z));
+			}
 		}
 
 		return senderLoc;

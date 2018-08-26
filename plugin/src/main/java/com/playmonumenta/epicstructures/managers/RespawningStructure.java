@@ -1,7 +1,5 @@
 package com.playmonumenta.epicstructures.managers;
 
-import com.boydti.fawe.object.schematic.Schematic;
-
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.regions.Region;
 
@@ -17,12 +15,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
-import org.bukkit.Location;
 import org.bukkit.util.Vector;
 import org.bukkit.World;
 
 import com.playmonumenta.epicstructures.Plugin;
-import com.playmonumenta.epicstructures.utils.MessagingUtils;
 import com.playmonumenta.epicstructures.utils.StructureUtils;
 
 public class RespawningStructure implements Comparable<RespawningStructure> {
@@ -298,8 +294,8 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void tick(int ticks) {
-		if (((mTicksLeft >= 2400) && ((mTicksLeft - ticks) < 2400)) ||
-		    ((mTicksLeft >= 600) && ((mTicksLeft - ticks) < 600))) {
+		if ((mTicksLeft >= 2400 && (mTicksLeft - ticks) < 2400) ||
+		    (mTicksLeft >= 600 && (mTicksLeft - ticks) < 600)) {
 			for (Player player : Bukkit.getOnlinePlayers()) {
 				if (mOuterBounds.within(player.getLocation().toVector())) {
 					tellRespawnTime(player);

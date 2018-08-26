@@ -1,7 +1,5 @@
 package com.playmonumenta.epicstructures.managers;
 
-import com.boydti.fawe.object.schematic.Schematic;
-
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.Map;
