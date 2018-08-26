@@ -1,5 +1,8 @@
 package com.playmonumenta.epicstructures.managers;
 
+import com.playmonumenta.epicstructures.Plugin;
+import com.playmonumenta.epicstructures.utils.StructureUtils;
+
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.regions.Region;
 
@@ -15,11 +18,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
+import org.bukkit.GameMode;
 import org.bukkit.util.Vector;
 import org.bukkit.World;
-
-import com.playmonumenta.epicstructures.Plugin;
-import com.playmonumenta.epicstructures.utils.StructureUtils;
 
 public class RespawningStructure implements Comparable<RespawningStructure> {
 	public class StructureBounds {
@@ -42,7 +43,6 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	private World mWorld;
 	private Random mRandom;
 
-	//TODO: Make this a map also
 	protected String mConfigLabel;        // The label used to modify this structure via commands
 	private String mName;                 // What the pretty name of the structure is
 	private Vector mLoadPos;              // Where it will be loaded
@@ -307,7 +307,8 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 		if (mTicksLeft < 0) {
 			for (Player player : Bukkit.getOnlinePlayers()) {
-				if (mOuterBounds.within(player.getLocation().toVector())) {
+				if (player.getGameMode() != GameMode.SPECTATOR &&
+				    mOuterBounds.within(player.getLocation().toVector())) {
 					respawn();
 					break;
 				}
