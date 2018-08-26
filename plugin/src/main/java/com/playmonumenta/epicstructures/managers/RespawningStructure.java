@@ -274,7 +274,6 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	public Map<String, Object> getConfig() {
 		Map<String, Object> configMap = new LinkedHashMap<String, Object>();
 
-		//TODO: save the active structure path so it survives /reload
 		configMap.put("name", mName);
 		configMap.put("structure_paths", new ArrayList<>(mGenericVariants.keySet()));
 		configMap.put("x", (int)mLoadPos.getX());
@@ -288,6 +287,9 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		}
 		if (!mSpecialVariants.isEmpty()) {
 			configMap.put("structure_special_paths", new ArrayList<>(mSpecialVariants.keySet()));
+		}
+		if (mNextRespawnPath != null) {
+			configMap.put("next_respawn_path", mNextRespawnPath);
 		}
 
 		return configMap;
