@@ -1,7 +1,7 @@
 package com.playmonumenta.epicstructures.utils;
 
 import com.boydti.fawe.example.NMSMappedFaweQueue;
-import com.boydti.fawe.example.NMSRelighter;
+import com.boydti.fawe.example.Relighter;
 import com.boydti.fawe.object.FaweQueue;
 import com.boydti.fawe.util.EditSessionBuilder;
 import com.boydti.fawe.util.SetQueue;
@@ -121,7 +121,7 @@ public class StructureUtils {
 				// After removing entities, fix the lighting
 				Operations.completeSmart(EntityVisitor, new Runnable() {
 					public void run() {
-						fixLighting(new BukkitWorld(world), destRegion);
+						fixLighting(extent, destRegion);
 					}
 				}, false);
 			}
@@ -134,7 +134,7 @@ public class StructureUtils {
 	}
 
 	/* This function derived from the one in FaweAPI */
-	private static void fixLighting(World world, Region selection) {
+	private static void fixLighting(EditSession extent, Region selection) {
 		final Vector bot = selection.getMinimumPoint();
 		final Vector top = selection.getMaximumPoint();
 
@@ -144,20 +144,13 @@ public class StructureUtils {
 		final int maxX = top.getBlockX() >> 4;
 		final int maxZ = top.getBlockZ() >> 4;
 
-		FaweQueue queue = SetQueue.IMP.getNewQueue(world, true, false);
-		if (queue instanceof NMSMappedFaweQueue) {
-			final NMSMappedFaweQueue nmsQueue = (NMSMappedFaweQueue) queue;
-			NMSRelighter relighter = new NMSRelighter(nmsQueue);
-			for (int x = minX; x <= maxX; x++) {
-				for (int z = minZ; z <= maxZ; z++) {
-					relighter.addChunk(x, z, null, 65535);
-				}
+		Relighter relighter = extent.getQueue().getRelighter();
+		for (int x = minX; x <= maxX; x++) {
+			for (int z = minZ; z <= maxZ; z++) {
+				relighter.addChunk(x, z, null, 65535);
 			}
-			relighter.removeLighting();
-			relighter.fixSkyLighting();
-			relighter.fixBlockLighting();
-			relighter.sendChunks();
 		}
-	}
 
+		relighter.fixBlockLighting();
+	}
 }
