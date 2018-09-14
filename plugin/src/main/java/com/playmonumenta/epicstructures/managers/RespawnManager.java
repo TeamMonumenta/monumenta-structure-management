@@ -3,17 +3,18 @@ package com.playmonumenta.epicstructures.managers;
 import com.playmonumenta.epicstructures.Plugin;
 
 import java.util.Arrays;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.logging.Level;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.Location;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.bukkit.World;
@@ -33,6 +34,7 @@ public class RespawnManager {
 			}
 		}
 	};
+	private boolean taskScheduled = false;
 
 	public RespawnManager(Plugin plugin, World world, YamlConfiguration config) {
 		mPlugin = plugin;
@@ -65,6 +67,7 @@ public class RespawnManager {
 
 		// Schedule a repeating task to trigger structure countdowns
 		mRunnable.runTaskTimer(mPlugin, 0, mTickPeriod);
+		taskScheduled = true;
 	}
 
 	/* It *should* be safe to call this async */
@@ -93,7 +96,7 @@ public class RespawnManager {
 	public void addStructure(int extraRadius, String configLabel, String name, String path,
 	                         Vector loadPos, int respawnTime) throws Exception {
 		mRespawns.put(configLabel, new RespawningStructure(mPlugin, mWorld, extraRadius, configLabel,
-		              name, Arrays.asList(path), loadPos, respawnTime, respawnTime, null, null, null));
+		              name, Arrays.asList(path), loadPos, respawnTime, respawnTime, null, null, null, null));
 		mPlugin.saveConfig();
 	}
 
@@ -155,6 +158,15 @@ public class RespawnManager {
 		mPlugin.saveConfig();
 	}
 
+	public void setSpawnerBreakTrigger(String label, SpawnerBreakTrigger trigger) throws Exception {
+		RespawningStructure struct = mRespawns.get(label);
+		if (struct == null) {
+			throw new Exception("Structure '" + label + "' not found!");
+		}
+		struct.setSpawnerBreakTrigger(trigger);
+		mPlugin.saveConfig();
+	}
+
 	public void activateSpecialStructure(String label, String nextRespawnPath) throws Exception {
 		RespawningStructure struct = mRespawns.get(label);
 		if (struct == null) {
@@ -166,7 +178,7 @@ public class RespawnManager {
 	public void tellNearbyRespawnTimes(Player player) {
 		boolean nearbyStruct = false;
 		for (RespawningStructure struct : mRespawns.values()) {
-			if (struct.isPlayerNearby(player)) {
+			if (struct.isNearby(player)) {
 				struct.tellRespawnTime(player);
 				nearbyStruct = true;
 			}
@@ -178,7 +190,10 @@ public class RespawnManager {
 	}
 
 	public void cleanup() {
-		mRunnable.cancel();
+		if (taskScheduled = true) {
+			mRunnable.cancel();
+			taskScheduled = false;
+		}
 		mRespawns.clear();
 	}
 
@@ -197,5 +212,12 @@ public class RespawnManager {
 		}
 
 		return config;
+	}
+
+	public void spawnerBreakEvent(Location loc) {
+		Vector vec = loc.toVector();
+		for (RespawningStructure struct : mRespawns.values()) {
+			struct.spawnerBreakEvent(vec);
+		}
 	}
 }

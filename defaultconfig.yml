@@ -37,3 +37,21 @@ respawning_structures:
         # Command to run after the structure respawns
         # OPTIONAL
         post_respawn_command: "say mystructure respawned!"
+
+        # Component that allows actions to be triggered on players when they break spawners
+        # contained within the structure.
+        # Only works if ScriptedQuests is present on the server
+        # OPTIONAL
+        spawner_break_trigger:
+            # How many spawners in this structure need to be broken to trigger the event
+            spawner_count: 1
+
+            # How many spawners are currently remaining
+            # Should not need to set this value - it is automatically written when the plugin
+            #   is disabled (shutdown, restart, etc.)
+            # OPTIONAL
+            #spawner_count_remaining: 0
+
+            # ScriptedQuests component to run on all players who are within the structure when
+            # a spawner is broken and number of remaining spawners is 0 or fewer
+            scripted_quests_component: '{ "prerequisites": { "check_scores": { "DailyQuest": 1 } }, "actions": [ { "function": "monumenta:region_1/mechanisms/bounty_1" } ] }'

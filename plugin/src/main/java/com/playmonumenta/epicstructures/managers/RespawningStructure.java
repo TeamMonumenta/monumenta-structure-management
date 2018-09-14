@@ -19,6 +19,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.util.Vector;
 import org.bukkit.World;
 
@@ -62,6 +63,9 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	// If this is a path, it must be one of mSpecialVariants (not in generic variants!)
 	private String mNextRespawnPath;
 
+	// If this is non-null, then some action happens when players break some number of spawners
+	private SpawnerBreakTrigger mSpawnerBreakTrigger;
+
 	@Override
 	public int compareTo(RespawningStructure other) {
 		return mConfigLabel.compareTo(other.mConfigLabel);
@@ -102,18 +106,24 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			nextRespawnPath = config.getString("next_respawn_path");
 		}
 
+		SpawnerBreakTrigger spawnerBreakTrigger = null;
+		if (config.isConfigurationSection("spawner_break_trigger")) {
+			spawnerBreakTrigger = SpawnerBreakTrigger.fromConfig(plugin,
+					config.getConfigurationSection("spawner_break_trigger"));
+		}
+
 		return new RespawningStructure(plugin, world, config.getInt("extra_detection_radius"), configLabel,
 		                               config.getString("name"), config.getStringList("structure_paths"),
 		                               new Vector(config.getInt("x"), config.getInt("y"), config.getInt("z")),
 		                               config.getInt("respawn_period"), config.getInt("ticks_until_respawn"),
-									   postRespawnCommand, specialPaths, nextRespawnPath);
+									   postRespawnCommand, specialPaths, nextRespawnPath, spawnerBreakTrigger);
 	}
 
 	public RespawningStructure(Plugin plugin, World world, int extraRadius,
 	                           String configLabel, String name, List<String> genericPaths,
 	                           Vector loadPos, int respawnTime, int ticksLeft,
 							   String postRespawnCommand, List<String> specialPaths,
-							   String nextRespawnPath) throws Exception {
+							   String nextRespawnPath, SpawnerBreakTrigger spawnerBreakTrigger) throws Exception {
 		mPlugin = plugin;
 		mWorld = world;
 		mRandom = new Random();
@@ -124,6 +134,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		mRespawnTime = respawnTime;
 		mTicksLeft = ticksLeft;
 		mPostRespawnCommand = postRespawnCommand;
+		mSpawnerBreakTrigger = spawnerBreakTrigger;
 
 		if (mRespawnTime < 200) {
 			throw new Exception("Minimum respawn_period value is 200 ticks");
@@ -171,7 +182,8 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			   ") paths={" + String.join(" ", mGenericVariants.keySet()) + "} period=" + Integer.toString(mRespawnTime) + " ticksleft=" +
 			   Integer.toString(mTicksLeft) +
 			   (mPostRespawnCommand == null ? "" : " respawnCmd='" + mPostRespawnCommand + "'") +
-			   (mSpecialVariants.isEmpty() ? "" : " special_paths={" + String.join(" ", mSpecialVariants.keySet()) + "}");
+			   (mSpecialVariants.isEmpty() ? "" : " specialPaths={" + String.join(" ", mSpecialVariants.keySet()) + "}") +
+			   (mSpawnerBreakTrigger == null ? "" : " spawnerTrigger={" + mSpawnerBreakTrigger.getInfoString() + "}");
 	}
 
 	public void activateSpecialStructure(String nextRespawnPath) throws Exception {
@@ -210,6 +222,11 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), mPostRespawnCommand);
 		}
 
+		// If we are tracking spawners for this structure, reset the count
+		if (mSpawnerBreakTrigger != null) {
+			mSpawnerBreakTrigger.resetCount();
+		}
+
 		mTicksLeft = mRespawnTime;
 	}
 
@@ -246,15 +263,30 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		player.sendMessage(color + message);
 	}
 
-	public boolean isPlayerNearby(Player player) {
+	public boolean isNearby(Player player) {
 		if (mOuterBounds.within(player.getLocation().toVector())) {
 			return true;
 		}
 		return false;
 	}
 
+	public boolean isNearby(Location loc) {
+		return isNearby(loc);
+	}
+
+	public boolean isWithin(Player player) {
+		if (mInnerBounds.within(player.getLocation().toVector())) {
+			return true;
+		}
+		return false;
+	}
+
+	public boolean isWithin(Location loc) {
+		return isNearby(loc);
+	}
+
 	public void tellRespawnTimeIfNearby(Player player) {
-		if (isPlayerNearby(player)) {
+		if (isNearby(player)) {
 			tellRespawnTime(player);
 		}
 	}
@@ -291,6 +323,9 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		if (mNextRespawnPath != null) {
 			configMap.put("next_respawn_path", mNextRespawnPath);
 		}
+		if (mSpawnerBreakTrigger != null) {
+			configMap.put("spawner_break_trigger", mSpawnerBreakTrigger.getConfig());
+		}
 
 		return configMap;
 	}
@@ -316,5 +351,18 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 				}
 			}
 		}
+	}
+
+	// This event is called every time a spawner is broken anywhere
+	// Have to test that it was within this structure
+	public void spawnerBreakEvent(Vector vec) {
+		// Only care about tracking spawners if there is a trigger
+		if (mSpawnerBreakTrigger != null && mInnerBounds.within(vec)) {
+			mSpawnerBreakTrigger.spawnerBreakEvent(this);
+		}
+	}
+
+	public void setSpawnerBreakTrigger(SpawnerBreakTrigger trigger) {
+		mSpawnerBreakTrigger = trigger;
 	}
 }

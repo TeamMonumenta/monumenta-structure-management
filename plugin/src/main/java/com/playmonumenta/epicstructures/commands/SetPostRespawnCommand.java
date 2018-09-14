@@ -45,7 +45,8 @@ public class SetPostRespawnCommand {
 		try {
 			plugin.mRespawnManager.setPostRespawnCommand(label, command);
 		} catch (Exception e) {
-			sender.sendMessage(ChatColor.RED + "Got error while attempting to set post respawn command: " + e.getMessage()); return;
+			sender.sendMessage(ChatColor.RED + "Got error while attempting to set post respawn command: " + e.getMessage());
+			return;
 		}
 
 		if (command != null) {
