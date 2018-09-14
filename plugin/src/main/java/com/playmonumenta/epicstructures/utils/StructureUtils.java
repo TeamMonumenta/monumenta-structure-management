@@ -1,7 +1,6 @@
 package com.playmonumenta.epicstructures.utils;
 
-import com.boydti.fawe.example.NMSMappedFaweQueue;
-import com.boydti.fawe.example.Relighter;
+import com.boydti.fawe.FaweAPI;
 import com.boydti.fawe.object.FaweQueue;
 import com.boydti.fawe.util.EditSessionBuilder;
 import com.boydti.fawe.util.SetQueue;
@@ -109,48 +108,28 @@ public class StructureUtils {
 			}
 		};
 
-		Runnable entityOperation = new Runnable() {
-			public void run() {
+		// Get the currently loaded entities in the destination region
+		List <? extends Entity > entities = extent.getEntities(destRegion);
 
-				// Get the currently loaded entities in the destination region
-				List <? extends Entity > entities = extent.getEntities(destRegion);
+		// Visit those entities and when visited, remove them
+		Operations.completeBlindly(new EntityVisitor(entities.iterator(), removeFunc));
 
-				// Visit those entities and when visited, remove them
-				EntityVisitor EntityVisitor = new EntityVisitor(entities.iterator(), removeFunc);
+		// After entities have been removed, update the blocks
+		Operations.completeBlindly(regionVisitor);
 
-				// After removing entities, fix the lighting
-				Operations.completeSmart(EntityVisitor, new Runnable() {
-					public void run() {
-						fixLighting(extent, destRegion);
-					}
-				}, false);
-			}
-		};
-
-		// First update the blocks, then remove entities, then fix lighting
-		Operations.completeSmart(regionVisitor, entityOperation, false);
+		/*
+		 * TODO:
+		 * This causes any mob spawned after relighting this area to be invisible.
+		 * It does this even without all of the other code in this function
+		 * It does not matter what the relighting settings are set to
+		 * It does not matter if any other entities are in the chunk
+		 * It does not matter if you summon the mob with /summon or a spawner
+		 *
+		// After entities & blocks, fix lighting
+		FaweAPI.fixLighting(FaweAPI.getWorld(world.getName()),
+							destRegion, extent.getQueue(), FaweQueue.RelightMode.ALL);
+		 */
 
 		extent.flushQueue();
-	}
-
-	/* This function derived from the one in FaweAPI */
-	private static void fixLighting(EditSession extent, Region selection) {
-		final Vector bot = selection.getMinimumPoint();
-		final Vector top = selection.getMaximumPoint();
-
-		final int minX = bot.getBlockX() >> 4;
-		final int minZ = bot.getBlockZ() >> 4;
-
-		final int maxX = top.getBlockX() >> 4;
-		final int maxZ = top.getBlockZ() >> 4;
-
-		Relighter relighter = extent.getQueue().getRelighter();
-		for (int x = minX; x <= maxX; x++) {
-			for (int z = minZ; z <= maxZ; z++) {
-				relighter.addChunk(x, z, null, 65535);
-			}
-		}
-
-		relighter.fixBlockLighting();
 	}
 }
