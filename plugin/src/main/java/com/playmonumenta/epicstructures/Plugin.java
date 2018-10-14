@@ -40,7 +40,7 @@ public class Plugin extends JavaPlugin {
 
 		mStructureManager = new StructureManager(this, mWorld);
 
-		getCommand("LoadStructure").setExecutor(new LoadStructure(this, mWorld));
+		LoadStructure.register(this, mWorld);
 		getCommand("SaveStructure").setExecutor(new SaveStructure(this, mWorld));
 		getCommand("RespawnStructure").setExecutor(new RespawnStructure(this));
 		getCommand("AddRespawningStructure").setExecutor(new AddRespawningStructure(this, mWorld));

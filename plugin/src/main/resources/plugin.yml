@@ -3,10 +3,6 @@ main: com.playmonumenta.epicstructures.Plugin
 version: 1.0
 api-version: 1.13
 commands:
-  loadStructure:
-    permission: epicstructures
-    description: Loads the specified structure at the indicated coordinates
-    usage: /loadStructure <name> <x> <y> <z>
   saveStructure:
     permission: epicstructures
     description: Saves the specified structure contained by the given coordinates

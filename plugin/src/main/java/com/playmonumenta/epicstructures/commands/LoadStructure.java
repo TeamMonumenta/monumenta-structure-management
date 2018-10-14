@@ -2,70 +2,73 @@ package com.playmonumenta.epicstructures.commands;
 
 import com.boydti.fawe.object.schematic.Schematic;
 
-import com.sk89q.worldedit.Vector;
-
-import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.Location;
-
 import com.playmonumenta.epicstructures.Plugin;
 import com.playmonumenta.epicstructures.utils.CommandUtils;
 import com.playmonumenta.epicstructures.utils.MessagingUtils;
 import com.playmonumenta.epicstructures.utils.StructureUtils;
 
-public class LoadStructure implements CommandExecutor {
-	Plugin mPlugin;
-	org.bukkit.World mWorld;
+import com.sk89q.worldedit.Vector;
 
-	public LoadStructure(Plugin plugin, org.bukkit.World world) {
-		mPlugin = plugin;
-		mWorld = world;
+import io.github.jorelali.commandapi.api.arguments.Argument;
+import io.github.jorelali.commandapi.api.arguments.LocationArgument;
+import io.github.jorelali.commandapi.api.arguments.StringArgument;
+import io.github.jorelali.commandapi.api.CommandAPI;
+import io.github.jorelali.commandapi.api.CommandPermission;
+
+import java.util.LinkedHashMap;
+
+import org.bukkit.ChatColor;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.Location;
+import org.bukkit.World;
+
+public class LoadStructure {
+	public static void register(Plugin plugin, World world) {
+		/* First one of these includes coordinate arguments */
+		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
+
+		arguments.put("path", new StringArgument());
+		arguments.put("position", new LocationArgument());
+
+		CommandAPI.getInstance().register("loadstructure",
+		                                  new CommandPermission("epicstructures"),
+		                                  arguments,
+		                                  (sender, args) -> {
+		                                      load(sender, plugin, world, (String)args[0], (Location)args[1]);
+		                                  }
+		);
 	}
 
-	@Override
-	public boolean onCommand(CommandSender sender, Command command, String arg2, String[] arg3) {
-		if (arg3.length != 4) {
-			sender.sendMessage(ChatColor.RED + "This command requires exactly four arguments");
-			return false;
-		}
-
-		if (arg3[0].contains("..")) {
+	private static void load(CommandSender sender, Plugin plugin, World world,
+	                         String path, Location loadLoc) {
+		if (path.contains("..")) {
 			sender.sendMessage(ChatColor.RED + "Paths containing '..' are not allowed");
-			return false;
+			return;
 		}
 
-		// Parse the coordinates to load the structure
-		Vector loadPos;
-		try {
-			Location loadLoc = CommandUtils.parseLocationFromString(sender, mWorld, arg3[1], arg3[2], arg3[3]);
-
-			loadPos = new Vector(loadLoc.getBlockX(), loadLoc.getBlockY(), loadLoc.getBlockZ());
-		} catch (Exception e) {
-			sender.sendMessage(ChatColor.RED + "Failed to parse coordinates");
-			MessagingUtils.sendStackTrace(sender, e);
-			return false;
-		}
+		Vector loadPos = new Vector(loadLoc.getBlockX(), loadLoc.getBlockY(), loadLoc.getBlockZ());
 
 		Schematic schem;
 		try {
-			schem = mPlugin.mStructureManager.loadSchematic("structures", arg3[0]);
+			schem = plugin.mStructureManager.loadSchematic("structures", path);
 		} catch (Exception e) {
-			mPlugin.getLogger().severe("Caught exception: " + e);
+			plugin.getLogger().severe("Caught exception: " + e);
 			e.printStackTrace();
 
 			if (sender != null) {
 				sender.sendMessage(ChatColor.RED + "Failed to load structure");
 				MessagingUtils.sendStackTrace(sender, e);
 			}
-			return false;
+			return;
 		}
 
-		StructureUtils.paste(schem.getClipboard(), mWorld, loadPos);
+		StructureUtils.paste(schem.getClipboard(), world, loadPos);
 
-		sender.sendMessage("Loaded structure '" + arg3[0] + "' at " + loadPos);
-
-		return true;
+		sender.sendMessage("Loaded structure '" + path + "' at " + loadPos);
 	}
 }
