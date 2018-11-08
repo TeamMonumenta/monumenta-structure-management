@@ -1,12 +1,11 @@
 package com.playmonumenta.epicstructures.commands;
 
-import com.boydti.fawe.object.schematic.Schematic;
-
 import com.playmonumenta.epicstructures.Plugin;
 import com.playmonumenta.epicstructures.utils.CommandUtils;
 import com.playmonumenta.epicstructures.utils.MessagingUtils;
 import com.playmonumenta.epicstructures.utils.StructureUtils;
 
+import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
 import com.sk89q.worldedit.Vector;
 
 import io.github.jorelali.commandapi.api.arguments.Argument;
@@ -53,9 +52,9 @@ public class LoadStructure {
 
 		Vector loadPos = new Vector(loadLoc.getBlockX(), loadLoc.getBlockY(), loadLoc.getBlockZ());
 
-		Schematic schem;
+		BlockArrayClipboard clipboard;
 		try {
-			schem = plugin.mStructureManager.loadSchematic("structures", path);
+			clipboard = plugin.mStructureManager.loadSchematicClipboard("structures", path);
 		} catch (Exception e) {
 			plugin.getLogger().severe("Caught exception: " + e);
 			e.printStackTrace();
@@ -67,7 +66,7 @@ public class LoadStructure {
 			return;
 		}
 
-		StructureUtils.paste(schem.getClipboard(), world, loadPos);
+		StructureUtils.paste(clipboard, world, loadPos);
 
 		sender.sendMessage("Loaded structure '" + path + "' at " + loadPos);
 	}

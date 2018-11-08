@@ -3,7 +3,7 @@ package com.playmonumenta.epicstructures.managers;
 import com.playmonumenta.epicstructures.Plugin;
 import com.playmonumenta.epicstructures.utils.StructureUtils;
 
-import com.sk89q.worldedit.extent.clipboard.Clipboard;
+import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
 import com.sk89q.worldedit.regions.Region;
 
 import java.util.ArrayList;
@@ -53,9 +53,9 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	private int mRespawnTime;             // How many ticks between respawns
 	private String mPostRespawnCommand;   // Command run via the console after respawning structure
 
-	// Path String -> Clipboard maps
-	private Map<String, Clipboard> mGenericVariants = new HashMap<String, Clipboard>();
-	private Map<String, Clipboard> mSpecialVariants = new HashMap<String, Clipboard>();
+	// Path String -> BlockArrayClipboard maps
+	private Map<String, BlockArrayClipboard> mGenericVariants = new HashMap<String, BlockArrayClipboard>();
+	private Map<String, BlockArrayClipboard> mSpecialVariants = new HashMap<String, BlockArrayClipboard>();
 
 	// Which structure will be spawned next
 	// If this is null, one of the genericVariants will be chosen randomly
@@ -130,10 +130,10 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		}
 
 		// Load all of the supplied structures
-		Clipboard clipboard = null;
+		BlockArrayClipboard clipboard = null;
 		for (String path : genericPaths) {
 			// TODO: This is a sloppy way to get the dimensions... falling through to the last one
-			clipboard = mPlugin.mStructureManager.loadSchematic("structures", path).getClipboard();
+			clipboard = mPlugin.mStructureManager.loadSchematicClipboard("structures", path);
 			mGenericVariants.put(path, clipboard);
 		}
 		if (clipboard == null) {
@@ -142,7 +142,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 		if (specialPaths != null) {
 			for (String path : specialPaths) {
-				mSpecialVariants.put(path, mPlugin.mStructureManager.loadSchematic("structures", path).getClipboard());
+				mSpecialVariants.put(path, mPlugin.mStructureManager.loadSchematicClipboard("structures", path));
 			}
 		}
 
@@ -176,7 +176,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 	public void activateSpecialStructure(String nextRespawnPath) throws Exception {
 		if (nextRespawnPath != null && !mSpecialVariants.containsKey(nextRespawnPath)) {
-			mSpecialVariants.put(nextRespawnPath, mPlugin.mStructureManager.loadSchematic("structures", nextRespawnPath).getClipboard());
+			mSpecialVariants.put(nextRespawnPath, mPlugin.mStructureManager.loadSchematicClipboard("structures", nextRespawnPath));
 		}
 		//TODO: Check that this structure is the same size!
 
@@ -184,10 +184,10 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void respawn() {
-		Clipboard clipboard;
+		BlockArrayClipboard clipboard;
 		if (mNextRespawnPath == null) {
 			// No specified next path - pick a generic one at random
-			List<Clipboard> valueList = new ArrayList<Clipboard>(mGenericVariants.values());
+			List<BlockArrayClipboard> valueList = new ArrayList<BlockArrayClipboard>(mGenericVariants.values());
 			clipboard = valueList.get(mRandom.nextInt(valueList.size()));
 		} else {
 			// Next path was specified - use it

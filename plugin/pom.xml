@@ -19,16 +19,23 @@
 
     <repositories>
         <repository>
+            <id>repo</id>
+            <releases>
+                <enabled>true</enabled>
+                <checksumPolicy>ignore</checksumPolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <url>file://${project.baseUri}/repo</url>
+        </repository>
+        <repository>
             <id>spigotmc-repo</id>
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
         <repository>
             <id>fawe-repo</id>
             <url>http://ci.athion.net/job/FastAsyncWorldEdit/ws/mvn/</url>
-        </repository>
-        <repository>
-            <id>sk89q-repo</id>
-            <url>http://maven.sk89q.com/repo/</url>
         </repository>
         <repository>
             <id>jorelali</id>
@@ -46,14 +53,8 @@
 
         <dependency>
             <groupId>com.boydti</groupId>
-            <artifactId>fawe-api</artifactId>
-            <version>18.10.05-f3fdef6-1218-21.5.5</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.sk89q.worldedit</groupId>
-            <artifactId>worldedit-bukkit</artifactId>
-            <version>6.1.4-SNAPSHOT</version>
+            <artifactId>FastAsyncWorldEdit-bukkit</artifactId>
+            <version>18.10.26-94d5028-2069</version>
             <scope>provided</scope>
         </dependency>
 
