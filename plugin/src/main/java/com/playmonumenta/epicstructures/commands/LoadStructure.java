@@ -10,11 +10,12 @@ import com.sk89q.worldedit.Vector;
 
 import io.github.jorelali.commandapi.api.arguments.Argument;
 import io.github.jorelali.commandapi.api.arguments.LocationArgument;
-import io.github.jorelali.commandapi.api.arguments.StringArgument;
+import io.github.jorelali.commandapi.api.arguments.TextArgument;
 import io.github.jorelali.commandapi.api.CommandAPI;
 import io.github.jorelali.commandapi.api.CommandPermission;
 
 import java.util.LinkedHashMap;
+import java.util.regex.Pattern;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -27,11 +28,12 @@ import org.bukkit.Location;
 import org.bukkit.World;
 
 public class LoadStructure {
+	private static final Pattern INVALID_PATH_PATTERN = Pattern.compile("[^-/_a-zA-Z0-9]");
 	public static void register(Plugin plugin, World world) {
 		/* First one of these includes coordinate arguments */
 		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
 
-		arguments.put("path", new StringArgument());
+		arguments.put("path", new TextArgument());
 		arguments.put("position", new LocationArgument());
 
 		CommandAPI.getInstance().register("loadstructure",
@@ -45,8 +47,8 @@ public class LoadStructure {
 
 	private static void load(CommandSender sender, Plugin plugin, World world,
 	                         String path, Location loadLoc) {
-		if (path.contains("..")) {
-			sender.sendMessage(ChatColor.RED + "Paths containing '..' are not allowed");
+		if (INVALID_PATH_PATTERN.matcher(path).find()) {
+			sender.sendMessage(ChatColor.RED + "Path contains illegal characters!");
 			return;
 		}
 
