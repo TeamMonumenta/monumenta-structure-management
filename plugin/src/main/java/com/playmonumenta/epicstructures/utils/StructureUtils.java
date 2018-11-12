@@ -20,11 +20,14 @@ import com.sk89q.worldedit.world.block.BlockTypes;
 
 import java.util.List;
 
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.World;
 
 public class StructureUtils {
+	private static final boolean LIGHT_CLEANER_ENABLED = Bukkit.getPluginManager().isPluginEnabled("LightCleaner");
+
 	// Custom paste function copied and modified from
 	// FastAsyncWorldedit/core/src/main/java/com/boydti/fawe/object/schematic/Schematic.java
 	//
@@ -71,7 +74,7 @@ public class StructureUtils {
 		extent.flushQueue();
 
 		/*
-		 * Fix lighting after the structure loads
+		 * Fix lighting after the structure loads (if plugin present)
 		 */
 		new BukkitRunnable() {
 			@Override
@@ -83,6 +86,10 @@ public class StructureUtils {
 	}
 
 	public static void scheduleLighting(World world, Vector to, Vector size) {
+		if (!LIGHT_CLEANER_ENABLED) {
+			return;
+		}
+
 		// Pad one chunk on all sides
 		final int originX = (to.getBlockX() / 16) - 1;
 		final int originZ = (to.getBlockZ() / 16) - 1;
