@@ -1,19 +1,22 @@
 package com.playmonumenta.epicstructures.utils;
 
+import com.bergerkiller.bukkit.common.wrappers.LongHashSet;
+import com.bergerkiller.bukkit.lightcleaner.lighting.LightingService;
+
 import com.boydti.fawe.FaweAPI;
 import com.boydti.fawe.object.clipboard.FaweClipboard;
 import com.boydti.fawe.object.FaweQueue;
 import com.boydti.fawe.util.EditSessionBuilder;
 import com.boydti.fawe.util.SetQueue;
 
-import com.sk89q.worldedit.world.block.BlockState;
-import com.sk89q.worldedit.world.block.BlockTypes;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
 import com.sk89q.worldedit.MutableBlockVector;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.Vector;
+import com.sk89q.worldedit.world.block.BlockState;
+import com.sk89q.worldedit.world.block.BlockTypes;
 
 import java.util.List;
 
@@ -64,5 +67,26 @@ public class StructureUtils {
 		 */
 
 		extent.flushQueue();
+
+		/*
+		 * Fix lighting after the structure loads
+		 */
+		scheduleLighting(world, to, size);
+	}
+
+	public static void scheduleLighting(World world, Vector to, Vector size) {
+		// Pad one chunk on all sides
+		final int originX = (to.getBlockX() / 16) - 1;
+		final int originZ = (to.getBlockZ() / 16) - 1;
+		final int sizeX = (((size.getBlockX() - 1) / 16) + 3);
+		final int sizeZ = (((size.getBlockZ() - 1) / 16) + 3);
+
+        LongHashSet chunks = new LongHashSet(sizeX * sizeZ);
+		for (int x = 0; x < sizeX; x++) {
+			for (int z = 0; z < sizeZ; z++) {
+				chunks.add(originX + x, originZ + z);
+			}
+		}
+		LightingService.schedule(world, chunks);
 	}
 }
