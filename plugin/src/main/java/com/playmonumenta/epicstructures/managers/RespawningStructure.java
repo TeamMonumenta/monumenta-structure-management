@@ -202,7 +202,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		}
 
 		// Load the structure
-		StructureUtils.paste(clipboard, mWorld,
+		StructureUtils.paste(mPlugin, clipboard, mWorld,
 		                     new com.sk89q.worldedit.Vector(mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ()));
 
 		// If a command was specified to run after, run it

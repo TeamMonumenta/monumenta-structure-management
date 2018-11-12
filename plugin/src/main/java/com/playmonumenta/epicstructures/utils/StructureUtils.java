@@ -20,6 +20,8 @@ import com.sk89q.worldedit.world.block.BlockTypes;
 
 import java.util.List;
 
+import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.World;
 
 public class StructureUtils {
@@ -27,7 +29,7 @@ public class StructureUtils {
 	// FastAsyncWorldedit/core/src/main/java/com/boydti/fawe/object/schematic/Schematic.java
 	//
 	// Ignores structure void, leaving the original block in place
-	public static void paste(BlockArrayClipboard clipboard, World world, Vector to) {
+	public static void paste(Plugin plugin, BlockArrayClipboard clipboard, World world, Vector to) {
 		// TODO: Whatever is going on here... entities are broken IF:
 		// fastmode = true (regardless of combine stages setting)
 		// fastmode = false AND combineStages = true
@@ -71,7 +73,13 @@ public class StructureUtils {
 		/*
 		 * Fix lighting after the structure loads
 		 */
-		scheduleLighting(world, to, size);
+		new BukkitRunnable() {
+			@Override
+			public void run()
+			{
+				scheduleLighting(world, to, size);
+			}
+		}.runTaskLater(plugin, 40);
 	}
 
 	public static void scheduleLighting(World world, Vector to, Vector size) {

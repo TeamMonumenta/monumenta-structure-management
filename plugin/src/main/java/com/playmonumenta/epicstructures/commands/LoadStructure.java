@@ -68,7 +68,7 @@ public class LoadStructure {
 			return;
 		}
 
-		StructureUtils.paste(clipboard, world, loadPos);
+		StructureUtils.paste(plugin, clipboard, world, loadPos);
 
 		sender.sendMessage("Loaded structure '" + path + "' at " + loadPos);
 	}
