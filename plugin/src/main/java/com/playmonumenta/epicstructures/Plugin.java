@@ -42,8 +42,8 @@ public class Plugin extends JavaPlugin {
 
 		LoadStructure.register(this, mWorld);
 		ActivateSpecialStructure.register(this);
+		RespawnStructure.register(this);
 		getCommand("SaveStructure").setExecutor(new SaveStructure(this, mWorld));
-		getCommand("RespawnStructure").setExecutor(new RespawnStructure(this));
 		getCommand("AddRespawningStructure").setExecutor(new AddRespawningStructure(this, mWorld));
 		getCommand("RemoveRespawningStructure").setExecutor(new RemoveRespawningStructure(this));
 		getCommand("ListRespawningStructures").setExecutor(new ListRespawningStructures(this));

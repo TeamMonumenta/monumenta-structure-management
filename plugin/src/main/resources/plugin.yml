@@ -8,10 +8,6 @@ commands:
     permission: epicstructures
     description: Saves the specified structure contained by the given coordinates
     usage: /saveStructure <name> <x1> <y1> <z1> <x2> <y2> <z2>
-  respawnStructure:
-    permission: epicstructures
-    description: Sets the countdown timer on the specified structure
-    usage: /respawnStructure <name> [ticks=600]
   addRespawningStructure:
     permission: epicstructures
     description: Adds a new automatically respawning structure
