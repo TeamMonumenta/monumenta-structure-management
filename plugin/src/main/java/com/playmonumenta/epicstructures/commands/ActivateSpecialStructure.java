@@ -21,23 +21,20 @@ public class ActivateSpecialStructure {
 		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
 
 		arguments.put("label", new StringArgument());
-		arguments.put("special_structure_path", new TextArgument());
-
-		CommandAPI.getInstance().register("activatespecialstructure",
-		                                  new CommandPermission("epicstructures"),
-		                                  arguments,
-		                                  (sender, args) -> {
-		                                      activate(sender, plugin, (String)args[0], (String)args[1]);
-		                                  }
-		);
-
-		arguments.put("label", new StringArgument());
-
 		CommandAPI.getInstance().register("activatespecialstructure",
 		                                  new CommandPermission("epicstructures"),
 		                                  arguments,
 		                                  (sender, args) -> {
 		                                      activate(sender, plugin, (String)args[0], null);
+		                                  }
+		);
+
+		arguments.put("special_structure_path", new TextArgument());
+		CommandAPI.getInstance().register("activatespecialstructure",
+		                                  new CommandPermission("epicstructures"),
+		                                  arguments,
+		                                  (sender, args) -> {
+		                                      activate(sender, plugin, (String)args[0], (String)args[1]);
 		                                  }
 		);
 	}

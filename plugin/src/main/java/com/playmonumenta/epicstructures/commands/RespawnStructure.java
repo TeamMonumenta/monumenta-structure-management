@@ -19,23 +19,20 @@ public class RespawnStructure {
 		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
 
 		arguments.put("label", new StringArgument());
-		arguments.put("ticks_until_respawn", new IntegerArgument(0));
-
-		CommandAPI.getInstance().register("respawnstructure",
-		                                  new CommandPermission("epicstructures"),
-		                                  arguments,
-		                                  (sender, args) -> {
-		                                      respawn(sender, plugin, (String)args[0], (Integer)args[1]);
-		                                  }
-		);
-
-		arguments.put("label", new StringArgument());
-
 		CommandAPI.getInstance().register("respawnstructure",
 		                                  new CommandPermission("epicstructures"),
 		                                  arguments,
 		                                  (sender, args) -> {
 		                                      respawn(sender, plugin, (String)args[0], 600); // Default 30s
+		                                  }
+		);
+
+		arguments.put("ticks_until_respawn", new IntegerArgument(0));
+		CommandAPI.getInstance().register("respawnstructure",
+		                                  new CommandPermission("epicstructures"),
+		                                  arguments,
+		                                  (sender, args) -> {
+		                                      respawn(sender, plugin, (String)args[0], (Integer)args[1]);
 		                                  }
 		);
 	}
