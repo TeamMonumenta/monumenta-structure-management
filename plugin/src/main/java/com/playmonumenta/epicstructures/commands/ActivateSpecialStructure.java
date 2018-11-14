@@ -1,45 +1,63 @@
 package com.playmonumenta.epicstructures.commands;
 
-import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-
 import com.playmonumenta.epicstructures.Plugin;
 
-public class ActivateSpecialStructure implements CommandExecutor {
-	Plugin mPlugin;
+import io.github.jorelali.commandapi.api.arguments.Argument;
+import io.github.jorelali.commandapi.api.arguments.TextArgument;
+import io.github.jorelali.commandapi.api.arguments.StringArgument;
+import io.github.jorelali.commandapi.api.CommandAPI;
+import io.github.jorelali.commandapi.api.CommandPermission;
 
-	public ActivateSpecialStructure(Plugin plugin) {
-		mPlugin = plugin;
+import java.util.LinkedHashMap;
+import java.util.regex.Pattern;
+
+import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
+
+public class ActivateSpecialStructure {
+	private static final Pattern INVALID_PATH_PATTERN = Pattern.compile("[^-/_a-zA-Z0-9]");
+	public static void register(Plugin plugin) {
+		/* First one of these includes coordinate arguments */
+		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
+
+		arguments.put("label", new StringArgument());
+		arguments.put("special_structure_path", new TextArgument());
+
+		CommandAPI.getInstance().register("activatespecialstructure",
+		                                  new CommandPermission("epicstructures"),
+		                                  arguments,
+		                                  (sender, args) -> {
+		                                      activate(sender, plugin, (String)args[0], (String)args[1]);
+		                                  }
+		);
+
+		arguments.put("label", new StringArgument());
+
+		CommandAPI.getInstance().register("activatespecialstructure",
+		                                  new CommandPermission("epicstructures"),
+		                                  arguments,
+		                                  (sender, args) -> {
+		                                      activate(sender, plugin, (String)args[0], null);
+		                                  }
+		);
 	}
 
-	@Override
-	public boolean onCommand(CommandSender sender, Command command, String arg2, String[] arg3) {
-		if (arg3.length != 1 && arg3.length != 2) {
-			sender.sendMessage(ChatColor.RED + "This command requires one or two arguments");
-			return false;
-		}
-
-		String label = arg3[0];
-		String nextRespawnPath = null;
-		if (arg3.length == 2) {
-			nextRespawnPath = arg3[1];
+	private static void activate(CommandSender sender, Plugin plugin, String label, String path) {
+		if (path != null && INVALID_PATH_PATTERN.matcher(path).find()) {
+			sender.sendMessage(ChatColor.RED + "Path contains illegal characters!");
+			return;
 		}
 
 		try {
-			mPlugin.mRespawnManager.activateSpecialStructure(label, nextRespawnPath);
+			plugin.mRespawnManager.activateSpecialStructure(label, path);
 		} catch (Exception e) {
 			sender.sendMessage(ChatColor.RED + "Got error while attempting to activate special structure: " + e.getMessage());
-			return false;
 		}
 
-		if (arg3.length == 2) {
+		if (path != null) {
 			sender.sendMessage("Successfully activated special structure");
 		} else {
 			sender.sendMessage("Successfully deactivated special structure");
 		}
-
-		return true;
 	}
 }

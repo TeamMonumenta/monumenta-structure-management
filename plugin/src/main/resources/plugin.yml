@@ -28,10 +28,6 @@ commands:
     permission: epicstructures
     description: Sets the command run after respawning a structure
     usage: /setPostRespawnCommand <label> [command with spaces]
-  activateSpecialStructure:
-    permission: epicstructures
-    description: Sets the path of the next respawn of the structure.
-    usage: /activateSpecialStructure <label> [path_to_special_structure]
   reloadStructures:
     permission: epicstructures
     description: Reloads structures from config file, discarding current settings (including current times!)
