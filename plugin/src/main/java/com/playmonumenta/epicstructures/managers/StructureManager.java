@@ -91,6 +91,13 @@ public class StructureManager {
 		// Re-load the schematic from disk into the cache
 		mSchematics.remove(baseFolderName + baseName);
 		loadSchematic(baseFolderName, baseName);
+
+		/*
+		 * Cache has been updated - but the respawning structures need to be updated too
+		 * to get this new cached copy
+		 */
+		mPlugin.saveConfig();
+		mPlugin.reloadConfig();
 	}
 
 	private String _getFileName(String baseFolderName, String baseName) {
