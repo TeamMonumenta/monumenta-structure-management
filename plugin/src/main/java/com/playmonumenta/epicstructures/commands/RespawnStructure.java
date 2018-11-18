@@ -3,8 +3,8 @@ package com.playmonumenta.epicstructures.commands;
 import com.playmonumenta.epicstructures.Plugin;
 
 import io.github.jorelali.commandapi.api.arguments.Argument;
+import io.github.jorelali.commandapi.api.arguments.DynamicSuggestedStringArgument;
 import io.github.jorelali.commandapi.api.arguments.IntegerArgument;
-import io.github.jorelali.commandapi.api.arguments.StringArgument;
 import io.github.jorelali.commandapi.api.CommandAPI;
 import io.github.jorelali.commandapi.api.CommandPermission;
 
@@ -18,7 +18,7 @@ public class RespawnStructure {
 		/* First one of these includes coordinate arguments */
 		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
 
-		arguments.put("label", new StringArgument());
+		arguments.put("label", new DynamicSuggestedStringArgument(() -> {return plugin.mRespawnManager.listStructures();}));
 		CommandAPI.getInstance().register("respawnstructure",
 		                                  new CommandPermission("epicstructures"),
 		                                  arguments,
