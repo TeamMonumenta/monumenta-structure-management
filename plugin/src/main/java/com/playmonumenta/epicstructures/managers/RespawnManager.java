@@ -93,33 +93,36 @@ public class RespawnManager {
 		mPlugin.saveConfig();
 	}
 
-	public void listStructures(CommandSender sender, int page) {
-		final int ITEMS_PER_PAGE = 5;
-		final int numPages = ((mRespawns.size() - 1) / ITEMS_PER_PAGE) + 1;
-
+	/* Human readable */
+	public void listStructures(CommandSender sender) {
 		if (mRespawns.isEmpty()) {
 			sender.sendMessage("No respawning structures registered");
 			return;
 		}
 
-		sender.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + "Structure List (Page " + Integer.toString(page) +
-		                   " of " + Integer.toString(numPages) + ")");
-		boolean empty = true;
-		int skipped = 0;
-		int printed = 0;
+		sender.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + "Respawning Structure List");
+		String structuresString = ChatColor.GREEN + "";
 		for (Map.Entry<String, RespawningStructure> entry : mRespawns.entrySet()) {
-			if (skipped < (page - 1) * ITEMS_PER_PAGE) {
-				skipped++;
-			} else {
-				printed++;
-				sender.sendMessage(ChatColor.GREEN + entry.getKey() + " : " + ChatColor.RESET +
-								   entry.getValue().getInfoString());
-
-				if (printed >= ITEMS_PER_PAGE) {
-					return;
-				}
-			}
+			structuresString += entry.getKey() + "  ";
 		}
+		sender.sendMessage(structuresString);
+	}
+
+	/* Machine readable list */
+	public String[] listStructures() {
+		return mRespawns.keySet().toArray(new String[mRespawns.size()]);
+	}
+
+	public void structureInfo(CommandSender sender, String label) {
+		RespawningStructure struct = mRespawns.get(label);
+
+		if (struct == null) {
+			sender.sendMessage(ChatColor.RED + "Structure '" + label + "' not found!");
+			return;
+		}
+
+		sender.sendMessage(ChatColor.GREEN + label + " : " + ChatColor.RESET +
+						   struct.getInfoString());
 	}
 
 	public void setTimer(String label, int ticksUntilRespawn) throws Exception {

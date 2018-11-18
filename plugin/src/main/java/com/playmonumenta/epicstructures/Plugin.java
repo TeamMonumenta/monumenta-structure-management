@@ -43,10 +43,10 @@ public class Plugin extends JavaPlugin {
 		LoadStructure.register(this, mWorld);
 		ActivateSpecialStructure.register(this);
 		RespawnStructure.register(this);
+		ListRespawningStructures.register(this);
 		getCommand("SaveStructure").setExecutor(new SaveStructure(this, mWorld));
 		getCommand("AddRespawningStructure").setExecutor(new AddRespawningStructure(this, mWorld));
 		getCommand("RemoveRespawningStructure").setExecutor(new RemoveRespawningStructure(this));
-		getCommand("ListRespawningStructures").setExecutor(new ListRespawningStructures(this));
 		getCommand("SetPostRespawnCommand").setExecutor(new SetPostRespawnCommand(this));
 		getCommand("ReloadStructures").setExecutor(new ReloadStructures(this));
 		//TODO: Command to add an alternate generic structure

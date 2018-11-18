@@ -16,10 +16,6 @@ commands:
     permission: epicstructures
     description: Removes an automatically respawning structure
     usage: /removeRespawningStructure <label>
-  listRespawningStructures:
-    permission: epicstructures
-    description: Lists automatically respawning structures
-    usage: /listRespawningStructures [page=1]
   setPostRespawnCommand:
     permission: epicstructures
     description: Sets the command run after respawning a structure
