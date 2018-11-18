@@ -7,7 +7,7 @@ import java.util.logging.Level;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -19,12 +19,12 @@ import org.bukkit.util.Vector;
 import org.bukkit.World;
 
 public class RespawnManager {
-	private Plugin mPlugin;
-	private World mWorld;
+	private final Plugin mPlugin;
+	private final World mWorld;
 
-	private SortedMap<String, RespawningStructure> mRespawns = new TreeMap<String, RespawningStructure>();
-	private int mTickPeriod;
-	private BukkitRunnable mRunnable = new BukkitRunnable() {
+	private final SortedMap<String, RespawningStructure> mRespawns = new ConcurrentSkipListMap<String, RespawningStructure>();
+	private final int mTickPeriod;
+	private final BukkitRunnable mRunnable = new BukkitRunnable() {
 		@Override
 		public void run()
 		{
@@ -52,29 +52,42 @@ public class RespawnManager {
 			plugin.getLogger().log(Level.INFO, "No respawning structures defined");
 			return;
 		}
-		ConfigurationSection respawnSection = config.getConfigurationSection("respawning_structures");
 
+		// Load the structures asynchronously so this doesn't hold up the start of the server
+		ConfigurationSection respawnSection = config.getConfigurationSection("respawning_structures");
+		new BukkitRunnable() {
+			@Override
+			public void run()
+			{
+				loadStructuresAsync(respawnSection);
+			}
+		}.runTaskAsynchronously(plugin);
+
+		// Schedule a repeating task to trigger structure countdowns
+		mRunnable.runTaskTimer(mPlugin, 0, mTickPeriod);
+	}
+
+	/* It *should* be safe to call this async */
+	private void loadStructuresAsync(ConfigurationSection respawnSection) {
 		Set<String> keys = respawnSection.getKeys(false);
 
 		// Iterate over all the respawning entries (shallow list at this level)
 		for (String key : keys) {
 			if (!respawnSection.isConfigurationSection(key)) {
-				plugin.getLogger().log(Level.WARNING,
-				                       "respawning_structures entry '" + key + "' is not a configuration section!");
+				mPlugin.asyncLog(Level.WARNING, "respawning_structures entry '" + key + "' is not a configuration section!");
 				continue;
 			}
 
 			try {
-				mRespawns.put(key, RespawningStructure.fromConfig(plugin, world, key,
+				mRespawns.put(key, RespawningStructure.fromConfig(mPlugin, mWorld, key,
 				              respawnSection.getConfigurationSection(key)));
+				mPlugin.asyncLog(Level.INFO, "Successfully loaded respawning structure '" + key + "': ");
 			} catch (Exception e) {
-				plugin.getLogger().log(Level.WARNING, "Failed to load respawning structure entry '" + key + "': ", e);
+				mPlugin.asyncLog(Level.WARNING, "Failed to load respawning structure entry '" + key + "': ", e);
 				continue;
 			}
 		}
 
-		// Schedule a repeating task to trigger structure countdowns
-		mRunnable.runTaskTimer(mPlugin, 0, mTickPeriod);
 	}
 
 	public void addStructure(int extraRadius, String configLabel, String name, String path,

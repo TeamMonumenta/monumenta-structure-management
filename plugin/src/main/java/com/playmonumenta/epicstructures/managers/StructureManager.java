@@ -19,10 +19,10 @@ import java.io.FileOutputStream;
 
 import java.nio.file.Paths;
 
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 public class StructureManager {
-	private HashMap<String, Schematic> mSchematics = new HashMap<String, Schematic>();
+	private ConcurrentSkipListMap<String, Schematic> mSchematics = new ConcurrentSkipListMap<String, Schematic>();
 	Plugin mPlugin;
 	org.bukkit.World mWorld;
 	private final ClipboardFormat FORMAT;
@@ -33,6 +33,7 @@ public class StructureManager {
 		FORMAT = ClipboardFormat.findByAlias("structure");
 	}
 
+	/* It *should* be safe to call this async */
 	public Schematic loadSchematic(String baseFolderName, String baseName) throws Exception {
 		if (baseFolderName == null || baseFolderName.isEmpty() || baseName == null || baseName.isEmpty()) {
 			throw new Exception("Structure name is empty!");
@@ -59,6 +60,7 @@ public class StructureManager {
 		return schem;
 	}
 
+	/* It *should* be safe to call this async */
 	public BlockArrayClipboard loadSchematicClipboard(String baseFolderName, String baseName) throws Exception {
 		Clipboard clipboard = loadSchematic(baseFolderName, baseName).getClipboard();
 		if (!(clipboard instanceof BlockArrayClipboard)) {
