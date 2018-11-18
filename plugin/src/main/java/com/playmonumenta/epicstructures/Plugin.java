@@ -9,6 +9,7 @@ import com.playmonumenta.epicstructures.commands.RemoveRespawningStructure;
 import com.playmonumenta.epicstructures.commands.RespawnStructure;
 import com.playmonumenta.epicstructures.commands.SaveStructure;
 import com.playmonumenta.epicstructures.commands.SetPostRespawnCommand;
+import com.playmonumenta.epicstructures.commands.SetPostRespawnCommand;
 import com.playmonumenta.epicstructures.managers.EventListener;
 import com.playmonumenta.epicstructures.managers.RespawnManager;
 import com.playmonumenta.epicstructures.managers.StructureManager;
@@ -45,10 +46,10 @@ public class Plugin extends JavaPlugin {
 		ActivateSpecialStructure.register(this);
 		RespawnStructure.register(this);
 		ListRespawningStructures.register(this);
+		SetPostRespawnCommand.register(this);
 		getCommand("SaveStructure").setExecutor(new SaveStructure(this, mWorld));
 		getCommand("AddRespawningStructure").setExecutor(new AddRespawningStructure(this, mWorld));
 		getCommand("RemoveRespawningStructure").setExecutor(new RemoveRespawningStructure(this));
-		getCommand("SetPostRespawnCommand").setExecutor(new SetPostRespawnCommand(this));
 		getCommand("ReloadStructures").setExecutor(new ReloadStructures(this));
 		//TODO: Command to add an alternate generic structure
 		//TODO: Command to set all timers to max ?

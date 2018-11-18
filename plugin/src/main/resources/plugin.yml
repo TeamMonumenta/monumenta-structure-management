@@ -16,10 +16,6 @@ commands:
     permission: epicstructures
     description: Removes an automatically respawning structure
     usage: /removeRespawningStructure <label>
-  setPostRespawnCommand:
-    permission: epicstructures
-    description: Sets the command run after respawning a structure
-    usage: /setPostRespawnCommand <label> [command with spaces]
   reloadStructures:
     permission: epicstructures
     description: Reloads structures from config file, discarding current settings (including current times!)
