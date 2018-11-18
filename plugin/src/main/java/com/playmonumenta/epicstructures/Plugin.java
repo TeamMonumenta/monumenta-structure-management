@@ -44,12 +44,14 @@ public class Plugin extends JavaPlugin {
 
 		LoadStructure.register(this, mWorld);
 		ActivateSpecialStructure.register(this);
+
 		RespawnStructure.register(this);
 		ListRespawningStructures.register(this);
 		SetPostRespawnCommand.register(this);
+		RemoveRespawningStructure.register(this);
+
 		getCommand("SaveStructure").setExecutor(new SaveStructure(this, mWorld));
 		getCommand("AddRespawningStructure").setExecutor(new AddRespawningStructure(this, mWorld));
-		getCommand("RemoveRespawningStructure").setExecutor(new RemoveRespawningStructure(this));
 		getCommand("ReloadStructures").setExecutor(new ReloadStructures(this));
 		//TODO: Command to add an alternate generic structure
 		//TODO: Command to set all timers to max ?

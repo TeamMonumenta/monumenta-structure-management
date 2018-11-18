@@ -12,10 +12,6 @@ commands:
     permission: epicstructures
     description: Adds a new automatically respawning structure
     usage: /addRespawningStructure <label> <path> <x> <y> <z> <extraRadius> <respawnTime> <display name with spaces>
-  removeRespawningStructure:
-    permission: epicstructures
-    description: Removes an automatically respawning structure
-    usage: /removeRespawningStructure <label>
   reloadStructures:
     permission: epicstructures
     description: Reloads structures from config file, discarding current settings (including current times!)

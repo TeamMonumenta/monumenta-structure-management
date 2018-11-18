@@ -1,37 +1,40 @@
 package com.playmonumenta.epicstructures.commands;
 
-import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-
 import com.playmonumenta.epicstructures.Plugin;
 
-public class RemoveRespawningStructure implements CommandExecutor {
-	Plugin mPlugin;
+import io.github.jorelali.commandapi.api.arguments.Argument;
+import io.github.jorelali.commandapi.api.arguments.DynamicSuggestedStringArgument;
+import io.github.jorelali.commandapi.api.CommandAPI;
+import io.github.jorelali.commandapi.api.CommandPermission;
 
-	public RemoveRespawningStructure(Plugin plugin) {
-		mPlugin = plugin;
+import java.util.LinkedHashMap;
+
+import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
+
+public class RemoveRespawningStructure {
+	public static void register(Plugin plugin) {
+		/* First one of these includes coordinate arguments */
+		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
+
+		arguments.put("label", new DynamicSuggestedStringArgument(() -> {return plugin.mRespawnManager.listStructures();}));
+		CommandAPI.getInstance().register("removerespawningstructures",
+		                                  new CommandPermission("epicstructures"),
+		                                  arguments,
+		                                  (sender, args) -> {
+		                                      remove(sender, plugin, (String)args[0]);
+		                                  }
+		);
 	}
 
-	@Override
-	public boolean onCommand(CommandSender sender, Command command, String arg2, String[] arg3) {
-		if (arg3.length != 1) {
-			sender.sendMessage(ChatColor.RED + "Invalid number of parameters - expected 1");
-			return false;
-		}
-
-		String configLabel = arg3[0];
-
+	private static void remove(CommandSender sender, Plugin plugin, String label) {
 		try {
-			mPlugin.mRespawnManager.removeStructure(configLabel);
+			plugin.mRespawnManager.removeStructure(label);
 		} catch (Exception e) {
 			sender.sendMessage(ChatColor.RED + "Failed to remove structure: " + e.getMessage());
-			return false;
+			return;
 		}
 
-		sender.sendMessage("Structure removed successfully");
-
-		return true;
+		sender.sendMessage("Structure '" + label + "' no longer respawns automatically");
 	}
 }
