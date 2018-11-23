@@ -35,6 +35,7 @@ public class RespawnManager {
 		}
 	};
 	private boolean taskScheduled = false;
+	private boolean structuresLoaded = false;
 
 	public RespawnManager(Plugin plugin, World world, YamlConfiguration config) {
 		mPlugin = plugin;
@@ -62,12 +63,13 @@ public class RespawnManager {
 			public void run()
 			{
 				loadStructuresAsync(respawnSection);
+
+				// Schedule a repeating task to trigger structure countdowns
+				mRunnable.runTaskTimer(mPlugin, 0, mTickPeriod);
+				taskScheduled = true;
+				structuresLoaded = true;
 			}
 		}.runTaskAsynchronously(plugin);
-
-		// Schedule a repeating task to trigger structure countdowns
-		mRunnable.runTaskTimer(mPlugin, 0, mTickPeriod);
-		taskScheduled = true;
 	}
 
 	/* It *should* be safe to call this async */
@@ -90,7 +92,6 @@ public class RespawnManager {
 				continue;
 			}
 		}
-
 	}
 
 	public void addStructure(int extraRadius, String configLabel, String name, String path,
@@ -197,7 +198,11 @@ public class RespawnManager {
 		mRespawns.clear();
 	}
 
-	public YamlConfiguration getConfig() {
+	public YamlConfiguration getConfig() throws Exception {
+		if (!structuresLoaded) {
+			throw new Exception("Structures haven't finished loading yet!");
+		}
+
 		// Create the top-level config to return
 		YamlConfiguration config = new YamlConfiguration();
 

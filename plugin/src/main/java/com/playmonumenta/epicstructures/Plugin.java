@@ -114,7 +114,7 @@ public class Plugin extends JavaPlugin {
 			try {
 				mConfig = mRespawnManager.getConfig();
 				mConfig.save(mConfigFile);
-			} catch (IOException ex) {
+			} catch (Exception ex) {
 				getLogger().log(Level.SEVERE, "Could not save config to " + mConfigFile, ex);
 			}
 		}
