@@ -55,8 +55,8 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	private String mPostRespawnCommand;   // Command run via the console after respawning structure
 
 	// Path String -> BlockArrayClipboard maps
-	private Map<String, BlockArrayClipboard> mGenericVariants = new HashMap<String, BlockArrayClipboard>();
-	private Map<String, BlockArrayClipboard> mSpecialVariants = new HashMap<String, BlockArrayClipboard>();
+	private final List<String> mGenericVariants = new ArrayList<String>();
+	private final List<String> mSpecialVariants = new ArrayList<String>();
 
 	// Which structure will be spawned next
 	// If this is null, one of the genericVariants will be chosen randomly
@@ -144,8 +144,9 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		BlockArrayClipboard clipboard = null;
 		for (String path : genericPaths) {
 			// TODO: This is a sloppy way to get the dimensions... falling through to the last one
-			clipboard = mPlugin.mStructureManager.loadSchematicClipboard("structures", path);
-			mGenericVariants.put(path, clipboard);
+			// Pre-load the schematic into the cache, but don't store a reference to it
+			mPlugin.mStructureManager.loadSchematic("structures", path);
+			mGenericVariants.add(path);
 		}
 		if (clipboard == null) {
 			throw new Exception("No structures specified for '" + mConfigLabel + "'");
@@ -153,7 +154,9 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 		if (specialPaths != null) {
 			for (String path : specialPaths) {
-				mSpecialVariants.put(path, mPlugin.mStructureManager.loadSchematicClipboard("structures", path));
+				// Pre-load the schematic into the cache, but don't store a reference to it
+				mPlugin.mStructureManager.loadSchematic("structures", path);
+				mSpecialVariants.add(path);
 			}
 		}
 
@@ -179,16 +182,17 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	public String getInfoString() {
 		return "name='" + mName + "' pos=(" + Integer.toString((int)mLoadPos.getX()) + " " +
 		       Integer.toString((int)mLoadPos.getY()) + " " + Integer.toString((int)mLoadPos.getZ()) +
-			   ") paths={" + String.join(" ", mGenericVariants.keySet()) + "} period=" + Integer.toString(mRespawnTime) + " ticksleft=" +
+			   ") paths={" + String.join(" ", mGenericVariants) + "} period=" + Integer.toString(mRespawnTime) + " ticksleft=" +
 			   Integer.toString(mTicksLeft) +
 			   (mPostRespawnCommand == null ? "" : " respawnCmd='" + mPostRespawnCommand + "'") +
-			   (mSpecialVariants.isEmpty() ? "" : " specialPaths={" + String.join(" ", mSpecialVariants.keySet()) + "}") +
+			   (mSpecialVariants.isEmpty() ? "" : " specialPaths={" + String.join(" ", mSpecialVariants) + "}") +
 			   (mSpawnerBreakTrigger == null ? "" : " spawnerTrigger={" + mSpawnerBreakTrigger.getInfoString() + "}");
 	}
 
 	public void activateSpecialStructure(String nextRespawnPath) throws Exception {
-		if (nextRespawnPath != null && !mSpecialVariants.containsKey(nextRespawnPath)) {
-			mSpecialVariants.put(nextRespawnPath, mPlugin.mStructureManager.loadSchematicClipboard("structures", nextRespawnPath));
+		if (nextRespawnPath != null && !mSpecialVariants.contains(nextRespawnPath)) {
+			mSpecialVariants.add(nextRespawnPath);
+			mPlugin.mStructureManager.loadSchematic("structures", nextRespawnPath);
 		}
 		//TODO: Check that this structure is the same size!
 
@@ -197,20 +201,26 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 	public void respawn() {
 		BlockArrayClipboard clipboard;
-		if (mNextRespawnPath == null) {
-			// No specified next path - pick a generic one at random
-			List<BlockArrayClipboard> valueList = new ArrayList<BlockArrayClipboard>(mGenericVariants.values());
-			clipboard = valueList.get(mRandom.nextInt(valueList.size()));
-		} else {
-			// Next path was specified - use it
-			clipboard = mSpecialVariants.get(mNextRespawnPath);
-			if (clipboard == null) {
-				// This should not be possible because we check when setting mNextRespawnPath
-				mPlugin.getLogger().log(Level.SEVERE, "Tried to spawn nonexistent nextRespawnPath='" + mNextRespawnPath + "'");
-				return;
+		try {
+			if (mNextRespawnPath == null) {
+				// No specified next path - pick a generic one at random
+				String path = mGenericVariants.get(mRandom.nextInt(mGenericVariants.size()));
+				clipboard = mPlugin.mStructureManager.loadSchematicClipboard("structures", path);
+			} else {
+				// Next path was specified - use it
+				clipboard = mPlugin.mStructureManager.loadSchematicClipboard("structures", mNextRespawnPath);
+				if (clipboard == null) {
+					// This should not be possible because we check when setting mNextRespawnPath
+					mPlugin.getLogger().log(Level.SEVERE, "Tried to spawn nonexistent nextRespawnPath='" + mNextRespawnPath + "'");
+					return;
+				}
+				// Go back to generic versions after spawning this once
+				mNextRespawnPath = null;
 			}
-			// Go back to generic versions after spawning this once
-			mNextRespawnPath = null;
+		} catch (Exception e) {
+			mPlugin.getLogger().log(Level.SEVERE, "Failed to respawn structure '" + mConfigLabel + "'");
+			e.printStackTrace();
+			return;
 		}
 
 		// Load the structure
@@ -307,7 +317,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		Map<String, Object> configMap = new LinkedHashMap<String, Object>();
 
 		configMap.put("name", mName);
-		configMap.put("structure_paths", new ArrayList<>(mGenericVariants.keySet()));
+		configMap.put("structure_paths", mGenericVariants);
 		configMap.put("x", (int)mLoadPos.getX());
 		configMap.put("y", (int)mLoadPos.getY());
 		configMap.put("z", (int)mLoadPos.getZ());
@@ -318,7 +328,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			configMap.put("post_respawn_command", mPostRespawnCommand);
 		}
 		if (!mSpecialVariants.isEmpty()) {
-			configMap.put("structure_special_paths", new ArrayList<>(mSpecialVariants.keySet()));
+			configMap.put("structure_special_paths", mSpecialVariants);
 		}
 		if (mNextRespawnPath != null) {
 			configMap.put("next_respawn_path", mNextRespawnPath);
