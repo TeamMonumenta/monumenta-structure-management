@@ -145,7 +145,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		for (String path : genericPaths) {
 			// TODO: This is a sloppy way to get the dimensions... falling through to the last one
 			// Pre-load the schematic into the cache, but don't store a reference to it
-			mPlugin.mStructureManager.loadSchematic("structures", path);
+			clipboard = mPlugin.mStructureManager.loadSchematic(path);
 			mGenericVariants.add(path);
 		}
 		if (clipboard == null) {
@@ -155,7 +155,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		if (specialPaths != null) {
 			for (String path : specialPaths) {
 				// Pre-load the schematic into the cache, but don't store a reference to it
-				mPlugin.mStructureManager.loadSchematic("structures", path);
+				mPlugin.mStructureManager.loadSchematic(path);
 				mSpecialVariants.add(path);
 			}
 		}
@@ -190,9 +190,10 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void activateSpecialStructure(String nextRespawnPath) throws Exception {
+		//TODO: There needs to be a better way to register special versions!
 		if (nextRespawnPath != null && !mSpecialVariants.contains(nextRespawnPath)) {
 			mSpecialVariants.add(nextRespawnPath);
-			mPlugin.mStructureManager.loadSchematic("structures", nextRespawnPath);
+			mPlugin.mStructureManager.loadSchematic(nextRespawnPath);
 		}
 		//TODO: Check that this structure is the same size!
 
@@ -205,10 +206,10 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			if (mNextRespawnPath == null) {
 				// No specified next path - pick a generic one at random
 				String path = mGenericVariants.get(mRandom.nextInt(mGenericVariants.size()));
-				clipboard = mPlugin.mStructureManager.loadSchematicClipboard("structures", path);
+				clipboard = mPlugin.mStructureManager.loadSchematic(path);
 			} else {
 				// Next path was specified - use it
-				clipboard = mPlugin.mStructureManager.loadSchematicClipboard("structures", mNextRespawnPath);
+				clipboard = mPlugin.mStructureManager.loadSchematic(mNextRespawnPath);
 				if (clipboard == null) {
 					// This should not be possible because we check when setting mNextRespawnPath
 					mPlugin.getLogger().log(Level.SEVERE, "Tried to spawn nonexistent nextRespawnPath='" + mNextRespawnPath + "'");

@@ -56,7 +56,7 @@ public class LoadStructure {
 
 		BlockArrayClipboard clipboard;
 		try {
-			clipboard = plugin.mStructureManager.loadSchematicClipboard("structures", path);
+			clipboard = plugin.mStructureManager.loadSchematic(path);
 		} catch (Exception e) {
 			plugin.getLogger().severe("Caught exception: " + e);
 			e.printStackTrace();

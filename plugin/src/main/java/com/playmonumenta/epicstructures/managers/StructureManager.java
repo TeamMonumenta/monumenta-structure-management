@@ -22,60 +22,57 @@ import java.nio.file.Paths;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 public class StructureManager {
-	private ConcurrentSkipListMap<String, Schematic> mSchematics = new ConcurrentSkipListMap<String, Schematic>();
-	Plugin mPlugin;
-	org.bukkit.World mWorld;
-	private final ClipboardFormat FORMAT;
+	private static final String BASE_FOLDER_NAME = "structures";
+
+	private final ConcurrentSkipListMap<String, BlockArrayClipboard> mSchematics = new ConcurrentSkipListMap<String, BlockArrayClipboard>();
+	private final Plugin mPlugin;
+	private final org.bukkit.World mWorld;
+	private final ClipboardFormat format;
 
 	public StructureManager(Plugin plugin, org.bukkit.World world) {
 		mPlugin = plugin;
 		mWorld = world;
-		FORMAT = ClipboardFormat.findByAlias("structure");
+		format = ClipboardFormat.findByAlias("structure");
 	}
 
 	/* It *should* be safe to call this async */
-	public Schematic loadSchematic(String baseFolderName, String baseName) throws Exception {
-		if (baseFolderName == null || baseFolderName.isEmpty() || baseName == null || baseName.isEmpty()) {
+	public BlockArrayClipboard loadSchematic(String baseName) throws Exception {
+		if (baseName == null || baseName.isEmpty()) {
 			throw new Exception("Structure name is empty!");
 		}
 
-		Schematic schem;
-		schem = mSchematics.get(baseFolderName + baseName);
-		if (schem == null) {
+		BlockArrayClipboard clipboard;
+		clipboard = mSchematics.get(baseName);
+		if (clipboard == null) {
 			// Schematic not already loaded - need to read it from disk and load it into RAM
 
-			final String fileName = _getFileName(baseFolderName, baseName);
+			final String fileName = _getFileName(baseName);
 
 			File file = new File(fileName);
 			if (!file.exists()) {
 				throw new Exception("Structure '" + baseName + "' does not exist");
 			}
 
-			schem = FORMAT.load(file);
+			Clipboard newClip = format.load(file).getClipboard();
+			if (!(newClip instanceof BlockArrayClipboard)) {
+				throw new Exception("Clipboard is not a BlockArrayClipboard!");
+			}
+			clipboard = (BlockArrayClipboard)newClip;
 
 			// Cache the schematic for fast access later
-			mSchematics.put(baseFolderName + baseName, schem);
+			mSchematics.put(baseName, clipboard);
 		}
 
-		return schem;
-	}
-
-	/* It *should* be safe to call this async */
-	public BlockArrayClipboard loadSchematicClipboard(String baseFolderName, String baseName) throws Exception {
-		Clipboard clipboard = loadSchematic(baseFolderName, baseName).getClipboard();
-		if (!(clipboard instanceof BlockArrayClipboard)) {
-			throw new Exception("Clipboard is not a BlockArrayClipboard!");
-		}
-		return (BlockArrayClipboard)clipboard;
+		return clipboard;
 	}
 
 	// This code adapted from forum post here: https://www.spigotmc.org/threads/saving-schematics-to-file-with-worldedit-api.276078/
-	public void saveSchematic(String baseFolderName, String baseName, Vector minpos, Vector maxpos, Runnable whenDone) throws Exception {
-		if (baseFolderName == null || baseFolderName.isEmpty() || baseName == null || baseName.isEmpty()) {
+	public void saveSchematic(String baseName, Vector minpos, Vector maxpos, Runnable whenDone) throws Exception {
+		if (baseName == null || baseName.isEmpty()) {
 			throw new Exception("Structure name is empty!");
 		}
 
-		final String fileName = _getFileName(baseFolderName, baseName);
+		final String fileName = _getFileName(baseName);
 
 		File file = new File(fileName);
 		if (!file.exists()) {
@@ -86,11 +83,11 @@ public class StructureManager {
 		World world = new BukkitWorld(mWorld);
 		CuboidRegion cReg = new CuboidRegion(world, minpos, maxpos);
 		Schematic schem = new Schematic(cReg);
-		schem.save(file, FORMAT);
+		schem.save(file, format);
 
 		// Re-load the schematic from disk into the cache
-		mSchematics.remove(baseFolderName + baseName);
-		loadSchematic(baseFolderName, baseName);
+		mSchematics.remove(baseName);
+		loadSchematic(baseName);
 
 		/*
 		 * Cache has been updated - but the respawning structures need to be updated too
@@ -100,7 +97,7 @@ public class StructureManager {
 		mPlugin.reloadConfig();
 	}
 
-	private String _getFileName(String baseFolderName, String baseName) {
-		return Paths.get(mPlugin.getDataFolder().toString(), baseFolderName, baseName + ".schematic").toString();
+	private String _getFileName(String baseName) {
+		return Paths.get(mPlugin.getDataFolder().toString(), BASE_FOLDER_NAME, baseName + ".schematic").toString();
 	}
 }
