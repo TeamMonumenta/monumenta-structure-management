@@ -4,48 +4,39 @@ import com.playmonumenta.epicstructures.Plugin;
 
 import io.github.jorelali.commandapi.api.arguments.Argument;
 import io.github.jorelali.commandapi.api.arguments.DynamicSuggestedStringArgument;
+import io.github.jorelali.commandapi.api.arguments.IntegerArgument;
 import io.github.jorelali.commandapi.api.CommandAPI;
 import io.github.jorelali.commandapi.api.CommandPermission;
 
 import java.util.LinkedHashMap;
 
 import org.bukkit.ChatColor;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
-public class ListRespawningStructures {
+public class SetRespawnTimer {
 	public static void register(Plugin plugin) {
 		/* First one of these includes coordinate arguments */
 		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
 
-		CommandAPI.getInstance().register("listrespawningstructures",
-		                                  new CommandPermission("epicstructures"),
-		                                  arguments,
-		                                  (sender, args) -> {
-		                                      list(sender, plugin, null);
-		                                  }
-		);
-
 		arguments.put("label", new DynamicSuggestedStringArgument(() -> {return plugin.mRespawnManager.listStructures();}));
-		CommandAPI.getInstance().register("listrespawningstructures",
+		arguments.put("ticks", new IntegerArgument(0));
+		CommandAPI.getInstance().register("setrespawntimer",
 		                                  new CommandPermission("epicstructures"),
 		                                  arguments,
 		                                  (sender, args) -> {
-		                                      list(sender, plugin, (String)args[0]);
+		                                      setTimer(sender, plugin, (String)args[0], (Integer)args[1]);
 		                                  }
 		);
 	}
 
-	private static void list(CommandSender sender, Plugin plugin, String label) {
-		if (label == null) {
-			plugin.mRespawnManager.listStructures(sender);
-		} else {
-			try {
-				plugin.mRespawnManager.structureInfo(sender, label);
-			} catch (Exception e) {
-				sender.sendMessage(ChatColor.RED + "Got error while attempting to get structure info: " + e.getMessage());
-				return;
-			}
+	private static void setTimer(CommandSender sender, Plugin plugin, String label, int ticks) {
+		try {
+			plugin.mRespawnManager.setTimerPeriod(label, ticks);
+		} catch (Exception e) {
+			sender.sendMessage(ChatColor.RED + "Got error while attempting to set post respawn command: " + e.getMessage());
+			return;
 		}
+
+		sender.sendMessage("Successfully set respawn timer to '" + Integer.toString(ticks) + "'");
 	}
 }

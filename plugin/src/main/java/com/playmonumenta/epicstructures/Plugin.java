@@ -9,6 +9,7 @@ import com.playmonumenta.epicstructures.commands.RemoveRespawningStructure;
 import com.playmonumenta.epicstructures.commands.RespawnStructure;
 import com.playmonumenta.epicstructures.commands.SaveStructure;
 import com.playmonumenta.epicstructures.commands.SetPostRespawnCommand;
+import com.playmonumenta.epicstructures.commands.SetRespawnTimer;
 import com.playmonumenta.epicstructures.commands.SetSpawnerBreakTrigger;
 import com.playmonumenta.epicstructures.managers.EventListener;
 import com.playmonumenta.epicstructures.managers.RespawnManager;
@@ -50,6 +51,7 @@ public class Plugin extends JavaPlugin {
 		SetPostRespawnCommand.register(this);
 		SetSpawnerBreakTrigger.register(this);
 		RemoveRespawningStructure.register(this);
+		SetRespawnTimer.register(this);
 
 		getCommand("SaveStructure").setExecutor(new SaveStructure(this, mWorld));
 		getCommand("AddRespawningStructure").setExecutor(new AddRespawningStructure(this, mWorld));

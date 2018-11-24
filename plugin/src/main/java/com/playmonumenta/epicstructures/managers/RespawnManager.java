@@ -130,50 +130,31 @@ public class RespawnManager {
 		return mRespawns.keySet().toArray(new String[mRespawns.size()]);
 	}
 
-	public void structureInfo(CommandSender sender, String label) {
-		RespawningStructure struct = mRespawns.get(label);
-
-		if (struct == null) {
-			sender.sendMessage(ChatColor.RED + "Structure '" + label + "' not found!");
-			return;
-		}
-
+	public void structureInfo(CommandSender sender, String label) throws Exception {
 		sender.sendMessage(ChatColor.GREEN + label + " : " + ChatColor.RESET +
-						   struct.getInfoString());
+						   _getStructure(label).getInfoString());
 	}
 
 	public void setTimer(String label, int ticksUntilRespawn) throws Exception {
-		RespawningStructure struct = mRespawns.get(label);
-		if (struct == null) {
-			throw new Exception("Structure '" + label + "' not found!");
-		}
-		struct.setRespawnTimer(ticksUntilRespawn);
+		_getStructure(label).setRespawnTimer(ticksUntilRespawn);
+	}
+
+	public void setTimerPeriod(String label, int ticksUntilRespawn) throws Exception {
+		_getStructure(label).setRespawnTimerPeriod(ticksUntilRespawn);
 	}
 
 	public void setPostRespawnCommand(String label, String command) throws Exception {
-		RespawningStructure struct = mRespawns.get(label);
-		if (struct == null) {
-			throw new Exception("Structure '" + label + "' not found!");
-		}
-		struct.setPostRespawnCommand(command);
+		_getStructure(label).setPostRespawnCommand(command);
 		mPlugin.saveConfig();
 	}
 
 	public void setSpawnerBreakTrigger(String label, SpawnerBreakTrigger trigger) throws Exception {
-		RespawningStructure struct = mRespawns.get(label);
-		if (struct == null) {
-			throw new Exception("Structure '" + label + "' not found!");
-		}
-		struct.setSpawnerBreakTrigger(trigger);
+		_getStructure(label).setSpawnerBreakTrigger(trigger);
 		mPlugin.saveConfig();
 	}
 
 	public void activateSpecialStructure(String label, String nextRespawnPath) throws Exception {
-		RespawningStructure struct = mRespawns.get(label);
-		if (struct == null) {
-			throw new Exception("Structure '" + label + "' not found!");
-		}
-		struct.activateSpecialStructure(nextRespawnPath);
+		_getStructure(label).activateSpecialStructure(nextRespawnPath);
 	}
 
 	public void tellNearbyRespawnTimes(Player player) {
@@ -224,5 +205,13 @@ public class RespawnManager {
 		for (RespawningStructure struct : mRespawns.values()) {
 			struct.spawnerBreakEvent(vec);
 		}
+	}
+
+	private RespawningStructure _getStructure(String label) throws Exception {
+		RespawningStructure struct = mRespawns.get(label);
+		if (struct == null) {
+			throw new Exception("Structure '" + label + "' not found!");
+		}
+		return struct;
 	}
 }

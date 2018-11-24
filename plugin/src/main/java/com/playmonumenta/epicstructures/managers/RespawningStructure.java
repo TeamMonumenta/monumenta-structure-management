@@ -310,6 +310,10 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		}
 	}
 
+	public void setRespawnTimerPeriod(int ticksUntilRespawn) {
+		mRespawnTime = ticksUntilRespawn;
+	}
+
 	public void setPostRespawnCommand(String postRespawnCommand) {
 		mPostRespawnCommand = postRespawnCommand;
 	}
