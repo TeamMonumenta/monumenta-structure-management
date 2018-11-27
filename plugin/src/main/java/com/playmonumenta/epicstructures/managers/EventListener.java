@@ -36,11 +36,13 @@ public class EventListener implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.HIGHEST)
+	@EventHandler(priority = EventPriority.LOWEST)
 	public void BlockBreakEvent(BlockBreakEvent event) {
-		Block block = event.getBlock();
-		if (block.getType() == Material.SPAWNER) {
-			mPlugin.mRespawnManager.spawnerBreakEvent(block.getLocation());
+		if (!event.isCancelled()) {
+			Block block = event.getBlock();
+			if (block.getType() == Material.SPAWNER) {
+				mPlugin.mRespawnManager.spawnerBreakEvent(block.getLocation());
+			}
 		}
 	}
 }
