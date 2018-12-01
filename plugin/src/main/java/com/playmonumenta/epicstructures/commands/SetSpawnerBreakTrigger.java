@@ -22,7 +22,7 @@ public class SetSpawnerBreakTrigger {
 
 		arguments.put("label", new DynamicSuggestedStringArgument(() -> {return plugin.mRespawnManager.listStructures();}));
 		CommandAPI.getInstance().register("setspawnerbreaktrigger",
-		                                  new CommandPermission("epicstructures"),
+		                                  CommandPermission.fromString("epicstructures"),
 		                                  arguments,
 		                                  (sender, args) -> {
 		                                      setTrigger(sender, plugin, (String)args[0], 0, null);
@@ -32,7 +32,7 @@ public class SetSpawnerBreakTrigger {
 		arguments.put("spawner_count", new IntegerArgument(0));
 		arguments.put("quest_component", new GreedyStringArgument());
 		CommandAPI.getInstance().register("setspawnerbreaktrigger",
-		                                  new CommandPermission("epicstructures"),
+		                                  CommandPermission.fromString("epicstructures"),
 		                                  arguments,
 		                                  (sender, args) -> {
 		                                      setTrigger(sender, plugin, (String)args[0], (Integer)args[1], (String)args[2]);

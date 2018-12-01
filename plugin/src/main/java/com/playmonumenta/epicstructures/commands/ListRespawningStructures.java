@@ -19,7 +19,7 @@ public class ListRespawningStructures {
 		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
 
 		CommandAPI.getInstance().register("listrespawningstructures",
-		                                  new CommandPermission("epicstructures"),
+		                                  CommandPermission.fromString("epicstructures"),
 		                                  arguments,
 		                                  (sender, args) -> {
 		                                      list(sender, plugin, null);
@@ -28,7 +28,7 @@ public class ListRespawningStructures {
 
 		arguments.put("label", new DynamicSuggestedStringArgument(() -> {return plugin.mRespawnManager.listStructures();}));
 		CommandAPI.getInstance().register("listrespawningstructures",
-		                                  new CommandPermission("epicstructures"),
+		                                  CommandPermission.fromString("epicstructures"),
 		                                  arguments,
 		                                  (sender, args) -> {
 		                                      list(sender, plugin, (String)args[0]);

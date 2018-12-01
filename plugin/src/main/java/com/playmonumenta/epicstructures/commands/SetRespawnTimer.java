@@ -21,7 +21,7 @@ public class SetRespawnTimer {
 		arguments.put("label", new DynamicSuggestedStringArgument(() -> {return plugin.mRespawnManager.listStructures();}));
 		arguments.put("ticks", new IntegerArgument(0));
 		CommandAPI.getInstance().register("setrespawntimer",
-		                                  new CommandPermission("epicstructures"),
+		                                  CommandPermission.fromString("epicstructures"),
 		                                  arguments,
 		                                  (sender, args) -> {
 		                                      setTimer(sender, plugin, (String)args[0], (Integer)args[1]);

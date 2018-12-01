@@ -37,7 +37,7 @@ public class LoadStructure {
 		arguments.put("position", new LocationArgument());
 
 		CommandAPI.getInstance().register("loadstructure",
-		                                  new CommandPermission("epicstructures"),
+		                                  CommandPermission.fromString("epicstructures"),
 		                                  arguments,
 		                                  (sender, args) -> {
 		                                      load(sender, plugin, world, (String)args[0], (Location)args[1]);

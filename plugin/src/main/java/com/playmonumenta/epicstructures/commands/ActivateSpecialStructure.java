@@ -22,7 +22,7 @@ public class ActivateSpecialStructure {
 
 		arguments.put("label", new DynamicSuggestedStringArgument(() -> {return plugin.mRespawnManager.listStructures();}));
 		CommandAPI.getInstance().register("activatespecialstructure",
-		                                  new CommandPermission("epicstructures"),
+		                                  CommandPermission.fromString("epicstructures"),
 		                                  arguments,
 		                                  (sender, args) -> {
 		                                      activate(sender, plugin, (String)args[0], null);
@@ -31,7 +31,7 @@ public class ActivateSpecialStructure {
 
 		arguments.put("special_structure_path", new TextArgument());
 		CommandAPI.getInstance().register("activatespecialstructure",
-		                                  new CommandPermission("epicstructures"),
+		                                  CommandPermission.fromString("epicstructures"),
 		                                  arguments,
 		                                  (sender, args) -> {
 		                                      activate(sender, plugin, (String)args[0], (String)args[1]);

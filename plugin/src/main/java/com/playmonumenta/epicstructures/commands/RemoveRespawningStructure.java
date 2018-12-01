@@ -19,7 +19,7 @@ public class RemoveRespawningStructure {
 
 		arguments.put("label", new DynamicSuggestedStringArgument(() -> {return plugin.mRespawnManager.listStructures();}));
 		CommandAPI.getInstance().register("removerespawningstructures",
-		                                  new CommandPermission("epicstructures"),
+		                                  CommandPermission.fromString("epicstructures"),
 		                                  arguments,
 		                                  (sender, args) -> {
 		                                      remove(sender, plugin, (String)args[0]);

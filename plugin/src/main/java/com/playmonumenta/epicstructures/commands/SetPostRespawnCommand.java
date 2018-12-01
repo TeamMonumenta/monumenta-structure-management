@@ -20,7 +20,7 @@ public class SetPostRespawnCommand {
 
 		arguments.put("label", new DynamicSuggestedStringArgument(() -> {return plugin.mRespawnManager.listStructures();}));
 		CommandAPI.getInstance().register("setpostrespawncommand",
-		                                  new CommandPermission("epicstructures"),
+		                                  CommandPermission.fromString("epicstructures"),
 		                                  arguments,
 		                                  (sender, args) -> {
 		                                      setcommand(sender, plugin, (String)args[0], null);
@@ -29,7 +29,7 @@ public class SetPostRespawnCommand {
 
 		arguments.put("command", new TextArgument());
 		CommandAPI.getInstance().register("setpostrespawncommand",
-		                                  new CommandPermission("epicstructures"),
+		                                  CommandPermission.fromString("epicstructures"),
 		                                  arguments,
 		                                  (sender, args) -> {
 		                                      setcommand(sender, plugin, (String)args[0], (String)args[1]);
