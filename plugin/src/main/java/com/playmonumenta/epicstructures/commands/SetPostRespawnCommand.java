@@ -38,6 +38,9 @@ public class SetPostRespawnCommand {
 	}
 
 	private static void setcommand(CommandSender sender, Plugin plugin, String label, String command) {
+		if (plugin.mRespawnManager == null) {
+			return;
+		}
 		if (command != null && command.startsWith("/")) {
 			command = command.substring(1);
 		}

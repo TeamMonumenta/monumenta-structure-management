@@ -38,6 +38,9 @@ public class RespawnStructure {
 	}
 
 	private static void respawn(CommandSender sender, Plugin plugin, String label, Integer ticksUntilRespawn) {
+		if (plugin.mRespawnManager == null) {
+			return;
+		}
 		try {
 			plugin.mRespawnManager.setTimer(label, ticksUntilRespawn);
 		} catch (Exception e) {

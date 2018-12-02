@@ -30,6 +30,9 @@ public class SetRespawnTimer {
 	}
 
 	private static void setTimer(CommandSender sender, Plugin plugin, String label, int ticks) {
+		if (plugin.mRespawnManager == null) {
+			return;
+		}
 		try {
 			plugin.mRespawnManager.setTimerPeriod(label, ticks);
 		} catch (Exception e) {

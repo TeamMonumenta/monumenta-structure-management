@@ -41,6 +41,9 @@ public class SetSpawnerBreakTrigger {
 	}
 
 	private static void setTrigger(CommandSender sender, Plugin plugin, String label, int spawnerCount, String questComponentStr) {
+		if (plugin.mRespawnManager == null) {
+			return;
+		}
 		try {
 			SpawnerBreakTrigger trigger = null;
 			if (questComponentStr != null) {

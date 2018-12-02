@@ -37,6 +37,9 @@ public class ListRespawningStructures {
 	}
 
 	private static void list(CommandSender sender, Plugin plugin, String label) {
+		if (plugin.mRespawnManager == null) {
+			return;
+		}
 		if (label == null) {
 			plugin.mRespawnManager.listStructures(sender);
 		} else {

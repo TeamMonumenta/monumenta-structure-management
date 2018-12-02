@@ -28,6 +28,9 @@ public class RemoveRespawningStructure {
 	}
 
 	private static void remove(CommandSender sender, Plugin plugin, String label) {
+		if (plugin.mRespawnManager == null) {
+			return;
+		}
 		try {
 			plugin.mRespawnManager.removeStructure(label);
 		} catch (Exception e) {

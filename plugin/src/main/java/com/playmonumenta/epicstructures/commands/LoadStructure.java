@@ -1,7 +1,6 @@
 package com.playmonumenta.epicstructures.commands;
 
 import com.playmonumenta.epicstructures.Plugin;
-import com.playmonumenta.epicstructures.utils.CommandUtils;
 import com.playmonumenta.epicstructures.utils.MessagingUtils;
 import com.playmonumenta.epicstructures.utils.StructureUtils;
 
@@ -18,18 +17,12 @@ import java.util.LinkedHashMap;
 import java.util.regex.Pattern;
 
 import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
 import org.bukkit.Location;
-import org.bukkit.World;
 
 public class LoadStructure {
 	private static final Pattern INVALID_PATH_PATTERN = Pattern.compile("[^-/_a-zA-Z0-9]");
-	public static void register(Plugin plugin, World world) {
+	public static void register(Plugin plugin) {
 		/* First one of these includes coordinate arguments */
 		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
 
@@ -40,15 +33,17 @@ public class LoadStructure {
 		                                  CommandPermission.fromString("epicstructures"),
 		                                  arguments,
 		                                  (sender, args) -> {
-		                                      load(sender, plugin, world, (String)args[0], (Location)args[1]);
+		                                      load(sender, plugin, (String)args[0], (Location)args[1]);
 		                                  }
 		);
 	}
 
-	private static void load(CommandSender sender, Plugin plugin, World world,
-	                         String path, Location loadLoc) {
+	private static void load(CommandSender sender, Plugin plugin, String path, Location loadLoc) {
 		if (INVALID_PATH_PATTERN.matcher(path).find()) {
 			sender.sendMessage(ChatColor.RED + "Path contains illegal characters!");
+			return;
+		}
+		if (plugin.mStructureManager == null || plugin.mWorld == null) {
 			return;
 		}
 
@@ -68,7 +63,7 @@ public class LoadStructure {
 			return;
 		}
 
-		StructureUtils.paste(plugin, clipboard, world, loadPos);
+		StructureUtils.paste(plugin, clipboard, plugin.mWorld, loadPos);
 
 		sender.sendMessage("Loaded structure '" + path + "' at " + loadPos);
 	}

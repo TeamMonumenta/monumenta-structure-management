@@ -44,6 +44,9 @@ public class ActivateSpecialStructure {
 			sender.sendMessage(ChatColor.RED + "Path contains illegal characters!");
 			return;
 		}
+		if (plugin.mRespawnManager == null) {
+			return;
+		}
 
 		try {
 			plugin.mRespawnManager.activateSpecialStructure(label, path);

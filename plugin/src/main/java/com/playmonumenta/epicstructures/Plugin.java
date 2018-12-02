@@ -36,22 +36,23 @@ public class Plugin extends JavaPlugin {
 	private File mConfigFile;
 	private YamlConfiguration mConfig;
 
-	// Logic that is performed upon enabling the plugin.
 	@Override
-	public void onEnable() {
-		mWorld = Bukkit.getWorlds().get(0);
-
-		mStructureManager = new StructureManager(this, mWorld);
-
-		LoadStructure.register(this, mWorld);
+	public void onLoad() {
+		LoadStructure.register(this);
 		ActivateSpecialStructure.register(this);
-
 		RespawnStructure.register(this);
 		ListRespawningStructures.register(this);
 		SetPostRespawnCommand.register(this);
 		SetSpawnerBreakTrigger.register(this);
 		RemoveRespawningStructure.register(this);
 		SetRespawnTimer.register(this);
+	}
+
+	@Override
+	public void onEnable() {
+		mWorld = Bukkit.getWorlds().get(0);
+
+		mStructureManager = new StructureManager(this, mWorld);
 
 		getCommand("SaveStructure").setExecutor(new SaveStructure(this, mWorld));
 		getCommand("AddRespawningStructure").setExecutor(new AddRespawningStructure(this, mWorld));
@@ -65,7 +66,6 @@ public class Plugin extends JavaPlugin {
 		reloadConfig();
 	}
 
-	// Logic that is performed upon disabling the plugin.
 	@Override
 	public void onDisable() {
 		// Save current structure respawn times
