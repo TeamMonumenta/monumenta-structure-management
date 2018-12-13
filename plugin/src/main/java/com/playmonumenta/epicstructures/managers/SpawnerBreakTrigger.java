@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
 import com.playmonumenta.epicstructures.Plugin;
-import com.playmonumenta.scriptedquests.quests.QuestComponent;
+import com.playmonumenta.scriptedquests.quests.components.QuestComponent;
 
 import java.util.LinkedHashMap;
 import java.util.List;
