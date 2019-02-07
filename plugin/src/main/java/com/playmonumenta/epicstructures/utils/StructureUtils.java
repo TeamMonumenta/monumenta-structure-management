@@ -42,12 +42,9 @@ public class StructureUtils {
 		final Vector size = sourceRegion.getMaximumPoint().subtract(sourceRegion.getMinimumPoint());
 		Region destRegion = new CuboidRegion(to, new Vector(to).add(size));
 		final Vector origin = clipboard.getOrigin();
-		final int relx = to.getBlockX() - origin.getBlockX();
-		final int rely = to.getBlockY() - origin.getBlockY();
-		final int relz = to.getBlockZ() - origin.getBlockZ();
-		final int maxx = size.getBlockX() + 1;
-		final int maxy = size.getBlockY() + 1;
-		final int maxz = size.getBlockZ() + 1;
+		final int relx = to.getBlockX();
+		final int rely = to.getBlockY();
+		final int relz = to.getBlockZ();
 
 		clipboard.IMP.forEach(new FaweClipboard.BlockReader() {
 			@Override
