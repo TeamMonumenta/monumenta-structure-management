@@ -32,7 +32,7 @@ public class StructureManager {
 	public StructureManager(Plugin plugin, org.bukkit.World world) {
 		mPlugin = plugin;
 		mWorld = world;
-		format = ClipboardFormat.findByAlias("structure");
+		format = ClipboardFormat.findByAlias("sponge");
 	}
 
 	/* It *should* be safe to call this async */
