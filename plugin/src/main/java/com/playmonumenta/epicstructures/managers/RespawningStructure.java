@@ -1,27 +1,25 @@
 package com.playmonumenta.epicstructures.managers;
 
-import com.playmonumenta.epicstructures.Plugin;
-import com.playmonumenta.epicstructures.utils.StructureUtils;
-
-import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
-import com.sk89q.worldedit.regions.Region;
-
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.Map;
 import java.util.Random;
+import java.util.logging.Level;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.Player;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
-import org.bukkit.util.Vector;
 import org.bukkit.World;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Player;
+import org.bukkit.util.Vector;
+
+import com.playmonumenta.epicstructures.Plugin;
+import com.playmonumenta.epicstructures.utils.StructureUtils;
+import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
+import com.sk89q.worldedit.regions.Region;
 
 public class RespawningStructure implements Comparable<RespawningStructure> {
 	public class StructureBounds {
@@ -346,8 +344,9 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void tick(int ticks) {
-		if ((mTicksLeft >= 2400 && (mTicksLeft - ticks) < 2400) ||
-		    (mTicksLeft >= 600 && (mTicksLeft - ticks) < 600)) {
+		if (!mName.isEmpty() &&
+		    ((mTicksLeft >= 2400 && (mTicksLeft - ticks) < 2400) ||
+		     (mTicksLeft >= 600 && (mTicksLeft - ticks) < 600))) {
 			for (Player player : Bukkit.getOnlinePlayers()) {
 				if (mOuterBounds.within(player.getLocation().toVector())) {
 					tellRespawnTime(player);
