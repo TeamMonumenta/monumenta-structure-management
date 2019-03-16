@@ -53,6 +53,7 @@ public class RespawnManager {
 		// Load the respawning structures configuration section
 		if (!config.isConfigurationSection("respawning_structures")) {
 			plugin.getLogger().log(Level.INFO, "No respawning structures defined");
+			structuresLoaded = true;
 			return;
 		}
 
@@ -172,7 +173,7 @@ public class RespawnManager {
 	}
 
 	public void cleanup() {
-		if (taskScheduled = true) {
+		if (taskScheduled) {
 			mRunnable.cancel();
 			taskScheduled = false;
 		}
