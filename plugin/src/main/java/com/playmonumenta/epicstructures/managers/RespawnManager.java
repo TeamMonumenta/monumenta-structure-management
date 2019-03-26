@@ -208,6 +208,13 @@ public class RespawnManager {
 		}
 	}
 
+	public void playerDeathEvent(Player player) {
+		Vector vec = player.getLocation().toVector();
+		for (RespawningStructure struct : mRespawns.values()) {
+			struct.playerDeathEvent(player, vec);
+		}
+	}
+
 	private RespawningStructure _getStructure(String label) throws Exception {
 		RespawningStructure struct = mRespawns.get(label);
 		if (struct == null) {

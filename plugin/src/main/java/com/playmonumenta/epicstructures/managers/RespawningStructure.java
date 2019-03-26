@@ -22,6 +22,8 @@ import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
 import com.sk89q.worldedit.regions.Region;
 
 public class RespawningStructure implements Comparable<RespawningStructure> {
+	public static final int PLAYER_DEATH_EXTEND_TIME = 20 * 60 * 6;  // 6 minutes
+
 	public class StructureBounds {
 		public Vector mLowerCorner;
 		public Vector mUpperCorner;
@@ -38,19 +40,21 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		}
 	}
 
-	private Plugin mPlugin;
-	private World mWorld;
-	private Random mRandom;
+	private final Plugin mPlugin;
+	private final World mWorld;
+	private final Random mRandom;
 
-	protected String mConfigLabel;        // The label used to modify this structure via commands
-	private String mName;                 // What the pretty name of the structure is
-	private Vector mLoadPos;              // Where it will be loaded
-	private StructureBounds mInnerBounds; // The bounding box for the structure itself
-	private StructureBounds mOuterBounds; // The bounding box for the nearby area around the structure
-	private int mExtraRadius;             // Radius around the structure that still gets messages
-	private int mTicksLeft;               // How many ticks remaining until respawn
-	private int mRespawnTime;             // How many ticks between respawns
-	private String mPostRespawnCommand;   // Command run via the console after respawning structure
+	protected final String mConfigLabel;        // The label used to modify this structure via commands
+	private final String mName;                 // What the pretty name of the structure is
+	private final Vector mLoadPos;              // Where it will be loaded
+	private final StructureBounds mInnerBounds; // The bounding box for the structure itself
+	private final StructureBounds mOuterBounds; // The bounding box for the nearby area around the structure
+	private final int mExtraRadius;             // Radius around the structure that still gets messages
+	private int mTicksLeft;                     // How many ticks remaining until respawn
+	private int mRespawnTime;                   // How many ticks between respawns
+	private boolean mTimeExtendedForPlayerDeath;// Whether the time that is remaining can be shortened (false) or not (true) if a player died recently.
+	private boolean mConquered;                 // Whether the time that is remaining can be shortened (false) or not (true) if a player died recently.
+	private String mPostRespawnCommand;         // Command run via the console after respawning structure
 
 	// Path String -> BlockArrayClipboard maps
 	private final List<String> mGenericVariants = new ArrayList<String>();
@@ -237,9 +241,13 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		}
 
 		mTicksLeft = mRespawnTime;
+		mTimeExtendedForPlayerDeath = false;
+		mConquered = false;
 	}
 
 	public void tellRespawnTime(Player player) {
+		// TODO: This changes dramatically. Need to tell people not just the time but whether it has been cleared or not, plus how many
+		// spawners are left to break
 		int minutes = mTicksLeft / (60 * 20);
 		int seconds = (mTicksLeft / 20) % 60;
 		String message = mName + " is respawning in ";
@@ -344,25 +352,27 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void tick(int ticks) {
-		if (!mName.isEmpty() &&
-		    ((mTicksLeft >= 2400 && (mTicksLeft - ticks) < 2400) ||
-		     (mTicksLeft >= 600 && (mTicksLeft - ticks) < 600))) {
-			for (Player player : Bukkit.getOnlinePlayers()) {
-				if (mOuterBounds.within(player.getLocation().toVector())) {
-					tellRespawnTime(player);
-				}
-			}
-		}
-
 		mTicksLeft -= ticks;
 
 		if (mTicksLeft < 0) {
+			boolean withinOuter = false;
+			boolean withinInner = false;
 			for (Player player : Bukkit.getOnlinePlayers()) {
-				if (player.getGameMode() != GameMode.SPECTATOR &&
-				    mOuterBounds.within(player.getLocation().toVector())) {
-					respawn();
-					break;
+				if (player.getGameMode() != GameMode.SPECTATOR) {
+					if (isWithin(player)) {
+						withinOuter = true;
+						withinInner = true;
+						break;
+					} else if (isNearby(player)) {
+						withinOuter = true;
+						// Keep looping in case we find another player inside
+					}
 				}
+			}
+
+			if (withinOuter && !withinInner) {
+				// Player is nearby but not inside - need to respawn
+				respawn();
 			}
 		}
 	}
@@ -372,8 +382,35 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	public void spawnerBreakEvent(Vector vec) {
 		// Only care about tracking spawners if there is a trigger
 		if (mSpawnerBreakTrigger != null && mInnerBounds.within(vec)) {
+			// TODO: The organization is weird here - this may call structureConqueredEvent()
 			mSpawnerBreakTrigger.spawnerBreakEvent(this);
 		}
+	}
+
+	// This event is called every time a player dies anywhere
+	// Have to test that it was within this structure
+	public void playerDeathEvent(Player player, Vector vec) {
+		if (mInnerBounds.within(vec)) {
+			player.sendMessage(ChatColor.GRAY + "The timer of the area you were in has been increased to give you time to get your stuff back.");
+			if (mTicksLeft < PLAYER_DEATH_EXTEND_TIME) {
+				mTicksLeft = PLAYER_DEATH_EXTEND_TIME;
+				mTimeExtendedForPlayerDeath = true;
+			}
+		}
+	}
+
+	public void structureConqueredEvent() {
+		// TODO: Sounds
+		if (mTimeExtendedForPlayerDeath) {
+			// Can't shorten time here because player died and time was increased
+			// TODO: Message to all players about conquering but no time extension
+		} else {
+			// TODO: Message to all players about conquering and time set to 0
+			if (mTicksLeft > 0) {
+				mTicksLeft = 0;
+			}
+		}
+		mConquered = true;
 	}
 
 	public void setSpawnerBreakTrigger(SpawnerBreakTrigger trigger) {

@@ -10,6 +10,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
@@ -68,5 +69,10 @@ public class EventListener implements Listener {
 				}
 			}
 		}
+	}
+
+	@EventHandler(priority = EventPriority.MONITOR)
+	public void PlayerDeathEvent(PlayerDeathEvent event) {
+		mPlugin.mRespawnManager.playerDeathEvent(event.getEntity());
 	}
 }

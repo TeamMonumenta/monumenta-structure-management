@@ -75,6 +75,7 @@ public class SpawnerBreakTrigger {
 					mQuestComponent.doActionsIfPrereqsMet(mScriptedQuestsPlugin, player, null);
 				}
 			}
+			structure.structureConqueredEvent();
 		}
 	}
 

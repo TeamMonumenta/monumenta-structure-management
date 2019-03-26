@@ -23,7 +23,7 @@ public class RespawnStructure {
 		                                  CommandPermission.fromString("epicstructures"),
 		                                  arguments,
 		                                  (sender, args) -> {
-		                                      respawn(sender, plugin, (String)args[0], 600); // Default 30s
+		                                      respawn(sender, plugin, (String)args[0], 0); // Default to immediately
 		                                  }
 		);
 
