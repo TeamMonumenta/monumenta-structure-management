@@ -72,7 +72,7 @@ public class SpawnerBreakTrigger {
 		if (mSpawnerCountRemaining <= 0) {
 			for (Player player : Bukkit.getOnlinePlayers()) {
 				if (structure.isWithin(player)) {
-					mQuestComponent.doActionsIfPrereqsMet(mScriptedQuestsPlugin, player);
+					mQuestComponent.doActionsIfPrereqsMet(mScriptedQuestsPlugin, player, null);
 				}
 			}
 		}
