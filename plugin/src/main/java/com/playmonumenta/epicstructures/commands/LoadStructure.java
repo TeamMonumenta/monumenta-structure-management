@@ -1,24 +1,23 @@
 package com.playmonumenta.epicstructures.commands;
 
-import com.playmonumenta.epicstructures.Plugin;
-import com.playmonumenta.epicstructures.utils.MessagingUtils;
-import com.playmonumenta.epicstructures.utils.StructureUtils;
-
-import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
-import com.sk89q.worldedit.Vector;
-
-import io.github.jorelali.commandapi.api.arguments.Argument;
-import io.github.jorelali.commandapi.api.arguments.LocationArgument;
-import io.github.jorelali.commandapi.api.arguments.TextArgument;
-import io.github.jorelali.commandapi.api.CommandAPI;
-import io.github.jorelali.commandapi.api.CommandPermission;
-
 import java.util.LinkedHashMap;
 import java.util.regex.Pattern;
 
 import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
 import org.bukkit.Location;
+import org.bukkit.command.CommandSender;
+
+import com.playmonumenta.epicstructures.Plugin;
+import com.playmonumenta.epicstructures.utils.MessagingUtils;
+import com.playmonumenta.epicstructures.utils.StructureUtils;
+import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
+import com.sk89q.worldedit.math.BlockVector3;
+
+import io.github.jorelali.commandapi.api.CommandAPI;
+import io.github.jorelali.commandapi.api.CommandPermission;
+import io.github.jorelali.commandapi.api.arguments.Argument;
+import io.github.jorelali.commandapi.api.arguments.LocationArgument;
+import io.github.jorelali.commandapi.api.arguments.TextArgument;
 
 public class LoadStructure {
 	private static final Pattern INVALID_PATH_PATTERN = Pattern.compile("[^-/_a-zA-Z0-9]");
@@ -47,7 +46,7 @@ public class LoadStructure {
 			return;
 		}
 
-		Vector loadPos = new Vector(loadLoc.getBlockX(), loadLoc.getBlockY(), loadLoc.getBlockZ());
+		BlockVector3 loadPos = BlockVector3.at(loadLoc.getBlockX(), loadLoc.getBlockY(), loadLoc.getBlockZ());
 
 		BlockArrayClipboard clipboard;
 		try {

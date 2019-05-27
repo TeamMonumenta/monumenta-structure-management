@@ -6,11 +6,10 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
-import com.sk89q.worldedit.Vector;
-
 import com.playmonumenta.epicstructures.Plugin;
 import com.playmonumenta.epicstructures.utils.CommandUtils;
 import com.playmonumenta.epicstructures.utils.MessagingUtils;
+import com.sk89q.worldedit.math.BlockVector3;
 
 public class SaveStructure implements CommandExecutor {
 	Plugin mPlugin;
@@ -34,17 +33,17 @@ public class SaveStructure implements CommandExecutor {
 		}
 
 		// Parse the coordinates of the structure to save
-		Vector minpos;
-		Vector maxpos;
+		BlockVector3 minpos;
+		BlockVector3 maxpos;
 		try {
 			Location loc1 = CommandUtils.parseLocationFromString(sender, mWorld, arg3[1], arg3[2], arg3[3]);
 			Location loc2 = CommandUtils.parseLocationFromString(sender, mWorld, arg3[4], arg3[5], arg3[6]);
 
-			Vector pos1 = new Vector(loc1.getBlockX(), loc1.getBlockY(), loc1.getBlockZ());
-			Vector pos2 = new Vector(loc2.getBlockX(), loc2.getBlockY(), loc2.getBlockZ());
+			BlockVector3 pos1 = BlockVector3.at(loc1.getBlockX(), loc1.getBlockY(), loc1.getBlockZ());
+			BlockVector3 pos2 = BlockVector3.at(loc2.getBlockX(), loc2.getBlockY(), loc2.getBlockZ());
 
-			minpos = Vector.getMinimum(pos1, pos2);
-			maxpos = Vector.getMaximum(pos1, pos2);
+			minpos = pos1.getMinimum(pos2);
+			maxpos = pos1.getMaximum(pos2);
 		} catch (Exception e) {
 			sender.sendMessage(ChatColor.RED + "Failed to parse coordinates");
 			MessagingUtils.sendStackTrace(sender, e);

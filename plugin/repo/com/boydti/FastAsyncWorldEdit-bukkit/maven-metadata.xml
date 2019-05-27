@@ -3,10 +3,10 @@
   <groupId>com.boydti</groupId>
   <artifactId>FastAsyncWorldEdit-bukkit</artifactId>
   <versioning>
-    <release>18.10.26-94d5028-2069</release>
+    <release>2019-05-24-d32777a</release>
     <versions>
-      <version>18.10.26-94d5028-2069</version>
+      <version>2019-05-24-d32777a</version>
     </versions>
-    <lastUpdated>20181108164024</lastUpdated>
+    <lastUpdated>20190527025942</lastUpdated>
   </versioning>
 </metadata>

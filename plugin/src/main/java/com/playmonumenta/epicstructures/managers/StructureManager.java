@@ -1,25 +1,19 @@
 package com.playmonumenta.epicstructures.managers;
 
+import java.io.File;
+import java.nio.file.Paths;
+import java.util.concurrent.ConcurrentSkipListMap;
+
 import com.boydti.fawe.object.schematic.Schematic;
-import com.boydti.fawe.util.EditSessionBuilder;
-
 import com.playmonumenta.epicstructures.Plugin;
-
 import com.sk89q.worldedit.bukkit.BukkitWorld;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
-import com.sk89q.worldedit.extent.Extent;
+import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats;
+import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
-import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.world.World;
-
-import java.io.File;
-import java.io.FileOutputStream;
-
-import java.nio.file.Paths;
-
-import java.util.concurrent.ConcurrentSkipListMap;
 
 public class StructureManager {
 	private static final String BASE_FOLDER_NAME = "structures";
@@ -32,7 +26,7 @@ public class StructureManager {
 	public StructureManager(Plugin plugin, org.bukkit.World world) {
 		mPlugin = plugin;
 		mWorld = world;
-		format = ClipboardFormat.findByAlias("sponge");
+		format = ClipboardFormats.findByAlias("sponge");
 	}
 
 	/* It *should* be safe to call this async */
@@ -67,7 +61,7 @@ public class StructureManager {
 	}
 
 	// This code adapted from forum post here: https://www.spigotmc.org/threads/saving-schematics-to-file-with-worldedit-api.276078/
-	public void saveSchematic(String baseName, Vector minpos, Vector maxpos, Runnable whenDone) throws Exception {
+	public void saveSchematic(String baseName, BlockVector3 minpos, BlockVector3 maxpos, Runnable whenDone) throws Exception {
 		if (baseName == null || baseName.isEmpty()) {
 			throw new Exception("Structure name is empty!");
 		}

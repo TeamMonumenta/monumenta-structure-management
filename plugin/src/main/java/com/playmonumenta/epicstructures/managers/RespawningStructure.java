@@ -19,6 +19,7 @@ import org.bukkit.util.Vector;
 import com.playmonumenta.epicstructures.Plugin;
 import com.playmonumenta.epicstructures.utils.StructureUtils;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
+import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Region;
 
 public class RespawningStructure implements Comparable<RespawningStructure> {
@@ -165,8 +166,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 		// Determine structure size
 		Region clipboardRegion = clipboard.getRegion().clone();
-		com.sk89q.worldedit.Vector structureSize =
-		    clipboardRegion.getMaximumPoint().subtract(clipboardRegion.getMinimumPoint());
+		BlockVector3 structureSize = clipboardRegion.getMaximumPoint().subtract(clipboardRegion.getMinimumPoint());
 
 		// Create a bounding box for the structure itself, plus a slightly larger box to notify nearby players
 		mInnerBounds = new StructureBounds(mLoadPos, mLoadPos.clone().add(new Vector(structureSize.getX(),
@@ -224,7 +224,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 		// Load the structure
 		StructureUtils.paste(mPlugin, clipboard, mWorld,
-		                     new com.sk89q.worldedit.Vector(mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ()));
+		                     BlockVector3.at(mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ()));
 
 		// If a command was specified to run after, run it
 		if (mPostRespawnCommand != null) {
