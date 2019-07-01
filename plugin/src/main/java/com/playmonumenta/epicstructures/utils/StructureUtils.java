@@ -2,6 +2,8 @@ package com.playmonumenta.epicstructures.utils;
 
 import org.bukkit.Bukkit;
 import org.bukkit.World;
+import org.bukkit.block.Chest;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -38,6 +40,17 @@ public class StructureUtils {
 		clipboard.IMP.forEach(new FaweClipboard.BlockReader() {
 			@Override
 			public <B extends BlockStateHolder<B>> void run(int x, int y, int z, B block) {
+				if (extent.getBlockType(x+relx, y+rely, z+relz).equals(BlockTypes.CHEST)) {
+					Chest chest = (Chest)world.getBlockAt(x+relx,y+rely,z+relz).getState();
+					if (chest.getCustomName() != null && chest.getCustomName().endsWith("'s Grave")) {
+						// Check if the grave has items inside. If it is empty, it can be overwritten.
+						for (ItemStack item : chest.getInventory()) {
+							if (item != null) {
+								return;
+							}
+						}
+					}
+				}
 				if (!block.getBlockType().equals(BlockTypes.STRUCTURE_VOID)) {
 					extent.setBlock(x + relx, y + rely, z + relz, block);
 				}
