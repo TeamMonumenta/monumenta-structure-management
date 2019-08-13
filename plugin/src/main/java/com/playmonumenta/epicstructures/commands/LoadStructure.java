@@ -1,11 +1,14 @@
 package com.playmonumenta.epicstructures.commands;
 
 import java.util.LinkedHashMap;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import com.playmonumenta.epicstructures.Plugin;
 import com.playmonumenta.epicstructures.utils.MessagingUtils;
@@ -48,22 +51,37 @@ public class LoadStructure {
 
 		BlockVector3 loadPos = BlockVector3.at(loadLoc.getBlockX(), loadLoc.getBlockY(), loadLoc.getBlockZ());
 
-		BlockArrayClipboard clipboard;
-		try {
-			clipboard = plugin.mStructureManager.loadSchematic(path);
-		} catch (Exception e) {
-			plugin.getLogger().severe("Caught exception: " + e);
-			e.printStackTrace();
+		// Load the schematic asynchronously (this might access the disk!)
+		// Then switch back to the main thread to initiate pasting
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				final BlockArrayClipboard clipboard;
 
-			if (sender != null) {
-				sender.sendMessage(ChatColor.RED + "Failed to load structure");
-				MessagingUtils.sendStackTrace(sender, e);
+				try {
+					clipboard = plugin.mStructureManager.loadSchematic(path);
+				} catch (Exception e) {
+					plugin.asyncLog(Level.SEVERE, "Failed to load schematic '" + path + "'", e);
+
+					if (sender != null) {
+						sender.sendMessage(ChatColor.RED + "Failed to load structure");
+						MessagingUtils.sendStackTrace(sender, e);
+					}
+					return;
+				}
+
+				/* Once the schematic is loaded, this task is used to paste it */
+				new BukkitRunnable() {
+					@Override
+					public void run() {
+						StructureUtils.paste(plugin, clipboard, plugin.mWorld, loadPos);
+
+						if (sender != null) {
+							sender.sendMessage("Loaded structure '" + path + "' at " + loadPos);
+						}
+					}
+				}.runTask(plugin);
 			}
-			return;
-		}
-
-		StructureUtils.paste(plugin, clipboard, plugin.mWorld, loadPos);
-
-		sender.sendMessage("Loaded structure '" + path + "' at " + loadPos);
+		}.runTaskAsynchronously(plugin);
 	}
 }

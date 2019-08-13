@@ -43,8 +43,7 @@ public class RespawnManager {
 
 		// Load the frequency that the plugin should check for respawning structures
 		if (!config.isInt("check_respawn_period")) {
-			plugin.getLogger().log(Level.INFO,
-			                       "No check_respawn_period setting specified - using default 20");
+			plugin.getLogger().warning("No check_respawn_period setting specified - using default 20");
 			mTickPeriod = 20;
 		} else {
 			mTickPeriod = config.getInt("check_respawn_period");

@@ -35,6 +35,7 @@ public class Plugin extends JavaPlugin {
 
 	private File mConfigFile;
 	private YamlConfiguration mConfig;
+	private boolean mUseStructureCache;
 
 	@Override
 	public void onLoad() {
@@ -51,8 +52,6 @@ public class Plugin extends JavaPlugin {
 	@Override
 	public void onEnable() {
 		mWorld = Bukkit.getWorlds().get(0);
-
-		mStructureManager = new StructureManager(this, mWorld);
 
 		getCommand("SaveStructure").setExecutor(new SaveStructure(this, mWorld));
 		getCommand("AddRespawningStructure").setExecutor(new AddRespawningStructure(this, mWorld));
@@ -108,6 +107,15 @@ public class Plugin extends JavaPlugin {
 
 		mConfig = YamlConfiguration.loadConfiguration(mConfigFile);
 
+		// Load whether to use the structure cache
+		if (!mConfig.isBoolean("structure_cache_enabled")) {
+			getLogger().warning("No structure_cache_enabled setting specified - using default false");
+			mUseStructureCache = false;
+		} else {
+			mUseStructureCache = mConfig.getBoolean("structure_cache_enabled");
+		}
+
+		mStructureManager = new StructureManager(this, mWorld, mUseStructureCache);
 		mRespawnManager = new RespawnManager(this, mWorld, mConfig);
 	}
 
@@ -115,6 +123,7 @@ public class Plugin extends JavaPlugin {
 		if (mRespawnManager != null) {
 			try {
 				mConfig = mRespawnManager.getConfig();
+				mConfig.set("structure_cache_enabled", mUseStructureCache);
 				mConfig.save(mConfigFile);
 			} catch (Exception ex) {
 				getLogger().log(Level.SEVERE, "Could not save config to " + mConfigFile, ex);

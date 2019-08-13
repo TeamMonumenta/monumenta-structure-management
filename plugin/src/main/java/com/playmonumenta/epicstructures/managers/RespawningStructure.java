@@ -14,6 +14,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import com.playmonumenta.epicstructures.Plugin;
@@ -142,19 +143,17 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		// Load all of the supplied structures
 		BlockArrayClipboard clipboard = null;
 		for (String path : genericPaths) {
-			// TODO: This is a sloppy way to get the dimensions... falling through to the last one
-			// Pre-load the schematic into the cache, but don't store a reference to it
-			clipboard = mPlugin.mStructureManager.loadSchematic(path);
 			mGenericVariants.add(path);
 		}
-		if (clipboard == null) {
+
+		if (mGenericVariants.size() < 1) {
 			throw new Exception("No structures specified for '" + mConfigLabel + "'");
 		}
+		// Load the first schematic to get its size
+		clipboard = mPlugin.mStructureManager.loadSchematic(mGenericVariants.get(0));
 
 		if (specialPaths != null) {
 			for (String path : specialPaths) {
-				// Pre-load the schematic into the cache, but don't store a reference to it
-				mPlugin.mStructureManager.loadSchematic(path);
 				mSpecialVariants.add(path);
 			}
 		}
@@ -199,44 +198,57 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void respawn() {
-		BlockArrayClipboard clipboard;
-		try {
-			if (mNextRespawnPath == null) {
-				// No specified next path - pick a generic one at random
-				String path = mGenericVariants.get(mRandom.nextInt(mGenericVariants.size()));
-				clipboard = mPlugin.mStructureManager.loadSchematic(path);
-			} else {
-				// Next path was specified - use it
-				clipboard = mPlugin.mStructureManager.loadSchematic(mNextRespawnPath);
-				if (clipboard == null) {
-					// This should not be possible because we check when setting mNextRespawnPath
-					mPlugin.getLogger().log(Level.SEVERE, "Tried to spawn nonexistent nextRespawnPath='" + mNextRespawnPath + "'");
-					return;
-				}
-				// Go back to generic versions after spawning this once
-				mNextRespawnPath = null;
-			}
-		} catch (Exception e) {
-			mPlugin.getLogger().log(Level.SEVERE, "Failed to respawn structure '" + mConfigLabel + "'");
-			e.printStackTrace();
-			return;
-		}
+		final String respawnPath;
 
-		// Load the structure
-		StructureUtils.paste(mPlugin, clipboard, mWorld,
-		                     BlockVector3.at(mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ()));
+		if (mNextRespawnPath == null) {
+			// No specified next path - pick a generic one at random
+			respawnPath = mGenericVariants.get(mRandom.nextInt(mGenericVariants.size()));
+		} else {
+			// Next path was specified - use it
+			respawnPath = mNextRespawnPath;
 
-		// If a command was specified to run after, run it
-		if (mPostRespawnCommand != null) {
-			Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), mPostRespawnCommand);
-		}
-
-		// If we are tracking spawners for this structure, reset the count
-		if (mSpawnerBreakTrigger != null) {
-			mSpawnerBreakTrigger.resetCount();
+			// Go back to generic versions after spawning this once
+			mNextRespawnPath = null;
 		}
 
 		mTicksLeft = mRespawnTime;
+
+		// Load the schematic asynchronously (this might access the disk!)
+		// Then switch back to the main thread to initiate pasting
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				final BlockArrayClipboard clipboard;
+
+				try {
+					clipboard = mPlugin.mStructureManager.loadSchematic(respawnPath);
+				} catch (Exception e) {
+					mPlugin.asyncLog(Level.SEVERE, "Failed to load schematic '" + respawnPath +
+					                 "' for respawning structure '" + mConfigLabel + "'", e);
+					return;
+				}
+
+				/* Once the schematic is loaded, this task is used to paste it */
+				new BukkitRunnable() {
+					@Override
+					public void run() {
+						// Load the structure
+						StructureUtils.paste(mPlugin, clipboard, mWorld,
+											 BlockVector3.at(mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ()));
+
+						// If a command was specified to run after, run it
+						if (mPostRespawnCommand != null) {
+							Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), mPostRespawnCommand);
+						}
+
+						// If we are tracking spawners for this structure, reset the count
+						if (mSpawnerBreakTrigger != null) {
+							mSpawnerBreakTrigger.resetCount();
+						}
+					}
+				}.runTask(mPlugin);
+			}
+		}.runTaskAsynchronously(mPlugin);
 	}
 
 	public void tellRespawnTime(Player player) {

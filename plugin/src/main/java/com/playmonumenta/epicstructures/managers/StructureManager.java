@@ -22,11 +22,14 @@ public class StructureManager {
 	private final Plugin mPlugin;
 	private final org.bukkit.World mWorld;
 	private final ClipboardFormat format;
+	private final boolean mUseStructureCache;
 
-	public StructureManager(Plugin plugin, org.bukkit.World world) {
+
+	public StructureManager(Plugin plugin, org.bukkit.World world, boolean useStructureCache) {
 		mPlugin = plugin;
 		mWorld = world;
 		format = ClipboardFormats.findByAlias("sponge");
+		mUseStructureCache = useStructureCache;
 	}
 
 	/* It *should* be safe to call this async */
@@ -35,8 +38,10 @@ public class StructureManager {
 			throw new Exception("Structure name is empty!");
 		}
 
-		BlockArrayClipboard clipboard;
-		clipboard = mSchematics.get(baseName);
+		BlockArrayClipboard clipboard = null;
+		if (mUseStructureCache) {
+			clipboard = mSchematics.get(baseName);
+		}
 		if (clipboard == null) {
 			// Schematic not already loaded - need to read it from disk and load it into RAM
 
@@ -53,8 +58,10 @@ public class StructureManager {
 			}
 			clipboard = (BlockArrayClipboard)newClip;
 
-			// Cache the schematic for fast access later
-			mSchematics.put(baseName, clipboard);
+			if (mUseStructureCache) {
+				// Cache the schematic for fast access later
+				mSchematics.put(baseName, clipboard);
+			}
 		}
 
 		return clipboard;
@@ -79,9 +86,11 @@ public class StructureManager {
 		Schematic schem = new Schematic(cReg);
 		schem.save(file, format);
 
-		// Re-load the schematic from disk into the cache
-		mSchematics.remove(baseName);
-		loadSchematic(baseName);
+		if (mUseStructureCache) {
+			// Re-load the schematic from disk into the cache
+			mSchematics.remove(baseName);
+			loadSchematic(baseName);
+		}
 
 		/*
 		 * Cache has been updated - but the respawning structures need to be updated too
