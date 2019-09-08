@@ -234,7 +234,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 					public void run() {
 						// Load the structure
 						StructureUtils.paste(mPlugin, clipboard, mWorld,
-											 BlockVector3.at(mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ()));
+											 BlockVector3.at(mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ()), true);
 
 						// If a command was specified to run after, run it
 						if (mPostRespawnCommand != null) {

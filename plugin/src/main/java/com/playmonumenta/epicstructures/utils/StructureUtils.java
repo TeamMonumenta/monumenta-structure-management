@@ -15,12 +15,13 @@ import com.boydti.fawe.object.clipboard.FaweClipboard;
 import com.boydti.fawe.util.EditSessionBuilder;
 import com.sk89q.jnbt.CompoundTag;
 import com.sk89q.worldedit.EditSession;
-import com.sk89q.worldedit.entity.Entity;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
 import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.math.Vector3;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldedit.world.block.BlockStateHolder;
+import com.sk89q.worldedit.world.block.BlockType;
 import com.sk89q.worldedit.world.block.BlockTypes;
 
 public class StructureUtils {
@@ -68,22 +69,29 @@ public class StructureUtils {
 			final int entityOffsetX = to.getBlockX() - origin.getBlockX();
 			final int entityOffsetY = to.getBlockY() - origin.getBlockY();
 			final int entityOffsetZ = to.getBlockZ() - origin.getBlockZ();
-			ArrayList<Entity> entityList = new ArrayList<>();
+			final Vector3 pos1 = to.toVector3();
+			final Vector3 pos2 = to.add(size).toVector3();
+
+			ArrayList<com.sk89q.worldedit.entity.Entity> entityList = new ArrayList<>();
 			// parse all entities of the world and put then in a saved list if the entity is in the structure location
-			for (Entity e : extent.getEntities()) {
-				if (e.getLocation().containedWithin(to.toVector3(), to.add(size).toVector3())){
-					entityList.add(e);
+			for (com.sk89q.worldedit.entity.Entity e : extent.getEntities()) {
+				if (e.getLocation().containedWithin(pos1, pos2)){
+					/* Only remove entities that are not within structure void */
+					BlockType type = clipboard.getBlockType(e.getLocation().subtract(entityOffsetX, entityOffsetY, entityOffsetZ).toBlockPoint());
+					if (!type.equals(BlockTypes.STRUCTURE_VOID)) {
+						entityList.add(e);
+					}
 				}
 			}
-			// summon new entities from the clipboard
-			for (Entity entity : clipboard.getEntities()) {
+			// summon new entities from the clipboard - all entities in the source structure are pasted regardless of whether they're in structure void or not
+			for (com.sk89q.worldedit.entity.Entity entity : clipboard.getEntities()) {
 				Location pos = entity.getLocation();
 				Location newPos = new Location(pos.getExtent(), pos.getX() + entityOffsetX, pos.getY() + entityOffsetY, pos.getZ() + entityOffsetZ, pos.getYaw(), pos.getPitch());
 				extent.createEntity(newPos, entity.getState());
 			}
 			// remove entities of the old list.
 			// dont ask why i delete them now, and not earlier. it just wont work if i do anything else
-			for (Entity e : entityList) {
+			for (com.sk89q.worldedit.entity.Entity e : entityList) {
 				if (entityShouldBeRemoved(e)) {
 					e.remove();
 				}
@@ -103,7 +111,7 @@ public class StructureUtils {
 		}.runTaskLater(plugin, 40);
 	}
 
-	public static boolean entityShouldBeRemoved(Entity entity) {
+	public static boolean entityShouldBeRemoved(com.sk89q.worldedit.entity.Entity entity) {
 		// i cant seem to be able to use EntityType enum to mach check
 		// so im using ID comparaison check
 		String type = entity.getType().getName();
