@@ -121,6 +121,10 @@ public class StructureUtils {
 			case "minecraft:villager":
 			case "minecraft:trident":
 			case "minecraft:horse":
+			case "minecraft:cow":
+			case "minecraft:pig":
+			case "minecraft:sheep":
+			case "minecraft:chicken":
 				return false;
 		}
 
