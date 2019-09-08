@@ -4,7 +4,6 @@ import java.util.LinkedHashMap;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
@@ -19,6 +18,7 @@ import com.sk89q.worldedit.math.BlockVector3;
 import io.github.jorelali.commandapi.api.CommandAPI;
 import io.github.jorelali.commandapi.api.CommandPermission;
 import io.github.jorelali.commandapi.api.arguments.Argument;
+import io.github.jorelali.commandapi.api.arguments.BooleanArgument;
 import io.github.jorelali.commandapi.api.arguments.LocationArgument;
 import io.github.jorelali.commandapi.api.arguments.TextArgument;
 
@@ -35,12 +35,22 @@ public class LoadStructure {
 		                                  CommandPermission.fromString("epicstructures"),
 		                                  arguments,
 		                                  (sender, args) -> {
-		                                      load(sender, plugin, (String)args[0], (Location)args[1]);
+		                                      load(sender, plugin, (String)args[0], (Location)args[1], false);
+		                                  }
+		);
+
+		arguments.put("includeEntities", new BooleanArgument());
+
+		CommandAPI.getInstance().register("loadstructure",
+		                                  CommandPermission.fromString("epicstructures"),
+		                                  arguments,
+		                                  (sender, args) -> {
+		                                      load(sender, plugin, (String)args[0], (Location)args[1], (Boolean)args[2]);
 		                                  }
 		);
 	}
 
-	private static void load(CommandSender sender, Plugin plugin, String path, Location loadLoc) {
+	private static void load(CommandSender sender, Plugin plugin, String path, Location loadLoc, boolean includeEntities) {
 		if (INVALID_PATH_PATTERN.matcher(path).find()) {
 			sender.sendMessage(ChatColor.RED + "Path contains illegal characters!");
 			return;
@@ -74,7 +84,7 @@ public class LoadStructure {
 				new BukkitRunnable() {
 					@Override
 					public void run() {
-						StructureUtils.paste(plugin, clipboard, plugin.mWorld, loadPos);
+						StructureUtils.paste(plugin, clipboard, plugin.mWorld, loadPos, includeEntities);
 
 						if (sender != null) {
 							sender.sendMessage("Loaded structure '" + path + "' at " + loadPos);

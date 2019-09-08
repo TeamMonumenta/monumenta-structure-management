@@ -30,7 +30,7 @@ public class StructureUtils {
 	// FastAsyncWorldedit/core/src/main/java/com/boydti/fawe/object/schematic/Schematic.java
 	//
 	// Ignores structure void, leaving the original block in place
-	public static void paste(Plugin plugin, BlockArrayClipboard clipboard, World world, BlockVector3 to) {
+	public static void paste(Plugin plugin, BlockArrayClipboard clipboard, World world, BlockVector3 to, boolean includeEntities) {
 		// TODO: Whatever is going on here... entities are broken IF:
 		// fastmode = true (regardless of combine stages setting)
 		// fastmode = false AND combineStages = true
@@ -63,28 +63,30 @@ public class StructureUtils {
 			}
 		}, true);
 
-		// entities
-		final int entityOffsetX = to.getBlockX() - origin.getBlockX();
-		final int entityOffsetY = to.getBlockY() - origin.getBlockY();
-		final int entityOffsetZ = to.getBlockZ() - origin.getBlockZ();
-		ArrayList<Entity> entityList = new ArrayList<>();
-		// parse all entities of the world and put then in a saved list if the entity is in the structure location
-		for (Entity e : extent.getEntities()) {
-			if (e.getLocation().containedWithin(to.toVector3(), to.add(size).toVector3())){
-				entityList.add(e);
+		if (includeEntities) {
+			// entities
+			final int entityOffsetX = to.getBlockX() - origin.getBlockX();
+			final int entityOffsetY = to.getBlockY() - origin.getBlockY();
+			final int entityOffsetZ = to.getBlockZ() - origin.getBlockZ();
+			ArrayList<Entity> entityList = new ArrayList<>();
+			// parse all entities of the world and put then in a saved list if the entity is in the structure location
+			for (Entity e : extent.getEntities()) {
+				if (e.getLocation().containedWithin(to.toVector3(), to.add(size).toVector3())){
+					entityList.add(e);
+				}
 			}
-		}
-		// summon new entities from the clipboard
-		for (Entity entity : clipboard.getEntities()) {
-			Location pos = entity.getLocation();
-			Location newPos = new Location(pos.getExtent(), pos.getX() + entityOffsetX, pos.getY() + entityOffsetY, pos.getZ() + entityOffsetZ, pos.getYaw(), pos.getPitch());
-			extent.createEntity(newPos, entity.getState());
-		}
-		// remove entities of the old list.
-		// dont ask why i delete them now, and not earlier. it just wont work if i do anything else
-		for (Entity e : entityList) {
-			if (entityShouldBeRemoved(e)) {
-				e.remove();
+			// summon new entities from the clipboard
+			for (Entity entity : clipboard.getEntities()) {
+				Location pos = entity.getLocation();
+				Location newPos = new Location(pos.getExtent(), pos.getX() + entityOffsetX, pos.getY() + entityOffsetY, pos.getZ() + entityOffsetZ, pos.getYaw(), pos.getPitch());
+				extent.createEntity(newPos, entity.getState());
+			}
+			// remove entities of the old list.
+			// dont ask why i delete them now, and not earlier. it just wont work if i do anything else
+			for (Entity e : entityList) {
+				if (entityShouldBeRemoved(e)) {
+					e.remove();
+				}
 			}
 		}
 
