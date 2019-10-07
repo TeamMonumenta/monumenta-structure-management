@@ -1,11 +1,13 @@
 package com.playmonumenta.epicstructures.utils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.block.Chest;
-import org.bukkit.block.ShulkerBox;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -27,6 +29,27 @@ import com.sk89q.worldedit.world.block.BlockTypes;
 
 public class StructureUtils {
 	private static final boolean LIGHT_CLEANER_ENABLED = Bukkit.getPluginManager().isPluginEnabled("LightCleaner");
+	private static final BlockType shulkerBoxes[] = {
+		BlockTypes.SHULKER_BOX,
+		BlockTypes.WHITE_SHULKER_BOX,
+		BlockTypes.ORANGE_SHULKER_BOX,
+		BlockTypes.MAGENTA_SHULKER_BOX,
+		BlockTypes.LIGHT_BLUE_SHULKER_BOX,
+		BlockTypes.YELLOW_SHULKER_BOX,
+		BlockTypes.LIME_SHULKER_BOX,
+		BlockTypes.PINK_SHULKER_BOX,
+		BlockTypes.GRAY_SHULKER_BOX,
+		BlockTypes.LIGHT_GRAY_SHULKER_BOX,
+		BlockTypes.CYAN_SHULKER_BOX,
+		BlockTypes.PURPLE_SHULKER_BOX,
+		BlockTypes.BLUE_SHULKER_BOX,
+		BlockTypes.BROWN_SHULKER_BOX,
+		BlockTypes.GREEN_SHULKER_BOX,
+		BlockTypes.RED_SHULKER_BOX,
+		BlockTypes.BLACK_SHULKER_BOX
+	};
+	private static final Set<BlockType> shulkerSet = new HashSet<>(Arrays.asList(shulkerBoxes));
+
 
 	// Custom paste function copied and modified from
 	// FastAsyncWorldedit/core/src/main/java/com/boydti/fawe/object/schematic/Schematic.java
@@ -48,11 +71,9 @@ public class StructureUtils {
 		clipboard.IMP.forEach(new FaweClipboard.BlockReader() {
 			@Override
 			public <B extends BlockStateHolder<B>> void run(int x, int y, int z, B block) {
-				if (world.getBlockAt(x+relx,y+rely,z+relz).getState() instanceof ShulkerBox) {
-					// Don't allow Shulker Boxes to be overwritten
-					return;
-				}
-				if (extent.getBlockType(x + relx, y + rely, z + relz).equals(BlockTypes.CHEST)) {
+				BlockType oldBlockType = extent.getBlockType(x + relx, y + rely, z + relz);
+				BlockType newBlockType = block.getBlockType();
+				if (oldBlockType.equals(BlockTypes.CHEST)) {
 					Chest chest = (Chest) world.getBlockAt(x + relx, y + rely, z + relz).getState();
 					if (chest.getCustomName() != null && chest.getCustomName().endsWith("'s Grave")) {
 						// Check if the grave has items inside. If it is empty, it can be overwritten.
@@ -63,7 +84,11 @@ public class StructureUtils {
 						}
 					}
 				}
-				if (!block.getBlockType().equals(BlockTypes.STRUCTURE_VOID)) {
+				if (shulkerSet.contains(oldBlockType)) {
+					// Don't allow Shulker Boxes to be overwritten
+					return;
+				}
+				if (!newBlockType.equals(BlockTypes.STRUCTURE_VOID)) {
 					extent.setBlock(x + relx, y + rely, z + relz, block);
 				}
 			}
