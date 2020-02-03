@@ -2,6 +2,7 @@ package com.playmonumenta.epicstructures.managers;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -22,6 +23,8 @@ import com.playmonumenta.epicstructures.utils.StructureUtils;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Region;
+
+import com.playmonumenta.scriptedquests.zones.ZoneLayer;
 
 public class RespawningStructure implements Comparable<RespawningStructure> {
 	public class StructureBounds {
@@ -174,6 +177,8 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		Vector extraRadiusVec = new Vector(extraRadius, extraRadius, extraRadius);
 		mOuterBounds = new StructureBounds(mInnerBounds.mLowerCorner.clone().subtract(extraRadiusVec),
 		                                   mInnerBounds.mUpperCorner.clone().add(extraRadiusVec));
+
+		registerZone();
 	}
 
 	public String getInfoString() {
@@ -390,5 +395,13 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 	public void setSpawnerBreakTrigger(SpawnerBreakTrigger trigger) {
 		mSpawnerBreakTrigger = trigger;
+	}
+
+	public boolean registerZone() {
+		ZoneLayer zoneLayer = mPlugin.mRespawnManager.mZoneLayer;
+		return zoneLayer.addZone(mOuterBounds.mLowerCorner.clone(),
+		                         mOuterBounds.mUpperCorner.clone(),
+		                         mName,
+		                         new LinkedHashSet<String>());
 	}
 }

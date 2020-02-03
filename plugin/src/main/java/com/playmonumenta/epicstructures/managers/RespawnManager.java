@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
@@ -18,6 +19,10 @@ import org.bukkit.Location;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.bukkit.World;
+
+import com.playmonumenta.scriptedquests.zones.ZoneLayer;
+import com.playmonumenta.scriptedquests.zones.zone.Zone;
+import com.playmonumenta.scriptedquests.zones.zonetree.BaseZoneTree;
 
 public class RespawnManager {
 	private final Plugin mPlugin;
@@ -36,6 +41,10 @@ public class RespawnManager {
 	};
 	private boolean taskScheduled = false;
 	private boolean structuresLoaded = false;
+
+	public final String mZoneLayerName = "Respawning Structures";
+	protected ZoneLayer mZoneLayer = new ZoneLayer(mZoneLayerName);
+	public BaseZoneTree mZoneTree;
 
 	public RespawnManager(Plugin plugin, World world, YamlConfiguration config) {
 		mPlugin = plugin;
@@ -92,6 +101,15 @@ public class RespawnManager {
 				continue;
 			}
 		}
+
+		com.playmonumenta.scriptedquests.Plugin scriptedQuestsPlugin;
+		scriptedQuestsPlugin = (com.playmonumenta.scriptedquests.Plugin)Bukkit.getPluginManager().getPlugin("ScriptedQuests");
+
+		try {
+			mZoneTree = mZoneLayer.createZoneTree(scriptedQuestsPlugin, null);
+		} catch (Exception e) {
+			mPlugin.asyncLog(Level.WARNING, "Failed to generate ZoneTree for pois (affects natural spawns)': ", e);
+		}
 	}
 
 	public void addStructure(int extraRadius, String configLabel, String name, String path,
@@ -99,6 +117,11 @@ public class RespawnManager {
 		mRespawns.put(configLabel, new RespawningStructure(mPlugin, mWorld, extraRadius, configLabel,
 		              name, Arrays.asList(path), loadPos, respawnTime, respawnTime, null, null, null, null));
 		mPlugin.saveConfig();
+
+		com.playmonumenta.scriptedquests.Plugin scriptedQuestsPlugin;
+		scriptedQuestsPlugin = (com.playmonumenta.scriptedquests.Plugin)Bukkit.getPluginManager().getPlugin("ScriptedQuests");
+
+		mZoneTree = mZoneLayer.createZoneTree(scriptedQuestsPlugin, null);
 	}
 
 	public void removeStructure(String configLabel) throws Exception {
@@ -108,6 +131,16 @@ public class RespawnManager {
 
 		mRespawns.remove(configLabel);
 		mPlugin.saveConfig();
+
+		mZoneLayer = new ZoneLayer(mZoneLayerName);
+		for (RespawningStructure struct : mRespawns.values()) {
+			struct.registerZone();
+		}
+
+		com.playmonumenta.scriptedquests.Plugin scriptedQuestsPlugin;
+		scriptedQuestsPlugin = (com.playmonumenta.scriptedquests.Plugin)Bukkit.getPluginManager().getPlugin("ScriptedQuests");
+
+		mZoneTree = mZoneLayer.createZoneTree(scriptedQuestsPlugin, null);
 	}
 
 	/* Human readable */
