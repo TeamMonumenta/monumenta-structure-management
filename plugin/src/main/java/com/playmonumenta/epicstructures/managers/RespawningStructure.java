@@ -398,10 +398,11 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public boolean registerZone() {
-		ZoneLayer zoneLayer = mPlugin.mRespawnManager.mZoneLayer;
+		ZoneLayer<RespawningStructure> zoneLayer = mPlugin.mRespawnManager.mZoneLayer;
 		return zoneLayer.addZone(mOuterBounds.mLowerCorner.clone(),
 		                         mOuterBounds.mUpperCorner.clone(),
 		                         mName,
-		                         new LinkedHashSet<String>());
+		                         new LinkedHashSet<String>(),
+								 this);
 	}
 }
