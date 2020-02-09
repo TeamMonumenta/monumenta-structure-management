@@ -1,27 +1,24 @@
 package com.playmonumenta.epicstructures.managers;
 
-import com.playmonumenta.epicstructures.Plugin;
-
 import java.util.Arrays;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.logging.Level;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.logging.Level;
 
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.Location;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
-import org.bukkit.World;
 
+import com.playmonumenta.epicstructures.Plugin;
 import com.playmonumenta.scriptedquests.zones.ZoneLayer;
-import com.playmonumenta.scriptedquests.zones.zone.Zone;
 import com.playmonumenta.scriptedquests.zones.zonetree.BaseZoneTree;
 
 public class RespawnManager {
@@ -43,8 +40,8 @@ public class RespawnManager {
 	private boolean structuresLoaded = false;
 
 	public final String mZoneLayerName = "Respawning Structures";
-	protected ZoneLayer mZoneLayer = new ZoneLayer(mZoneLayerName);
-	public BaseZoneTree mZoneTree;
+	protected ZoneLayer<RespawningStructure> mZoneLayer = new ZoneLayer<RespawningStructure>(mZoneLayerName);
+	public BaseZoneTree<RespawningStructure> mZoneTree;
 
 	public RespawnManager(Plugin plugin, World world, YamlConfiguration config) {
 		mPlugin = plugin;
@@ -102,11 +99,8 @@ public class RespawnManager {
 			}
 		}
 
-		com.playmonumenta.scriptedquests.Plugin scriptedQuestsPlugin;
-		scriptedQuestsPlugin = (com.playmonumenta.scriptedquests.Plugin)Bukkit.getPluginManager().getPlugin("ScriptedQuests");
-
 		try {
-			mZoneTree = mZoneLayer.createZoneTree(scriptedQuestsPlugin, null);
+			mZoneTree = mZoneLayer.createZoneTree(null);
 		} catch (Exception e) {
 			mPlugin.asyncLog(Level.WARNING, "Failed to generate ZoneTree for pois (affects natural spawns)': ", e);
 		}
@@ -118,10 +112,7 @@ public class RespawnManager {
 		              name, Arrays.asList(path), loadPos, respawnTime, respawnTime, null, null, null, null));
 		mPlugin.saveConfig();
 
-		com.playmonumenta.scriptedquests.Plugin scriptedQuestsPlugin;
-		scriptedQuestsPlugin = (com.playmonumenta.scriptedquests.Plugin)Bukkit.getPluginManager().getPlugin("ScriptedQuests");
-
-		mZoneTree = mZoneLayer.createZoneTree(scriptedQuestsPlugin, null);
+		mZoneTree = mZoneLayer.createZoneTree(null);
 	}
 
 	public void removeStructure(String configLabel) throws Exception {
@@ -132,15 +123,12 @@ public class RespawnManager {
 		mRespawns.remove(configLabel);
 		mPlugin.saveConfig();
 
-		mZoneLayer = new ZoneLayer(mZoneLayerName);
+		mZoneLayer = new ZoneLayer<RespawningStructure>(mZoneLayerName);
 		for (RespawningStructure struct : mRespawns.values()) {
 			struct.registerZone();
 		}
 
-		com.playmonumenta.scriptedquests.Plugin scriptedQuestsPlugin;
-		scriptedQuestsPlugin = (com.playmonumenta.scriptedquests.Plugin)Bukkit.getPluginManager().getPlugin("ScriptedQuests");
-
-		mZoneTree = mZoneLayer.createZoneTree(scriptedQuestsPlugin, null);
+		mZoneTree = mZoneLayer.createZoneTree(null);
 	}
 
 	/* Human readable */
