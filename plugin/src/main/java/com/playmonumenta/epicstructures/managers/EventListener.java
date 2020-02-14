@@ -84,7 +84,8 @@ public class EventListener implements Listener {
 		// It's easier to check the intentional ways than the natural ones.
 		if (event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.CUSTOM &&
 		    event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.SPAWNER_EGG &&
-		    event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.DEFAULT) {
+		    event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.DEFAULT &&
+			event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.SPAWNER) {
 			// Only cancel spawns in respawning structures
 			String zoneLayerName = mPlugin.mRespawnManager.mZoneLayerName;
 			BaseZoneTree zoneTree = mPlugin.mRespawnManager.mZoneTree;
