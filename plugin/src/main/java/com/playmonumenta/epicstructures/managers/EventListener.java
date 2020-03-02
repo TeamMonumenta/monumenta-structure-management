@@ -1,5 +1,7 @@
 package com.playmonumenta.epicstructures.managers;
 
+import java.util.EnumSet;
+
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
@@ -11,16 +13,23 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
+import com.playmonumenta.epicstructures.Plugin;
 import com.playmonumenta.scriptedquests.zones.zonetree.BaseZoneTree;
 
-import com.playmonumenta.epicstructures.Plugin;
-
 public class EventListener implements Listener {
+	private static final EnumSet<SpawnReason> DISALLOWED_STRUCTURE_SPAWN_REASONS = EnumSet.of(
+		SpawnReason.CHUNK_GEN,
+		SpawnReason.NATURAL,
+		SpawnReason.VILLAGE_DEFENSE,
+		SpawnReason.VILLAGE_INVASION
+	);
+
 	Plugin mPlugin = null;
 
 	public EventListener(Plugin plugin) {
@@ -82,13 +91,10 @@ public class EventListener implements Listener {
 
 		// We need to allow spawning mobs intentionally, but disable natural spawns.
 		// It's easier to check the intentional ways than the natural ones.
-		if (event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.CUSTOM &&
-		    event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.SPAWNER_EGG &&
-		    event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.DEFAULT &&
-			event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.SPAWNER) {
+		if (DISALLOWED_STRUCTURE_SPAWN_REASONS.contains(event.getSpawnReason())) {
 			// Only cancel spawns in respawning structures
 			String zoneLayerName = mPlugin.mRespawnManager.mZoneLayerName;
-			BaseZoneTree zoneTree = mPlugin.mRespawnManager.mZoneTree;
+			BaseZoneTree<RespawningStructure> zoneTree = mPlugin.mRespawnManager.mZoneTree;
 
 			if (zoneTree.getZone(loc, zoneLayerName) != null) {
 				event.setCancelled(true);
