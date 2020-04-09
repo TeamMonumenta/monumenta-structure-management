@@ -20,7 +20,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 import com.playmonumenta.epicstructures.Plugin;
-import com.playmonumenta.scriptedquests.zones.zonetree.BaseZoneTree;
 
 public class EventListener implements Listener {
 	private static final EnumSet<SpawnReason> DISALLOWED_STRUCTURE_SPAWN_REASONS = EnumSet.of(
@@ -93,10 +92,10 @@ public class EventListener implements Listener {
 		// It's easier to check the intentional ways than the natural ones.
 		if (DISALLOWED_STRUCTURE_SPAWN_REASONS.contains(event.getSpawnReason())) {
 			// Only cancel spawns in respawning structures
-			String zoneLayerName = mPlugin.mRespawnManager.mZoneLayerName;
-			BaseZoneTree<RespawningStructure> zoneTree = mPlugin.mRespawnManager.mZoneTree;
+			String zoneLayerNameInside = mPlugin.mRespawnManager.mZoneLayerNameInside;
 
-			if (zoneTree.getZone(loc, zoneLayerName) != null) {
+			// We don't care which poi it is, just that the poi exists at that location
+			if (mPlugin.mRespawnManager.mZoneManager.getZone(loc, zoneLayerNameInside) != null) {
 				event.setCancelled(true);
 				return;
 			}
