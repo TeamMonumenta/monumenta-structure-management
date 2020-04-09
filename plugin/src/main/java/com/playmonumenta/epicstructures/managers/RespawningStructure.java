@@ -25,6 +25,7 @@ import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Region;
 
 import com.playmonumenta.scriptedquests.zones.ZoneLayer;
+import com.playmonumenta.scriptedquests.zones.zone.Zone;
 
 public class RespawningStructure implements Comparable<RespawningStructure> {
 	public class StructureBounds {
@@ -119,14 +120,14 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		                               config.getString("name"), config.getStringList("structure_paths"),
 		                               new Vector(config.getInt("x"), config.getInt("y"), config.getInt("z")),
 		                               config.getInt("respawn_period"), config.getInt("ticks_until_respawn"),
-									   postRespawnCommand, specialPaths, nextRespawnPath, spawnerBreakTrigger);
+		                               postRespawnCommand, specialPaths, nextRespawnPath, spawnerBreakTrigger);
 	}
 
 	public RespawningStructure(Plugin plugin, World world, int extraRadius,
-	                           String configLabel, String name, List<String> genericPaths,
-	                           Vector loadPos, int respawnTime, int ticksLeft,
-							   String postRespawnCommand, List<String> specialPaths,
-							   String nextRespawnPath, SpawnerBreakTrigger spawnerBreakTrigger) throws Exception {
+		                       String configLabel, String name, List<String> genericPaths,
+		                       Vector loadPos, int respawnTime, int ticksLeft,
+		                       String postRespawnCommand, List<String> specialPaths,
+		                       String nextRespawnPath, SpawnerBreakTrigger spawnerBreakTrigger) throws Exception {
 		mPlugin = plugin;
 		mWorld = world;
 		mRandom = new Random();
@@ -184,11 +185,11 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	public String getInfoString() {
 		return "name='" + mName + "' pos=(" + Integer.toString((int)mLoadPos.getX()) + " " +
 		       Integer.toString((int)mLoadPos.getY()) + " " + Integer.toString((int)mLoadPos.getZ()) +
-			   ") paths={" + String.join(" ", mGenericVariants) + "} period=" + Integer.toString(mRespawnTime) + " ticksleft=" +
-			   Integer.toString(mTicksLeft) +
-			   (mPostRespawnCommand == null ? "" : " respawnCmd='" + mPostRespawnCommand + "'") +
-			   (mSpecialVariants.isEmpty() ? "" : " specialPaths={" + String.join(" ", mSpecialVariants) + "}") +
-			   (mSpawnerBreakTrigger == null ? "" : " spawnerTrigger={" + mSpawnerBreakTrigger.getInfoString() + "}");
+		       ") paths={" + String.join(" ", mGenericVariants) + "} period=" + Integer.toString(mRespawnTime) + " ticksleft=" +
+		       Integer.toString(mTicksLeft) +
+		       (mPostRespawnCommand == null ? "" : " respawnCmd='" + mPostRespawnCommand + "'") +
+		       (mSpecialVariants.isEmpty() ? "" : " specialPaths={" + String.join(" ", mSpecialVariants) + "}") +
+		       (mSpawnerBreakTrigger == null ? "" : " spawnerTrigger={" + mSpawnerBreakTrigger.getInfoString() + "}");
 	}
 
 	public void activateSpecialStructure(String nextRespawnPath) throws Exception {
@@ -398,11 +399,25 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public boolean registerZone() {
-		ZoneLayer<RespawningStructure> zoneLayer = mPlugin.mRespawnManager.mZoneLayer;
-		return zoneLayer.addZone(mOuterBounds.mLowerCorner.clone(),
-		                         mOuterBounds.mUpperCorner.clone(),
-		                         mName,
-		                         new LinkedHashSet<String>(),
-								 this);
+		ZoneLayer zoneLayerInside = mPlugin.mRespawnManager.mZoneLayerInside;
+		ZoneLayer zoneLayerNearby = mPlugin.mRespawnManager.mZoneLayerNearby;
+		Map<Zone, RespawningStructure> structuresByZone = mPlugin.mRespawnManager.mStructuresByZone;
+
+		Zone insideZone = new Zone(zoneLayerInside,
+		                           mInnerBounds.mLowerCorner.clone(),
+		                           mInnerBounds.mUpperCorner.clone(),
+		                           mName,
+		                           new LinkedHashSet<String>());
+		Zone nearbyZone = new Zone(zoneLayerNearby,
+		                           mOuterBounds.mLowerCorner.clone(),
+		                           mOuterBounds.mUpperCorner.clone(),
+		                           mName,
+		                           new LinkedHashSet<String>());
+		zoneLayerInside.addZone(insideZone);
+		zoneLayerNearby.addZone(nearbyZone);
+		structuresByZone.put(insideZone, this);
+		structuresByZone.put(nearbyZone, this);
+
+		return true;
 	}
 }
