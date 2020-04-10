@@ -92,7 +92,7 @@ public class EventListener implements Listener {
 		// It's easier to check the intentional ways than the natural ones.
 		if (DISALLOWED_STRUCTURE_SPAWN_REASONS.contains(event.getSpawnReason())) {
 			// Only cancel spawns in respawning structures
-			String zoneLayerNameInside = mPlugin.mRespawnManager.mZoneLayerNameInside;
+			String zoneLayerNameInside = RespawnManager.ZONE_LAYER_NAME_INSIDE;
 
 			// We don't care which poi it is, just that the poi exists at that location
 			if (mPlugin.mRespawnManager.mZoneManager.getZone(loc, zoneLayerNameInside) != null) {
