@@ -401,7 +401,6 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	public boolean registerZone() {
 		ZoneLayer zoneLayerInside = mPlugin.mRespawnManager.mZoneLayerInside;
 		ZoneLayer zoneLayerNearby = mPlugin.mRespawnManager.mZoneLayerNearby;
-		Map<Zone, RespawningStructure> structuresByZone = mPlugin.mRespawnManager.mStructuresByZone;
 
 		Zone insideZone = new Zone(zoneLayerInside,
 		                           mInnerBounds.mLowerCorner.clone(),
@@ -415,8 +414,9 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		                           new LinkedHashSet<String>());
 		zoneLayerInside.addZone(insideZone);
 		zoneLayerNearby.addZone(nearbyZone);
-		structuresByZone.put(insideZone, this);
-		structuresByZone.put(nearbyZone, this);
+
+		mPlugin.mRespawnManager.registerRespawningStructureZone(insideZone, this);
+		mPlugin.mRespawnManager.registerRespawningStructureZone(nearbyZone, this);
 
 		return true;
 	}

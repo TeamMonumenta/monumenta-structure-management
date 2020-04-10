@@ -28,6 +28,9 @@ import com.playmonumenta.scriptedquests.zones.zone.Zone;
 import com.playmonumenta.scriptedquests.zones.zone.ZoneFragment;
 
 public class RespawnManager {
+	public static final String ZONE_LAYER_NAME_INSIDE = "Respawning Structures Inside";
+	public static final String ZONE_LAYER_NAME_NEARBY = "Respawning Structures Nearby";
+
 	private final Plugin mPlugin;
 	private final World mWorld;
 	protected final ZoneManager mZoneManager;
@@ -45,12 +48,9 @@ public class RespawnManager {
 	};
 	private boolean taskScheduled = false;
 	private boolean structuresLoaded = false;
-
-	public final String mZoneLayerNameInside = "Respawning Structures Inside";
-	public final String mZoneLayerNameNearby = "Respawning Structures Nearby";
-	protected ZoneLayer mZoneLayerInside = new ZoneLayer(mZoneLayerNameInside);
-	protected ZoneLayer mZoneLayerNearby = new ZoneLayer(mZoneLayerNameNearby, true);
-	protected Map<Zone, RespawningStructure> mStructuresByZone = new LinkedHashMap<Zone, RespawningStructure>();
+	protected ZoneLayer mZoneLayerInside = new ZoneLayer(ZONE_LAYER_NAME_INSIDE);
+	protected ZoneLayer mZoneLayerNearby = new ZoneLayer(ZONE_LAYER_NAME_NEARBY, true);
+	private Map<Zone, RespawningStructure> mStructuresByZone = new LinkedHashMap<Zone, RespawningStructure>();
 
 	public RespawnManager(Plugin plugin, World world, YamlConfiguration config) {
 		mPlugin = plugin;
@@ -100,8 +100,8 @@ public class RespawnManager {
 
 		mZoneLayerInside.invalidate();
 		mZoneLayerNearby.invalidate();
-		mZoneLayerInside = new ZoneLayer(mZoneLayerNameInside);
-		mZoneLayerNearby = new ZoneLayer(mZoneLayerNameNearby, true);
+		mZoneLayerInside = new ZoneLayer(ZONE_LAYER_NAME_INSIDE);
+		mZoneLayerNearby = new ZoneLayer(ZONE_LAYER_NAME_NEARBY, true);
 		mStructuresByZone.clear();
 
 		// Iterate over all the respawning entries (shallow list at this level)
@@ -144,8 +144,8 @@ public class RespawnManager {
 
 		mZoneLayerInside.invalidate();
 		mZoneLayerNearby.invalidate();
-		mZoneLayerInside = new ZoneLayer(mZoneLayerNameInside);
-		mZoneLayerNearby = new ZoneLayer(mZoneLayerNameNearby, true);
+		mZoneLayerInside = new ZoneLayer(ZONE_LAYER_NAME_INSIDE);
+		mZoneLayerNearby = new ZoneLayer(ZONE_LAYER_NAME_NEARBY, true);
 		mStructuresByZone.clear();
 
 		for (RespawningStructure struct : mRespawns.values()) {
@@ -163,7 +163,7 @@ public class RespawnManager {
 			return structures;
 		}
 
-		String layerName = includeNearby ? mZoneLayerNameNearby : mZoneLayerNameInside;
+		String layerName = includeNearby ? ZONE_LAYER_NAME_NEARBY : ZONE_LAYER_NAME_INSIDE;
 		List<Zone> zones = zoneFragment.getParentAndEclipsed(layerName);
 		for (Zone zone : zones) {
 			RespawningStructure struct = mStructuresByZone.get(zone);
@@ -271,6 +271,10 @@ public class RespawnManager {
 		for (RespawningStructure struct : mRespawns.values()) {
 			struct.spawnerBreakEvent(vec);
 		}
+	}
+
+	protected void registerRespawningStructureZone(Zone zone, RespawningStructure structure) {
+		mStructuresByZone.put(zone, structure);
 	}
 
 	private RespawningStructure _getStructure(String label) throws Exception {
