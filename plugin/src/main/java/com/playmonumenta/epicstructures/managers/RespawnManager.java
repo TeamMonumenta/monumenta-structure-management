@@ -22,10 +22,10 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import com.playmonumenta.epicstructures.Plugin;
-import com.playmonumenta.scriptedquests.managers.ZoneManager;
+import com.playmonumenta.scriptedquests.zones.ZoneManager;
 import com.playmonumenta.scriptedquests.zones.ZoneLayer;
-import com.playmonumenta.scriptedquests.zones.zone.Zone;
-import com.playmonumenta.scriptedquests.zones.zone.ZoneFragment;
+import com.playmonumenta.scriptedquests.zones.Zone;
+import com.playmonumenta.scriptedquests.zones.ZoneFragment;
 
 public class RespawnManager {
 	public static final String ZONE_LAYER_NAME_INSIDE = "Respawning Structures Inside";

@@ -25,7 +25,7 @@ import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Region;
 
 import com.playmonumenta.scriptedquests.zones.ZoneLayer;
-import com.playmonumenta.scriptedquests.zones.zone.Zone;
+import com.playmonumenta.scriptedquests.zones.Zone;
 
 public class RespawningStructure implements Comparable<RespawningStructure> {
 	public class StructureBounds {
