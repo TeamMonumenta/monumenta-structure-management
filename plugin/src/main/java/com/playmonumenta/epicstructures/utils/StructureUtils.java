@@ -1,31 +1,37 @@
 package com.playmonumenta.epicstructures.utils;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
+
+import com.bergerkiller.bukkit.common.wrappers.LongHashSet;
+import com.bergerkiller.bukkit.lightcleaner.lighting.LightingService;
+import com.boydti.fawe.util.EditSessionBuilder;
+import com.sk89q.worldedit.EditSession;
+import com.sk89q.worldedit.bukkit.BukkitWorld;
+import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
+import com.sk89q.worldedit.function.RegionFunction;
+import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
+import com.sk89q.worldedit.function.operation.Operations;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.regions.Region;
+import com.sk89q.worldedit.util.Location;
+import com.sk89q.worldedit.world.block.BlockType;
+import com.sk89q.worldedit.world.block.BlockTypes;
 
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.block.Chest;
+import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Tameable;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
-
-import com.bergerkiller.bukkit.common.wrappers.LongHashSet;
-import com.bergerkiller.bukkit.lightcleaner.lighting.LightingService;
-import com.boydti.fawe.object.clipboard.FaweClipboard;
-import com.boydti.fawe.util.EditSessionBuilder;
-import com.sk89q.jnbt.CompoundTag;
-import com.sk89q.worldedit.EditSession;
-import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
-import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldedit.math.Vector3;
-import com.sk89q.worldedit.regions.Region;
-import com.sk89q.worldedit.util.Location;
-import com.sk89q.worldedit.world.block.BlockStateHolder;
-import com.sk89q.worldedit.world.block.BlockType;
-import com.sk89q.worldedit.world.block.BlockTypes;
+import org.bukkit.util.BoundingBox;
+import org.bukkit.util.Vector;
 
 public class StructureUtils {
 	private static final boolean LIGHT_CLEANER_ENABLED = Bukkit.getPluginManager().isPluginEnabled("LightCleaner");
@@ -50,85 +56,101 @@ public class StructureUtils {
 	};
 	private static final Set<BlockType> shulkerSet = new HashSet<>(Arrays.asList(shulkerBoxes));
 
-
-	// Custom paste function copied and modified from
-	// FastAsyncWorldedit/core/src/main/java/com/boydti/fawe/object/schematic/Schematic.java
-	//
 	// Ignores structure void, leaving the original block in place
 	public static void paste(Plugin plugin, BlockArrayClipboard clipboard, World world, BlockVector3 to, boolean includeEntities) {
-		// TODO: Whatever is going on here... entities are broken IF:
-		// fastmode = true (regardless of combine stages setting)
-		// fastmode = false AND combineStages = true
-		EditSession extent = new EditSessionBuilder(world.getName()).autoQueue(true).fastmode(false).combineStages(false).build();
 
-		Region sourceRegion = clipboard.getRegion().clone();
-		final BlockVector3 origin = clipboard.getOrigin();
-		final BlockVector3 size = sourceRegion.getMaximumPoint().subtract(sourceRegion.getMinimumPoint());
+		long startTime = System.currentTimeMillis(); // <-- START
+
+		EditSession extent = new EditSessionBuilder(new BukkitWorld(world))
+			.autoQueue(true)
+			.fastmode(true)
+			.combineStages(true)
+			.changeSetNull()
+			.checkMemory(false)
+			.allowedRegionsEverywhere()
+			.limitUnlimited()
+			.build();
+
+		/* Filter blocks from being pasted that would land on top of A */
 		final int relx = to.getBlockX();
 		final int rely = to.getBlockY();
 		final int relz = to.getBlockZ();
-
-		clipboard.IMP.forEach(new FaweClipboard.BlockReader() {
-			@Override
-			public <B extends BlockStateHolder<B>> void run(int x, int y, int z, B block) {
+		RegionFunction filterFunction = position -> {
+				int x = position.getBlockX();
+				int y = position.getBlockY();
+				int z = position.getBlockZ();
 				BlockType oldBlockType = extent.getBlockType(x + relx, y + rely, z + relz);
-				BlockType newBlockType = block.getBlockType();
+				BlockType newBlockType = clipboard.getBlock(position).getBlockType();
 				if (oldBlockType.equals(BlockTypes.CHEST)) {
 					Chest chest = (Chest) world.getBlockAt(x + relx, y + rely, z + relz).getState();
 					if (chest.getCustomName() != null && chest.getCustomName().endsWith("'s Grave")) {
 						// Check if the grave has items inside. If it is empty, it can be overwritten.
 						for (ItemStack item : chest.getInventory()) {
 							if (item != null) {
-								return;
+								return false;
 							}
 						}
 					}
 				}
 				if (shulkerSet.contains(oldBlockType)) {
 					// Don't allow Shulker Boxes to be overwritten
-					return;
+					return false;
 				}
 				if (!newBlockType.equals(BlockTypes.STRUCTURE_VOID)) {
-					extent.setBlock(x + relx, y + rely, z + relz, block);
+					return true;
 				}
-			}
-		}, true);
+				return false;
+			};
+
+		ForwardExtentCopy copy = new ForwardExtentCopy(clipboard, clipboard.getRegion(), clipboard.getOrigin(), extent, to);
+		copy.setCopyingBiomes(false);
+		copy.setFilterFunction(filterFunction);
+		copy.setCopyingEntities(false);
+
+		plugin.getLogger().info("Preparing paste took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds"); // STOP -->
+
+		startTime = System.currentTimeMillis(); // <-- START
+		Operations.completeBlindly(copy);
+		plugin.getLogger().info("completeBlindly took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds"); // STOP -->
+
+		Region sourceRegion = clipboard.getRegion();
+		final BlockVector3 origin = clipboard.getOrigin();
+		final BlockVector3 size = sourceRegion.getMaximumPoint().subtract(sourceRegion.getMinimumPoint());
+
+		startTime = System.currentTimeMillis(); // <-- START
+		extent.flushQueue();
+		plugin.getLogger().info("flushQueue took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds"); // STOP -->
 
 		if (includeEntities) {
-			// entities
+			startTime = System.currentTimeMillis(); // <-- START
+
+			/* Iterate over and remove entities that are not in structure void */
+			final Vector pos1 = new Vector((double)to.getX(), (double)to.getY(), (double)to.getZ());
+			final Vector pos2 = pos1.clone().add(new Vector(size.getX() + 1, size.getY() + 1, size.getZ() + 1));
+			final BoundingBox box = new BoundingBox(pos1.getX(), pos1.getY(), pos1.getZ(), pos2.getX(), pos2.getY(), pos2.getZ());
+			world.getNearbyEntities(box, (entity) -> {
+				Vector relPos = entity.getLocation().toVector().subtract(pos1);
+				return entityShouldBeRemoved(entity)
+					&& !clipboard.getBlock(BlockVector3.at(relPos.getBlockX(), relPos.getBlockY(), relPos.getBlockZ())).getBlockType().equals(BlockTypes.STRUCTURE_VOID);
+			}).forEach((entity) -> {
+				entity.remove();
+			});
+			plugin.getLogger().info("removing entities took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds"); // STOP -->
+
+			// summon new entities from the clipboard - all entities in the source structure are pasted regardless of whether they're in structure void or not
+			startTime = System.currentTimeMillis(); // <-- START
 			final int entityOffsetX = to.getBlockX() - origin.getBlockX();
 			final int entityOffsetY = to.getBlockY() - origin.getBlockY();
 			final int entityOffsetZ = to.getBlockZ() - origin.getBlockZ();
-			final Vector3 pos1 = to.toVector3();
-			final Vector3 pos2 = to.add(size).toVector3();
-
-			ArrayList<com.sk89q.worldedit.entity.Entity> entityList = new ArrayList<>();
-			// parse all entities of the world and put then in a saved list if the entity is in the structure location
-			for (com.sk89q.worldedit.entity.Entity e : extent.getEntities()) {
-				if (e.getLocation().containedWithin(pos1, pos2)){
-					/* Only remove entities that are not within structure void */
-					BlockType type = clipboard.getBlockType(e.getLocation().subtract(entityOffsetX, entityOffsetY, entityOffsetZ).toBlockPoint());
-					if (!type.equals(BlockTypes.STRUCTURE_VOID)) {
-						entityList.add(e);
-					}
-				}
-			}
-			// summon new entities from the clipboard - all entities in the source structure are pasted regardless of whether they're in structure void or not
 			for (com.sk89q.worldedit.entity.Entity entity : clipboard.getEntities()) {
+				plugin.getLogger().info("Entity should be summoned: " + entity.getType());
 				Location pos = entity.getLocation();
 				Location newPos = new Location(pos.getExtent(), pos.getX() + entityOffsetX, pos.getY() + entityOffsetY, pos.getZ() + entityOffsetZ, pos.getYaw(), pos.getPitch());
 				extent.createEntity(newPos, entity.getState());
 			}
-			// remove entities of the old list.
-			// dont ask why i delete them now, and not earlier. it just wont work if i do anything else
-			for (com.sk89q.worldedit.entity.Entity e : entityList) {
-				if (entityShouldBeRemoved(e)) {
-					e.remove();
-				}
-			}
-		}
 
-		extent.flushQueue();
+			plugin.getLogger().info("entities took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds"); // STOP -->
+		}
 
 		/*
 		 * Fix lighting after the structure loads (if plugin present)
@@ -136,55 +158,52 @@ public class StructureUtils {
 		new BukkitRunnable() {
 			@Override
 			public void run() {
+				long startTime = System.currentTimeMillis(); // <-- START
 				scheduleLighting(world, to, size);
+				plugin.getLogger().info("scheduleLighting took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds"); // STOP -->
 			}
 		}.runTaskLater(plugin, 40);
 	}
 
-	public static boolean entityShouldBeRemoved(com.sk89q.worldedit.entity.Entity entity) {
-		// i cant seem to be able to use EntityType enum to mach check
-		// so im using ID comparaison check
-		String type = entity.getType().getName();
-		if (type == null) {
-			//entity is invalid, should be removed
-			return true;
+	private static final EnumSet<EntityType> keptEntities = EnumSet.of(
+		EntityType.PLAYER,
+		EntityType.DROPPED_ITEM,
+		EntityType.EXPERIENCE_ORB,
+		EntityType.IRON_GOLEM,
+		EntityType.VILLAGER,
+		EntityType.TRIDENT,
+		EntityType.HORSE,
+		EntityType.COW,
+		EntityType.PIG,
+		EntityType.SHEEP,
+		EntityType.CHICKEN
+	);
+
+	private static boolean entityShouldBeRemoved(Entity entity) {
+		/* Keep some entity types always */
+		if (keptEntities.contains(entity.getType())) {
+			return false;
 		}
 
-		// entitytypes to be kept
-		switch (type) {
-			case "minecraft:player":
-			case "minecraft:item":
-			case "minecraft:experience_orb":
-			case "minecraft:iron_golem":
-			case "minecraft:villager":
-			case "minecraft:trident":
-			case "minecraft:horse":
-			case "minecraft:cow":
-			case "minecraft:pig":
-			case "minecraft:sheep":
-			case "minecraft:chicken":
+		/* Keep armor stands that have a name, are markers, or have tags */
+		if (entity instanceof ArmorStand) {
+			ArmorStand stand = (ArmorStand)entity;
+			if ((stand.getCustomName() != null && !stand.getCustomName().isEmpty())
+				|| stand.isMarker()
+				|| (stand.getScoreboardTags() != null && !stand.getScoreboardTags().isEmpty())) {
 				return false;
+			}
 		}
 
-		//special cases
-		CompoundTag data = entity.getState().getNbtData();
-		switch (type) {
-			case "minecraft:armor_stand":
-				// if the entity is an armorstand and has tags/name, do not remove it
-				if (!data.getString("CustomName").isEmpty() || data.getByte("Marker") > 0 || data.getList("Tags").size() > 0) {
-					return false;
-				}
-				break;
-			case "minecraft:wolf":
-			case "minecraft:ocelot":
-				// if the mob is tamed, keep it
-				if (!data.getString("OwnerUUID").isEmpty()) {
-					return false;
-				}
-				break;
+		/* Keep tameable critters that have an owner */
+		if (entity instanceof Tameable) {
+			Tameable critter = (Tameable)entity;
+			if (critter.getOwner() != null) {
+				return false;
+			}
 		}
 
-		//rest is removed
+		/* Remove otherwise */
 		return true;
 	}
 
