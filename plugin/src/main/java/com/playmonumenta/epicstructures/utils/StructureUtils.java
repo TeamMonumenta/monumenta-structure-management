@@ -92,9 +92,20 @@ public class StructureUtils {
 				int x = position.getBlockX();
 				int y = position.getBlockY();
 				int z = position.getBlockZ();
-				BlockType oldBlockType = extent.getBlockType(x + relx, y + rely, z + relz);
+				BlockType oldBlockType = null;
+
+				/*
+				 * Attempt to get the existing block type. If this errors for some reason, just proceed to overwrite
+				 * the block anyway if it's not structure void
+				 */
+				try {
+					oldBlockType = extent.getBlockType(x + relx, y + rely, z + relz);
+				} catch (Exception e) {
+					plugin.getLogger().warning("Caught error in FAWE extent.getBlock(). This should be reported to FAWE");
+					e.printStackTrace();
+				}
 				BlockType newBlockType = clipboard.getBlock(position).getBlockType();
-				if (oldBlockType.equals(BlockTypes.CHEST)) {
+				if (oldBlockType != null && oldBlockType.equals(BlockTypes.CHEST)) {
 					Chest chest = (Chest) world.getBlockAt(x + relx, y + rely, z + relz).getState();
 					if (chest.getCustomName() != null && chest.getCustomName().endsWith("'s Grave")) {
 						// Check if the grave has items inside. If it is empty, it can be overwritten.
@@ -105,11 +116,11 @@ public class StructureUtils {
 						}
 					}
 				}
-				if (shulkerSet.contains(oldBlockType)) {
+				if (oldBlockType != null && shulkerSet.contains(oldBlockType)) {
 					// Don't allow Shulker Boxes to be overwritten
 					return false;
 				}
-				if (!newBlockType.equals(BlockTypes.STRUCTURE_VOID)) {
+				if (newBlockType == null || !newBlockType.equals(BlockTypes.STRUCTURE_VOID)) {
 					return true;
 				}
 				return false;
