@@ -189,7 +189,7 @@ public class StructureUtils {
 		}.runTaskLater(plugin, 40);
 
 		/* TODO: Horrible hack */
-		}}.runTaskLater(plugin, 20);
+		}}.runTaskLater(plugin, 50);
 		/* TODO: Horrible hack */
 	}
 

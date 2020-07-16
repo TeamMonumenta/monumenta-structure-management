@@ -319,7 +319,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void setRespawnTimer(int ticksUntilRespawn) {
-		if (ticksUntilRespawn < 0) {
+		if (ticksUntilRespawn <= 0) {
 			respawn();
 		} else {
 			mTicksLeft = ticksUntilRespawn;
