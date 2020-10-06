@@ -2,12 +2,12 @@ package com.playmonumenta.epicstructures.managers;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.nio.file.Paths;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import com.boydti.fawe.object.clipboard.DiskOptimizedClipboard;
 import com.boydti.fawe.util.EditSessionBuilder;
 import com.playmonumenta.epicstructures.Plugin;
+import com.playmonumenta.epicstructures.utils.CommandUtils;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
@@ -21,8 +21,6 @@ import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.world.World;
 
 public class StructureManager {
-	private static final String BASE_FOLDER_NAME = "structures";
-
 	private final ConcurrentSkipListMap<String, BlockArrayClipboard> mSchematics = new ConcurrentSkipListMap<String, BlockArrayClipboard>();
 	private final Plugin mPlugin;
 	private final org.bukkit.World mWorld;
@@ -39,10 +37,6 @@ public class StructureManager {
 
 	/* It *should* be safe to call this async */
 	public BlockArrayClipboard loadSchematic(String baseName) throws Exception {
-		if (baseName == null || baseName.isEmpty()) {
-			throw new Exception("Structure name is empty!");
-		}
-
 		BlockArrayClipboard clipboard = null;
 		if (mUseStructureCache) {
 			clipboard = mSchematics.get(baseName);
@@ -50,12 +44,7 @@ public class StructureManager {
 		if (clipboard == null) {
 			// Schematic not already loaded - need to read it from disk and load it into RAM
 
-			final String fileName = _getFileName(baseName);
-
-			File file = new File(fileName);
-			if (!file.exists()) {
-				throw new Exception("Structure '" + baseName + "' does not exist");
-			}
+			File file = CommandUtils.getAndValidateSchematicPath(mPlugin, baseName, true);
 
 			Clipboard newClip = format.load(file);
 			if (newClip instanceof BlockArrayClipboard) {
@@ -76,13 +65,7 @@ public class StructureManager {
 	}
 
 	public void saveSchematic(String baseName, BlockVector3 minpos, BlockVector3 maxpos, Runnable whenDone) throws Exception {
-		if (baseName == null || baseName.isEmpty()) {
-			throw new Exception("Structure name is empty!");
-		}
-
-		final String fileName = _getFileName(baseName);
-
-		File file = new File(fileName);
+		File file = CommandUtils.getAndValidateSchematicPath(mPlugin, baseName, false);
 		if (!file.exists()) {
 			file.getParentFile().mkdirs();
 			file.createNewFile();
@@ -122,9 +105,5 @@ public class StructureManager {
 		 */
 		mPlugin.saveConfig();
 		mPlugin.reloadConfig();
-	}
-
-	private String _getFileName(String baseName) {
-		return Paths.get(mPlugin.getDataFolder().toString(), BASE_FOLDER_NAME, baseName + ".schematic").toString();
 	}
 }
