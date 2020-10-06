@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.regex.Pattern;
 
 import com.playmonumenta.epicstructures.Plugin;
+import com.playmonumenta.epicstructures.utils.CommandUtils;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -13,9 +14,9 @@ import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.arguments.TextArgument;
+import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
 public class ActivateSpecialStructure {
-	private static final Pattern INVALID_PATH_PATTERN = Pattern.compile("[^-/_a-zA-Z0-9]");
 	public static void register(Plugin plugin) {
 		final String command = "activatespecialstructure";
 		final CommandPermission perms = CommandPermission.fromString("epicstructures");
@@ -42,11 +43,9 @@ public class ActivateSpecialStructure {
 			.register();
 	}
 
-	private static void activate(CommandSender sender, Plugin plugin, String label, String path) {
-		if (path != null && INVALID_PATH_PATTERN.matcher(path).find()) {
-			sender.sendMessage(ChatColor.RED + "Path contains illegal characters!");
-			return;
-		}
+	private static void activate(CommandSender sender, Plugin plugin, String label, String path) throws WrapperCommandSyntaxException {
+		CommandUtils.getAndValidateSchematicPath(plugin, path, true);
+
 		if (plugin.mRespawnManager == null) {
 			return;
 		}

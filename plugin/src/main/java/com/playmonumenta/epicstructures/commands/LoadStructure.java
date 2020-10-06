@@ -2,9 +2,9 @@ package com.playmonumenta.epicstructures.commands;
 
 import java.util.LinkedHashMap;
 import java.util.logging.Level;
-import java.util.regex.Pattern;
 
 import com.playmonumenta.epicstructures.Plugin;
+import com.playmonumenta.epicstructures.utils.CommandUtils;
 import com.playmonumenta.epicstructures.utils.MessagingUtils;
 import com.playmonumenta.epicstructures.utils.StructureUtils;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
@@ -21,9 +21,9 @@ import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.BooleanArgument;
 import dev.jorel.commandapi.arguments.LocationArgument;
 import dev.jorel.commandapi.arguments.TextArgument;
+import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
 public class LoadStructure {
-	private static final Pattern INVALID_PATH_PATTERN = Pattern.compile("[^-/_a-zA-Z0-9]");
 	public static void register(Plugin plugin) {
 		final String command = "loadstructure";
 		final CommandPermission perms = CommandPermission.fromString("epicstructures");
@@ -52,12 +52,10 @@ public class LoadStructure {
 			.register();
 	}
 
-	private static void load(CommandSender sender, Plugin plugin, String path, Location loadLoc, boolean includeEntities) {
-		if (INVALID_PATH_PATTERN.matcher(path).find()) {
-			sender.sendMessage(ChatColor.RED + "Path contains illegal characters!");
-			return;
-		}
-		if (plugin.mStructureManager == null || plugin.mWorld == null) {
+	private static void load(CommandSender sender, Plugin plugin, String path, Location loadLoc, boolean includeEntities) throws WrapperCommandSyntaxException {
+		CommandUtils.getAndValidateSchematicPath(plugin, path, true);
+
+		if (plugin.mStructureManager == null) {
 			return;
 		}
 
@@ -86,7 +84,7 @@ public class LoadStructure {
 				new BukkitRunnable() {
 					@Override
 					public void run() {
-						StructureUtils.paste(plugin, clipboard, plugin.mWorld, loadPos, includeEntities);
+						StructureUtils.paste(plugin, clipboard, loadLoc.getWorld(), loadPos, includeEntities);
 
 						if (sender != null) {
 							sender.sendMessage("Loaded structure '" + path + "' at " + loadPos);
