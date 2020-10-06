@@ -1,43 +1,46 @@
 package com.playmonumenta.epicstructures.commands;
 
-import com.playmonumenta.epicstructures.managers.SpawnerBreakTrigger;
-import com.playmonumenta.epicstructures.Plugin;
-
-import io.github.jorelali.commandapi.api.arguments.Argument;
-import io.github.jorelali.commandapi.api.arguments.DynamicSuggestedStringArgument;
-import io.github.jorelali.commandapi.api.arguments.GreedyStringArgument;
-import io.github.jorelali.commandapi.api.arguments.IntegerArgument;
-import io.github.jorelali.commandapi.api.CommandAPI;
-import io.github.jorelali.commandapi.api.CommandPermission;
-
 import java.util.LinkedHashMap;
+
+import com.playmonumenta.epicstructures.Plugin;
+import com.playmonumenta.epicstructures.managers.SpawnerBreakTrigger;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 
+import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.CommandPermission;
+import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.GreedyStringArgument;
+import dev.jorel.commandapi.arguments.IntegerArgument;
+import dev.jorel.commandapi.arguments.StringArgument;
+
 public class SetSpawnerBreakTrigger {
 	public static void register(Plugin plugin) {
+		final String command = "setspawnerbreaktrigger";
+		final CommandPermission perms = CommandPermission.fromString("epicstructures");
+
 		/* First one of these includes coordinate arguments */
 		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
 
-		arguments.put("label", new DynamicSuggestedStringArgument(() -> {return plugin.mRespawnManager.listStructures();}));
-		CommandAPI.getInstance().register("setspawnerbreaktrigger",
-		                                  CommandPermission.fromString("epicstructures"),
-		                                  arguments,
-		                                  (sender, args) -> {
-		                                      setTrigger(sender, plugin, (String)args[0], 0, null);
-		                                  }
-		);
+		arguments.put("label", new StringArgument().overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}));
+		new CommandAPICommand(command)
+			.withPermission(perms)
+			.withArguments(arguments)
+			.executes((sender, args) -> {
+				setTrigger(sender, plugin, (String)args[0], 0, null);
+			})
+			.register();
 
 		arguments.put("spawner_count", new IntegerArgument(0));
 		arguments.put("quest_component", new GreedyStringArgument());
-		CommandAPI.getInstance().register("setspawnerbreaktrigger",
-		                                  CommandPermission.fromString("epicstructures"),
-		                                  arguments,
-		                                  (sender, args) -> {
-		                                      setTrigger(sender, plugin, (String)args[0], (Integer)args[1], (String)args[2]);
-		                                  }
-		);
+		new CommandAPICommand(command)
+			.withPermission(perms)
+			.withArguments(arguments)
+			.executes((sender, args) -> {
+				setTrigger(sender, plugin, (String)args[0], (Integer)args[1], (String)args[2]);
+			})
+			.register();
 	}
 
 	private static void setTrigger(CommandSender sender, Plugin plugin, String label, int spawnerCount, String questComponentStr) {
