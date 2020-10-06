@@ -4,50 +4,52 @@ import java.util.LinkedHashMap;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.command.CommandSender;
-import org.bukkit.scheduler.BukkitRunnable;
-
 import com.playmonumenta.epicstructures.Plugin;
 import com.playmonumenta.epicstructures.utils.MessagingUtils;
 import com.playmonumenta.epicstructures.utils.StructureUtils;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
 import com.sk89q.worldedit.math.BlockVector3;
 
-import io.github.jorelali.commandapi.api.CommandAPI;
-import io.github.jorelali.commandapi.api.CommandPermission;
-import io.github.jorelali.commandapi.api.arguments.Argument;
-import io.github.jorelali.commandapi.api.arguments.BooleanArgument;
-import io.github.jorelali.commandapi.api.arguments.LocationArgument;
-import io.github.jorelali.commandapi.api.arguments.TextArgument;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.command.CommandSender;
+import org.bukkit.scheduler.BukkitRunnable;
+
+import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.CommandPermission;
+import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.BooleanArgument;
+import dev.jorel.commandapi.arguments.LocationArgument;
+import dev.jorel.commandapi.arguments.TextArgument;
 
 public class LoadStructure {
 	private static final Pattern INVALID_PATH_PATTERN = Pattern.compile("[^-/_a-zA-Z0-9]");
 	public static void register(Plugin plugin) {
+		final String command = "loadstructure";
+		final CommandPermission perms = CommandPermission.fromString("epicstructures");
+
 		/* First one of these includes coordinate arguments */
 		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
 
 		arguments.put("path", new TextArgument());
 		arguments.put("position", new LocationArgument());
 
-		CommandAPI.getInstance().register("loadstructure",
-		                                  CommandPermission.fromString("epicstructures"),
-		                                  arguments,
-		                                  (sender, args) -> {
-		                                      load(sender, plugin, (String)args[0], (Location)args[1], false);
-		                                  }
-		);
+		new CommandAPICommand(command)
+			.withPermission(perms)
+			.withArguments(arguments)
+			.executes((sender, args) -> {
+				load(sender, plugin, (String)args[0], (Location)args[1], false);
+			})
+			.register();
 
 		arguments.put("includeEntities", new BooleanArgument());
-
-		CommandAPI.getInstance().register("loadstructure",
-		                                  CommandPermission.fromString("epicstructures"),
-		                                  arguments,
-		                                  (sender, args) -> {
-		                                      load(sender, plugin, (String)args[0], (Location)args[1], (Boolean)args[2]);
-		                                  }
-		);
+		new CommandAPICommand(command)
+			.withPermission(perms)
+			.withArguments(arguments)
+			.executes((sender, args) -> {
+				load(sender, plugin, (String)args[0], (Location)args[1], (Boolean)args[2]);
+			})
+			.register();
 	}
 
 	private static void load(CommandSender sender, Plugin plugin, String path, Location loadLoc, boolean includeEntities) {
