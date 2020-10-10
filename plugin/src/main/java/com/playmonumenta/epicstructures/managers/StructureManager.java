@@ -77,7 +77,7 @@ public class StructureManager {
 		clipboard.setOrigin(cReg.getMinimumPoint());
 
 		/* Copy the region (including entities and biomes) into the clipboard object */
-		EditSession extent = new EditSessionBuilder(new BukkitWorld(mWorld))
+		EditSession extent = new EditSessionBuilder(world)
 			.autoQueue(true)
 			.fastmode(true)
 			.combineStages(true)
@@ -88,7 +88,7 @@ public class StructureManager {
 			.build();
 		ForwardExtentCopy copy = new ForwardExtentCopy(extent, cReg, clipboard, cReg.getMinimumPoint());
 		copy.setCopyingEntities(true);
-		copy.setCopyingBiomes(true);
+		copy.setCopyingBiomes(false); // TODO: Re enable when FAWE supports this again
 		Operations.completeLegacy(copy);
 
 		format.write(new FileOutputStream(file), clipboard);

@@ -17,7 +17,6 @@ import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Region;
-import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldedit.world.block.BlockType;
 import com.sk89q.worldedit.world.block.BlockTypes;
 
@@ -84,6 +83,25 @@ public class StructureUtils {
 				long startTime = System.currentTimeMillis(); // <-- START
 		/* TODO: Horrible hack */
 
+		Region sourceRegion = clipboard.getRegion();
+		final BlockVector3 size = sourceRegion.getMaximumPoint().subtract(sourceRegion.getMinimumPoint());
+		if (includeEntities) {
+			startTime = System.currentTimeMillis(); // <-- START
+
+			/* Iterate over and remove entities that are not in structure void */
+			final Vector pos1 = new Vector((double)to.getX(), (double)to.getY(), (double)to.getZ());
+			final Vector pos2 = pos1.clone().add(new Vector(size.getX() + 1, size.getY() + 1, size.getZ() + 1));
+			final BoundingBox box = new BoundingBox(pos1.getX(), pos1.getY(), pos1.getZ(), pos2.getX(), pos2.getY(), pos2.getZ());
+			world.getNearbyEntities(box, (entity) -> {
+				Vector relPos = entity.getLocation().toVector().subtract(pos1);
+				return entityShouldBeRemoved(entity)
+					&& !clipboard.getBlock(BlockVector3.at(relPos.getBlockX(), relPos.getBlockY(), relPos.getBlockZ())).getBlockType().equals(BlockTypes.STRUCTURE_VOID);
+			}).forEach((entity) -> {
+				entity.remove();
+			});
+			plugin.getLogger().info("removing entities took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds"); // STOP -->
+		}
+
 		/* Filter blocks from being pasted that would land on top of A */
 		final int relx = to.getBlockX();
 		final int rely = to.getBlockY();
@@ -129,7 +147,7 @@ public class StructureUtils {
 		ForwardExtentCopy copy = new ForwardExtentCopy(clipboard, clipboard.getRegion(), clipboard.getOrigin(), extent, to);
 		copy.setCopyingBiomes(false);
 		copy.setFilterFunction(filterFunction);
-		copy.setCopyingEntities(false);
+		copy.setCopyingEntities(includeEntities);
 
 		plugin.getLogger().info("Preparing paste took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds"); // STOP -->
 
@@ -137,44 +155,9 @@ public class StructureUtils {
 		Operations.completeBlindly(copy);
 		plugin.getLogger().info("completeBlindly took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds"); // STOP -->
 
-		Region sourceRegion = clipboard.getRegion();
-		final BlockVector3 origin = clipboard.getOrigin();
-		final BlockVector3 size = sourceRegion.getMaximumPoint().subtract(sourceRegion.getMinimumPoint());
-
 		startTime = System.currentTimeMillis(); // <-- START
 		extent.flushQueue();
 		plugin.getLogger().info("flushQueue took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds"); // STOP -->
-
-		if (includeEntities) {
-			startTime = System.currentTimeMillis(); // <-- START
-
-			/* Iterate over and remove entities that are not in structure void */
-			final Vector pos1 = new Vector((double)to.getX(), (double)to.getY(), (double)to.getZ());
-			final Vector pos2 = pos1.clone().add(new Vector(size.getX() + 1, size.getY() + 1, size.getZ() + 1));
-			final BoundingBox box = new BoundingBox(pos1.getX(), pos1.getY(), pos1.getZ(), pos2.getX(), pos2.getY(), pos2.getZ());
-			world.getNearbyEntities(box, (entity) -> {
-				Vector relPos = entity.getLocation().toVector().subtract(pos1);
-				return entityShouldBeRemoved(entity)
-					&& !clipboard.getBlock(BlockVector3.at(relPos.getBlockX(), relPos.getBlockY(), relPos.getBlockZ())).getBlockType().equals(BlockTypes.STRUCTURE_VOID);
-			}).forEach((entity) -> {
-				entity.remove();
-			});
-			plugin.getLogger().info("removing entities took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds"); // STOP -->
-
-			// summon new entities from the clipboard - all entities in the source structure are pasted regardless of whether they're in structure void or not
-			startTime = System.currentTimeMillis(); // <-- START
-			final int entityOffsetX = to.getBlockX() - origin.getBlockX();
-			final int entityOffsetY = to.getBlockY() - origin.getBlockY();
-			final int entityOffsetZ = to.getBlockZ() - origin.getBlockZ();
-			for (com.sk89q.worldedit.entity.Entity entity : clipboard.getEntities()) {
-				plugin.getLogger().info("Entity should be summoned: " + entity.getType());
-				Location pos = entity.getLocation();
-				Location newPos = new Location(pos.getExtent(), pos.getX() + entityOffsetX, pos.getY() + entityOffsetY, pos.getZ() + entityOffsetZ, pos.getYaw(), pos.getPitch());
-				extent.createEntity(newPos, entity.getState());
-			}
-
-			plugin.getLogger().info("entities took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds"); // STOP -->
-		}
 
 		/*
 		 * Fix lighting after the structure loads (if plugin present)
