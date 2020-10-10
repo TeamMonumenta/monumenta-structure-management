@@ -34,10 +34,10 @@
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
 <!--
-		<repository>
-			<id>fawe-repo</id>
-			<url>http://ci.athion.net/job/FastAsyncWorldEdit-1.13/ws/mvn/</url>
-		</repository>
+        <repository>
+            <id>fawe-repo</id>
+            <url>http://ci.athion.net/job/FastAsyncWorldEdit-1.13/ws/mvn/</url>
+        </repository>
 -->
         <repository>
             <id>commandapi</id>
@@ -56,15 +56,15 @@
         <dependency>
             <groupId>com.boydti</groupId>
             <artifactId>FastAsyncWorldEdit-bukkit</artifactId>
-            <version>1.15-235</version>
+            <version>1.16-414</version>
             <scope>provided</scope>
         </dependency>
 <!--
-		<dependency>
-			<groupId>com.boydti</groupId>
-			<artifactId>fawe-api</artifactId>
-			<version>latest</version>
-		</dependency>
+        <dependency>
+            <groupId>com.boydti</groupId>
+            <artifactId>fawe-api</artifactId>
+            <version>latest</version>
+        </dependency>
 -->
 
         <dependency>
@@ -75,9 +75,9 @@
         </dependency>
 
         <dependency>
-			<groupId>com.bergerkiller.bukkit</groupId>
-			<artifactId>BKCommonLib</artifactId>
-			<version>1.15.2-v2</version>
+            <groupId>com.bergerkiller.bukkit</groupId>
+            <artifactId>BKCommonLib</artifactId>
+            <version>1.15.2-v2</version>
             <scope>provided</scope>
         </dependency>
 
