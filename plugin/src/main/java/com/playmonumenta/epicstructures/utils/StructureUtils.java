@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import com.bergerkiller.bukkit.common.wrappers.LongHashSet;
 import com.bergerkiller.bukkit.lightcleaner.lighting.LightingService;
@@ -15,14 +17,22 @@ import com.sk89q.worldedit.function.RegionFunction;
 import com.sk89q.worldedit.function.mask.SingleBlockTypeMask;
 import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
 import com.sk89q.worldedit.function.operation.Operations;
+import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.world.block.BlockType;
 import com.sk89q.worldedit.world.block.BlockTypes;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
+import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.BrewingStand;
 import org.bukkit.block.Chest;
+import org.bukkit.block.CreatureSpawner;
+import org.bukkit.block.Furnace;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -73,22 +83,9 @@ public class StructureUtils {
 
 		Region sourceRegion = clipboard.getRegion();
 		final BlockVector3 size = sourceRegion.getMaximumPoint().subtract(sourceRegion.getMinimumPoint());
-		if (includeEntities) {
-			startTime = System.currentTimeMillis(); // <-- START
-
-			/* Iterate over and remove entities that are not in structure void */
-			final Vector pos1 = new Vector((double)to.getX(), (double)to.getY(), (double)to.getZ());
-			final Vector pos2 = pos1.clone().add(new Vector(size.getX() + 1, size.getY() + 1, size.getZ() + 1));
-			final BoundingBox box = new BoundingBox(pos1.getX(), pos1.getY(), pos1.getZ(), pos2.getX(), pos2.getY(), pos2.getZ());
-			world.getNearbyEntities(box, (entity) -> {
-				Vector relPos = entity.getLocation().toVector().subtract(pos1);
-				return entityShouldBeRemoved(entity)
-					&& !clipboard.getBlock(BlockVector3.at(relPos.getBlockX(), relPos.getBlockY(), relPos.getBlockZ())).getBlockType().equals(BlockTypes.STRUCTURE_VOID);
-			}).forEach((entity) -> {
-				entity.remove();
-			});
-			plugin.getLogger().info("removing entities took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds"); // STOP -->
-		}
+		final Vector pos1 = new Vector((double)to.getX(), (double)to.getY(), (double)to.getZ());
+		final Vector pos2 = pos1.clone().add(new Vector(size.getX() + 1, size.getY() + 1, size.getZ() + 1));
+		final BoundingBox box = new BoundingBox(pos1.getX(), pos1.getY(), pos1.getZ(), pos2.getX(), pos2.getY(), pos2.getZ());
 
 		/* Filter blocks from being pasted that would land on top of A */
 		final int relx = to.getBlockX();
@@ -132,32 +129,88 @@ public class StructureUtils {
 				return false;
 			};
 
-		ForwardExtentCopy copy = new ForwardExtentCopy(clipboard, clipboard.getRegion(), clipboard.getOrigin(), extent, to);
-		copy.setCopyingBiomes(false);
-		copy.setFilterFunction(filterFunction);
-		copy.setCopyingEntities(includeEntities);
 
-		plugin.getLogger().info("Preparing paste took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds"); // STOP -->
+		Region shiftedRegion = clipboard.getRegion().clone();
+		shiftedRegion.shift(to);
 
-		startTime = System.currentTimeMillis(); // <-- START
-		Operations.completeBlindly(copy);
-		plugin.getLogger().info("completeBlindly took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds"); // STOP -->
+		Set<BlockVector2> chunks = shiftedRegion.getChunks();
+		AtomicInteger numRemaining = new AtomicInteger(chunks.size());
 
-		startTime = System.currentTimeMillis(); // <-- START
-		extent.flushQueue();
-		plugin.getLogger().info("flushQueue took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds"); // STOP -->
+		/* This chunk consumer removes entities and sets spawners/brewstands/furnaces to air */
+		Consumer<Chunk> chunkConsumer = (Chunk chunk) -> {
+			numRemaining.decrementAndGet();
+			for (BlockState state : chunk.getTileEntities()) {
+				if (state instanceof CreatureSpawner || state instanceof BrewingStand || state instanceof Furnace) {
+					Block block = state.getBlock();
+					block.setType(Material.DIRT);
+					block.setBlockData(Material.DIRT.createBlockData());
+				}
+			}
 
-		/*
-		 * Fix lighting after the structure loads (if plugin present)
-		 */
+			if (includeEntities) {
+				for (Entity entity : chunk.getEntities()) {
+					if (box.contains(entity.getLocation().toVector()) && entityShouldBeRemoved(entity)) {
+						Vector relPos = entity.getLocation().toVector().subtract(pos1);
+						if (!clipboard.getBlock(BlockVector3.at(relPos.getBlockX(), relPos.getBlockY(), relPos.getBlockZ())).getBlockType().equals(BlockTypes.STRUCTURE_VOID)) {
+							entity.remove();
+						}
+					}
+				}
+			}
+		};
+
+		/* Load all the chunks in the region and run the chunk consumer */
+		for (BlockVector2 chunkCoords : shiftedRegion.getChunks()) {
+			world.getChunkAtAsync(chunkCoords.getX(), chunkCoords.getZ(), chunkConsumer);
+		}
+
 		new BukkitRunnable() {
+			int numTicksWaited = 0;
 			@Override
 			public void run() {
-				long startTime = System.currentTimeMillis(); // <-- START
-				scheduleLighting(world, to, size);
-				plugin.getLogger().info("scheduleLighting took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds"); // STOP -->
+				numTicksWaited++;
+				if (numTicksWaited >= 30 * 20) {
+					plugin.getLogger().severe("Timed out waiting for chunks to load to paste structure!");
+					this.cancel();
+					return;
+				}
+				if (numRemaining.get() == 0) {
+					this.cancel();
+
+					new BukkitRunnable() {
+						@Override
+						public void run() {
+							ForwardExtentCopy copy = new ForwardExtentCopy(clipboard, clipboard.getRegion(), clipboard.getOrigin(), extent, to);
+							copy.setCopyingBiomes(false);
+							copy.setFilterFunction(filterFunction);
+							copy.setCopyingEntities(includeEntities);
+
+							plugin.getLogger().info("Preparing paste took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds"); // STOP -->
+
+							long startTime = System.currentTimeMillis(); // <-- START
+							Operations.completeBlindly(copy);
+							plugin.getLogger().info("completeBlindly took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds"); // STOP -->
+
+							startTime = System.currentTimeMillis(); // <-- START
+							extent.flushQueue();
+							plugin.getLogger().info("flushQueue took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds"); // STOP -->
+
+							/*
+							 * Fix lighting after the structure loads (if plugin present)
+							 */
+							new BukkitRunnable() {
+								@Override
+								public void run() {
+									long startTime = System.currentTimeMillis(); // <-- START
+									scheduleLighting(world, to, size);
+									plugin.getLogger().info("scheduleLighting took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds"); // STOP -->
+								}
+							}.runTaskLater(plugin, 40);
+						}
+					}.runTaskLater(plugin, 2);
+				}
 			}
-		}.runTaskLater(plugin, 40);
+		}.runTaskTimer(plugin, 0, 1);
 	}
 
 	private static final EnumSet<EntityType> keptEntities = EnumSet.of(
