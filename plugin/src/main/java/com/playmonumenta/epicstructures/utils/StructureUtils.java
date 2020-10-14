@@ -71,18 +71,6 @@ public class StructureUtils {
 			.limitUnlimited()
 			.build();
 
-		/* TODO: Horrible hack! This overwrites spawners with air before they are loaded again with spawners */
-		Region shiftedRegion = clipboard.getRegion().clone();
-		shiftedRegion.shift(to);
-		extent.replaceBlocks(shiftedRegion, new SingleBlockTypeMask(extent, BlockTypes.SPAWNER), BlockTypes.DIRT.getDefaultState());
-		extent.flushQueue();
-		plugin.getLogger().info("Replacing spawners took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds"); // STOP -->
-		new BukkitRunnable() {
-			@Override
-			public void run() {
-				long startTime = System.currentTimeMillis(); // <-- START
-		/* TODO: Horrible hack */
-
 		Region sourceRegion = clipboard.getRegion();
 		final BlockVector3 size = sourceRegion.getMaximumPoint().subtract(sourceRegion.getMinimumPoint());
 		if (includeEntities) {
@@ -170,10 +158,6 @@ public class StructureUtils {
 				plugin.getLogger().info("scheduleLighting took " + Long.toString(System.currentTimeMillis() - startTime) + " milliseconds"); // STOP -->
 			}
 		}.runTaskLater(plugin, 40);
-
-		/* TODO: Horrible hack */
-		}}.runTaskLater(plugin, 50);
-		/* TODO: Horrible hack */
 	}
 
 	private static final EnumSet<EntityType> keptEntities = EnumSet.of(
