@@ -25,6 +25,7 @@ import com.sk89q.worldedit.world.block.BlockTypes;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -141,9 +142,13 @@ public class StructureUtils {
 			numRemaining.decrementAndGet();
 			for (BlockState state : chunk.getTileEntities()) {
 				if (state instanceof CreatureSpawner || state instanceof BrewingStand || state instanceof Furnace) {
-					Block block = state.getBlock();
-					block.setType(Material.DIRT);
-					block.setBlockData(Material.DIRT.createBlockData());
+					org.bukkit.Location loc = state.getLocation();
+					BlockVector3 relPos = BlockVector3.at(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()).subtract(to);
+					if (box.contains(loc.toVector()) && !clipboard.getBlock(relPos).getBlockType().equals(BlockTypes.STRUCTURE_VOID)) {
+						Block block = state.getBlock();
+						block.setType(Material.DIRT);
+						block.setBlockData(Material.DIRT.createBlockData());
+					}
 				}
 			}
 
