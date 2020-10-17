@@ -6,6 +6,7 @@ import java.util.logging.Level;
 
 import com.playmonumenta.epicstructures.commands.ActivateSpecialStructure;
 import com.playmonumenta.epicstructures.commands.AddRespawningStructure;
+import com.playmonumenta.epicstructures.commands.ForceloadLazy;
 import com.playmonumenta.epicstructures.commands.ListRespawningStructures;
 import com.playmonumenta.epicstructures.commands.LoadStructure;
 import com.playmonumenta.epicstructures.commands.ReloadStructures;
@@ -47,6 +48,7 @@ public class Plugin extends JavaPlugin {
 		AddRespawningStructure.register(this);
 		RemoveRespawningStructure.register(this);
 		SetRespawnTimer.register(this);
+		ForceloadLazy.register(this);
 	}
 
 	@Override

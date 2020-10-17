@@ -1,7 +1,6 @@
 package com.playmonumenta.epicstructures.commands;
 
 import java.util.LinkedHashMap;
-import java.util.regex.Pattern;
 
 import com.playmonumenta.epicstructures.Plugin;
 import com.playmonumenta.epicstructures.utils.CommandUtils;
