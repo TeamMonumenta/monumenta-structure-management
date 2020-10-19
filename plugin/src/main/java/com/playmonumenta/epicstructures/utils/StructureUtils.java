@@ -181,19 +181,17 @@ public class StructureUtils {
 								return;
 							}
 
-							Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-								final long lightTime = System.currentTimeMillis(); // <-- START
+							final long lightTime = System.currentTimeMillis(); // <-- START
 
-								/* Relight an area 16 blocks bigger than the respawned area */
-								final Set<BlockVector2> lightingChunks = new CuboidRegion(to.subtract(16, 16, 16), to.add(size).add(16, 16, 16)).getChunks();
-								final LongHashSet lightCleanerChunks = new LongHashSet(lightingChunks.size());
-								for (final BlockVector2 chunk : lightingChunks) {
-									lightCleanerChunks.add(chunk.getX(), chunk.getZ());
-								}
-								LightingService.schedule(world, lightCleanerChunks);
+							/* Relight an area 16 blocks bigger than the respawned area */
+							final Set<BlockVector2> lightingChunks = new CuboidRegion(to.subtract(16, 16, 16), to.add(size).add(16, 16, 16)).getChunks();
+							final LongHashSet lightCleanerChunks = new LongHashSet(lightingChunks.size());
+							for (final BlockVector2 chunk : lightingChunks) {
+								lightCleanerChunks.add(chunk.getX(), chunk.getZ());
+							}
+							LightingService.schedule(world, lightCleanerChunks);
 
-								plugin.getLogger().info("scheduleLighting took " + Long.toString(System.currentTimeMillis() - lightTime) + " milliseconds (async)"); // STOP -->
-							});
+							plugin.getLogger().info("scheduleLighting took " + Long.toString(System.currentTimeMillis() - lightTime) + " milliseconds (async)"); // STOP -->
 						});
 					});
 				}
