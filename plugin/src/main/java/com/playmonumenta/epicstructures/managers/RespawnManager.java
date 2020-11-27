@@ -1,27 +1,39 @@
 package com.playmonumenta.epicstructures.managers;
 
-import com.playmonumenta.epicstructures.Plugin;
-
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.logging.Level;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.logging.Level;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.Location;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
-import org.bukkit.World;
+
+import com.playmonumenta.epicstructures.Plugin;
+import com.playmonumenta.scriptedquests.zones.ZoneManager;
+import com.playmonumenta.scriptedquests.zones.ZoneLayer;
+import com.playmonumenta.scriptedquests.zones.Zone;
+import com.playmonumenta.scriptedquests.zones.ZoneFragment;
 
 public class RespawnManager {
+	public static final String ZONE_LAYER_NAME_INSIDE = "Respawning Structures Inside";
+	public static final String ZONE_LAYER_NAME_NEARBY = "Respawning Structures Nearby";
+
 	private final Plugin mPlugin;
 	private final World mWorld;
+	protected final ZoneManager mZoneManager;
 
 	private final SortedMap<String, RespawningStructure> mRespawns = new ConcurrentSkipListMap<String, RespawningStructure>();
 	private final int mTickPeriod;
@@ -36,15 +48,24 @@ public class RespawnManager {
 	};
 	private boolean taskScheduled = false;
 	private boolean structuresLoaded = false;
+	protected ZoneLayer mZoneLayerInside = new ZoneLayer(ZONE_LAYER_NAME_INSIDE);
+	protected ZoneLayer mZoneLayerNearby = new ZoneLayer(ZONE_LAYER_NAME_NEARBY, true);
+	private Map<Zone, RespawningStructure> mStructuresByZone = new LinkedHashMap<Zone, RespawningStructure>();
 
 	public RespawnManager(Plugin plugin, World world, YamlConfiguration config) {
 		mPlugin = plugin;
 		mWorld = world;
 
+		com.playmonumenta.scriptedquests.Plugin scriptedQuestsPlugin;
+		scriptedQuestsPlugin = (com.playmonumenta.scriptedquests.Plugin)Bukkit.getPluginManager().getPlugin("ScriptedQuests");
+		mZoneManager = scriptedQuestsPlugin.mZoneManager;
+		// Register empty zone layers so replacing them is easier
+		mZoneManager.registerPluginZoneLayer(mZoneLayerInside);
+		mZoneManager.registerPluginZoneLayer(mZoneLayerNearby);
+
 		// Load the frequency that the plugin should check for respawning structures
 		if (!config.isInt("check_respawn_period")) {
-			plugin.getLogger().log(Level.INFO,
-			                       "No check_respawn_period setting specified - using default 20");
+			plugin.getLogger().warning("No check_respawn_period setting specified - using default 20");
 			mTickPeriod = 20;
 		} else {
 			mTickPeriod = config.getInt("check_respawn_period");
@@ -77,6 +98,12 @@ public class RespawnManager {
 	private void loadStructuresAsync(ConfigurationSection respawnSection) {
 		Set<String> keys = respawnSection.getKeys(false);
 
+		mZoneLayerInside.invalidate();
+		mZoneLayerNearby.invalidate();
+		mZoneLayerInside = new ZoneLayer(ZONE_LAYER_NAME_INSIDE);
+		mZoneLayerNearby = new ZoneLayer(ZONE_LAYER_NAME_NEARBY, true);
+		mStructuresByZone.clear();
+
 		// Iterate over all the respawning entries (shallow list at this level)
 		for (String key : keys) {
 			if (!respawnSection.isConfigurationSection(key)) {
@@ -93,6 +120,9 @@ public class RespawnManager {
 				continue;
 			}
 		}
+
+		mZoneManager.replacePluginZoneLayer(mZoneLayerInside);
+		mZoneManager.replacePluginZoneLayer(mZoneLayerNearby);
 	}
 
 	public void addStructure(int extraRadius, String configLabel, String name, String path,
@@ -100,6 +130,8 @@ public class RespawnManager {
 		mRespawns.put(configLabel, new RespawningStructure(mPlugin, mWorld, extraRadius, configLabel,
 		              name, Arrays.asList(path), loadPos, respawnTime, respawnTime, null, null, null, null));
 		mPlugin.saveConfig();
+		mZoneManager.replacePluginZoneLayer(mZoneLayerInside);
+		mZoneManager.replacePluginZoneLayer(mZoneLayerNearby);
 	}
 
 	public void removeStructure(String configLabel) throws Exception {
@@ -109,6 +141,39 @@ public class RespawnManager {
 
 		mRespawns.remove(configLabel);
 		mPlugin.saveConfig();
+
+		mZoneLayerInside.invalidate();
+		mZoneLayerNearby.invalidate();
+		mZoneLayerInside = new ZoneLayer(ZONE_LAYER_NAME_INSIDE);
+		mZoneLayerNearby = new ZoneLayer(ZONE_LAYER_NAME_NEARBY, true);
+		mStructuresByZone.clear();
+
+		for (RespawningStructure struct : mRespawns.values()) {
+			struct.registerZone();
+		}
+
+		mZoneManager.replacePluginZoneLayer(mZoneLayerInside);
+		mZoneManager.replacePluginZoneLayer(mZoneLayerNearby);
+	}
+
+	private List<RespawningStructure> getStructures(Vector loc, boolean includeNearby) {
+		List<RespawningStructure> structures = new ArrayList<RespawningStructure>();
+		ZoneFragment zoneFragment = mZoneManager.getZoneFragment(loc);
+		if (zoneFragment == null) {
+			return structures;
+		}
+
+		String layerName = includeNearby ? ZONE_LAYER_NAME_NEARBY : ZONE_LAYER_NAME_INSIDE;
+		List<Zone> zones = zoneFragment.getParentAndEclipsed(layerName);
+		for (Zone zone : zones) {
+			RespawningStructure struct = mStructuresByZone.get(zone);
+			if (struct == null) {
+				continue;
+			}
+			structures.add(struct);
+		}
+
+		return structures;
 	}
 
 	/* Human readable */
@@ -133,7 +198,7 @@ public class RespawnManager {
 
 	public void structureInfo(CommandSender sender, String label) throws Exception {
 		sender.sendMessage(ChatColor.GREEN + label + " : " + ChatColor.RESET +
-						   _getStructure(label).getInfoString());
+		                   _getStructure(label).getInfoString());
 	}
 
 	public void setTimer(String label, int ticksUntilRespawn) throws Exception {
@@ -213,6 +278,10 @@ public class RespawnManager {
 		for (RespawningStructure struct : mRespawns.values()) {
 			struct.playerDeathEvent(player, vec);
 		}
+	}
+
+	protected void registerRespawningStructureZone(Zone zone, RespawningStructure structure) {
+		mStructuresByZone.put(zone, structure);
 	}
 
 	private RespawningStructure _getStructure(String label) throws Exception {

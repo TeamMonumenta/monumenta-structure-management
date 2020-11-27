@@ -1,7 +1,10 @@
 package com.playmonumenta.epicstructures.managers;
 
+import java.util.EnumSet;
+
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -9,14 +12,24 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.Vector;
 
 import com.playmonumenta.epicstructures.Plugin;
 
 public class EventListener implements Listener {
+	private static final EnumSet<SpawnReason> DISALLOWED_STRUCTURE_SPAWN_REASONS = EnumSet.of(
+		SpawnReason.CHUNK_GEN,
+		SpawnReason.NATURAL,
+		SpawnReason.VILLAGE_DEFENSE,
+		SpawnReason.VILLAGE_INVASION
+	);
+
 	Plugin mPlugin = null;
 
 	public EventListener(Plugin plugin) {
@@ -74,5 +87,24 @@ public class EventListener implements Listener {
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void PlayerDeathEvent(PlayerDeathEvent event) {
 		mPlugin.mRespawnManager.playerDeathEvent(event.getEntity());
+	}
+
+	@EventHandler(priority = EventPriority.HIGH)
+	void CreatureSpawnEvent(CreatureSpawnEvent event) {
+		Entity entity = event.getEntity();
+		Vector loc = entity.getLocation().toVector();
+
+		// We need to allow spawning mobs intentionally, but disable natural spawns.
+		// It's easier to check the intentional ways than the natural ones.
+		if (DISALLOWED_STRUCTURE_SPAWN_REASONS.contains(event.getSpawnReason())) {
+			// Only cancel spawns in respawning structures
+			String zoneLayerNameInside = RespawnManager.ZONE_LAYER_NAME_INSIDE;
+
+			// We don't care which poi it is, just that the poi exists at that location
+			if (mPlugin.mRespawnManager.mZoneManager.getZone(loc, zoneLayerNameInside) != null) {
+				event.setCancelled(true);
+				return;
+			}
+		}
 	}
 }

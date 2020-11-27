@@ -1,40 +1,43 @@
 package com.playmonumenta.epicstructures.commands;
 
-import com.playmonumenta.epicstructures.Plugin;
-
-import io.github.jorelali.commandapi.api.arguments.Argument;
-import io.github.jorelali.commandapi.api.arguments.DynamicSuggestedStringArgument;
-import io.github.jorelali.commandapi.api.arguments.IntegerArgument;
-import io.github.jorelali.commandapi.api.CommandAPI;
-import io.github.jorelali.commandapi.api.CommandPermission;
-
 import java.util.LinkedHashMap;
+
+import com.playmonumenta.epicstructures.Plugin;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 
+import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.CommandPermission;
+import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.IntegerArgument;
+import dev.jorel.commandapi.arguments.StringArgument;
+
 public class RespawnStructure {
 	public static void register(Plugin plugin) {
+		final String command = "respawnstructure";
+		final CommandPermission perms = CommandPermission.fromString("epicstructures");
+
 		/* First one of these includes coordinate arguments */
 		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
 
-		arguments.put("label", new DynamicSuggestedStringArgument(() -> {return plugin.mRespawnManager.listStructures();}));
-		CommandAPI.getInstance().register("respawnstructure",
-		                                  CommandPermission.fromString("epicstructures"),
-		                                  arguments,
-		                                  (sender, args) -> {
-		                                      respawn(sender, plugin, (String)args[0], 0); // Default to immediately
-		                                  }
-		);
+		arguments.put("label", new StringArgument().overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}));
+		new CommandAPICommand(command)
+			.withPermission(perms)
+			.withArguments(arguments)
+			.executes((sender, args) -> {
+				respawn(sender, plugin, (String)args[0], 0); // Default to immediately
+			})
+			.register();
 
 		arguments.put("ticks_until_respawn", new IntegerArgument(0));
-		CommandAPI.getInstance().register("respawnstructure",
-		                                  CommandPermission.fromString("epicstructures"),
-		                                  arguments,
-		                                  (sender, args) -> {
-		                                      respawn(sender, plugin, (String)args[0], (Integer)args[1]);
-		                                  }
-		);
+		new CommandAPICommand(command)
+			.withPermission(perms)
+			.withArguments(arguments)
+			.executes((sender, args) -> {
+				respawn(sender, plugin, (String)args[0], (Integer)args[1]);
+			})
+			.register();
 	}
 
 	private static void respawn(CommandSender sender, Plugin plugin, String label, Integer ticksUntilRespawn) {

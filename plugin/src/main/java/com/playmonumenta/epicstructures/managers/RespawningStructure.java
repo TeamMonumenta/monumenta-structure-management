@@ -2,6 +2,7 @@ package com.playmonumenta.epicstructures.managers;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -14,12 +15,17 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import com.playmonumenta.epicstructures.Plugin;
 import com.playmonumenta.epicstructures.utils.StructureUtils;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
+import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Region;
+
+import com.playmonumenta.scriptedquests.zones.ZoneLayer;
+import com.playmonumenta.scriptedquests.zones.Zone;
 
 public class RespawningStructure implements Comparable<RespawningStructure> {
 	public static final int PLAYER_DEATH_EXTEND_TIME = 20 * 60 * 6;  // 6 minutes
@@ -118,14 +124,14 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		                               config.getString("name"), config.getStringList("structure_paths"),
 		                               new Vector(config.getInt("x"), config.getInt("y"), config.getInt("z")),
 		                               config.getInt("respawn_period"), config.getInt("ticks_until_respawn"),
-									   postRespawnCommand, specialPaths, nextRespawnPath, spawnerBreakTrigger);
+		                               postRespawnCommand, specialPaths, nextRespawnPath, spawnerBreakTrigger);
 	}
 
 	public RespawningStructure(Plugin plugin, World world, int extraRadius,
-	                           String configLabel, String name, List<String> genericPaths,
-	                           Vector loadPos, int respawnTime, int ticksLeft,
-							   String postRespawnCommand, List<String> specialPaths,
-							   String nextRespawnPath, SpawnerBreakTrigger spawnerBreakTrigger) throws Exception {
+		                       String configLabel, String name, List<String> genericPaths,
+		                       Vector loadPos, int respawnTime, int ticksLeft,
+		                       String postRespawnCommand, List<String> specialPaths,
+		                       String nextRespawnPath, SpawnerBreakTrigger spawnerBreakTrigger) throws Exception {
 		mPlugin = plugin;
 		mWorld = world;
 		mRandom = new Random();
@@ -145,19 +151,17 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		// Load all of the supplied structures
 		BlockArrayClipboard clipboard = null;
 		for (String path : genericPaths) {
-			// TODO: This is a sloppy way to get the dimensions... falling through to the last one
-			// Pre-load the schematic into the cache, but don't store a reference to it
-			clipboard = mPlugin.mStructureManager.loadSchematic(path);
 			mGenericVariants.add(path);
 		}
-		if (clipboard == null) {
+
+		if (mGenericVariants.size() < 1) {
 			throw new Exception("No structures specified for '" + mConfigLabel + "'");
 		}
+		// Load the first schematic to get its size
+		clipboard = mPlugin.mStructureManager.loadSchematic(mGenericVariants.get(0));
 
 		if (specialPaths != null) {
 			for (String path : specialPaths) {
-				// Pre-load the schematic into the cache, but don't store a reference to it
-				mPlugin.mStructureManager.loadSchematic(path);
 				mSpecialVariants.add(path);
 			}
 		}
@@ -169,8 +173,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 		// Determine structure size
 		Region clipboardRegion = clipboard.getRegion().clone();
-		com.sk89q.worldedit.Vector structureSize =
-		    clipboardRegion.getMaximumPoint().subtract(clipboardRegion.getMinimumPoint());
+		BlockVector3 structureSize = clipboardRegion.getMaximumPoint().subtract(clipboardRegion.getMinimumPoint());
 
 		// Create a bounding box for the structure itself, plus a slightly larger box to notify nearby players
 		mInnerBounds = new StructureBounds(mLoadPos, mLoadPos.clone().add(new Vector(structureSize.getX(),
@@ -179,16 +182,18 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		Vector extraRadiusVec = new Vector(extraRadius, extraRadius, extraRadius);
 		mOuterBounds = new StructureBounds(mInnerBounds.mLowerCorner.clone().subtract(extraRadiusVec),
 		                                   mInnerBounds.mUpperCorner.clone().add(extraRadiusVec));
+
+		registerZone();
 	}
 
 	public String getInfoString() {
 		return "name='" + mName + "' pos=(" + Integer.toString((int)mLoadPos.getX()) + " " +
 		       Integer.toString((int)mLoadPos.getY()) + " " + Integer.toString((int)mLoadPos.getZ()) +
-			   ") paths={" + String.join(" ", mGenericVariants) + "} period=" + Integer.toString(mRespawnTime) + " ticksleft=" +
-			   Integer.toString(mTicksLeft) +
-			   (mPostRespawnCommand == null ? "" : " respawnCmd='" + mPostRespawnCommand + "'") +
-			   (mSpecialVariants.isEmpty() ? "" : " specialPaths={" + String.join(" ", mSpecialVariants) + "}") +
-			   (mSpawnerBreakTrigger == null ? "" : " spawnerTrigger={" + mSpawnerBreakTrigger.getInfoString() + "}");
+		       ") paths={" + String.join(" ", mGenericVariants) + "} period=" + Integer.toString(mRespawnTime) + " ticksleft=" +
+		       Integer.toString(mTicksLeft) +
+		       (mPostRespawnCommand == null ? "" : " respawnCmd='" + mPostRespawnCommand + "'") +
+		       (mSpecialVariants.isEmpty() ? "" : " specialPaths={" + String.join(" ", mSpecialVariants) + "}") +
+		       (mSpawnerBreakTrigger == null ? "" : " spawnerTrigger={" + mSpawnerBreakTrigger.getInfoString() + "}");
 	}
 
 	public void activateSpecialStructure(String nextRespawnPath) throws Exception {
@@ -203,46 +208,59 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void respawn() {
-		BlockArrayClipboard clipboard;
-		try {
-			if (mNextRespawnPath == null) {
-				// No specified next path - pick a generic one at random
-				String path = mGenericVariants.get(mRandom.nextInt(mGenericVariants.size()));
-				clipboard = mPlugin.mStructureManager.loadSchematic(path);
-			} else {
-				// Next path was specified - use it
-				clipboard = mPlugin.mStructureManager.loadSchematic(mNextRespawnPath);
-				if (clipboard == null) {
-					// This should not be possible because we check when setting mNextRespawnPath
-					mPlugin.getLogger().log(Level.SEVERE, "Tried to spawn nonexistent nextRespawnPath='" + mNextRespawnPath + "'");
-					return;
-				}
-				// Go back to generic versions after spawning this once
-				mNextRespawnPath = null;
-			}
-		} catch (Exception e) {
-			mPlugin.getLogger().log(Level.SEVERE, "Failed to respawn structure '" + mConfigLabel + "'");
-			e.printStackTrace();
-			return;
-		}
+		final String respawnPath;
 
-		// Load the structure
-		StructureUtils.paste(mPlugin, clipboard, mWorld,
-		                     new com.sk89q.worldedit.Vector(mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ()));
+		if (mNextRespawnPath == null) {
+			// No specified next path - pick a generic one at random
+			respawnPath = mGenericVariants.get(mRandom.nextInt(mGenericVariants.size()));
+		} else {
+			// Next path was specified - use it
+			respawnPath = mNextRespawnPath;
 
-		// If a command was specified to run after, run it
-		if (mPostRespawnCommand != null) {
-			Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), mPostRespawnCommand);
-		}
-
-		// If we are tracking spawners for this structure, reset the count
-		if (mSpawnerBreakTrigger != null) {
-			mSpawnerBreakTrigger.resetCount();
+			// Go back to generic versions after spawning this once
+			mNextRespawnPath = null;
 		}
 
 		mTicksLeft = mRespawnTime;
 		mTimeExtendedForPlayerDeath = false;
 		mConquered = false;
+
+		// Load the schematic asynchronously (this might access the disk!)
+		// Then switch back to the main thread to initiate pasting
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				final BlockArrayClipboard clipboard;
+
+				try {
+					clipboard = mPlugin.mStructureManager.loadSchematic(respawnPath);
+				} catch (Exception e) {
+					mPlugin.asyncLog(Level.SEVERE, "Failed to load schematic '" + respawnPath +
+					                 "' for respawning structure '" + mConfigLabel + "'", e);
+					return;
+				}
+
+				/* Once the schematic is loaded, this task is used to paste it */
+				new BukkitRunnable() {
+					@Override
+					public void run() {
+						// Load the structure
+						StructureUtils.paste(mPlugin, clipboard, mWorld,
+											 BlockVector3.at(mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ()), true);
+
+						// If a command was specified to run after, run it
+						if (mPostRespawnCommand != null) {
+							Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), mPostRespawnCommand);
+						}
+
+						// If we are tracking spawners for this structure, reset the count
+						if (mSpawnerBreakTrigger != null) {
+							mSpawnerBreakTrigger.resetCount();
+						}
+					}
+				}.runTask(mPlugin);
+			}
+		}.runTaskAsynchronously(mPlugin);
 	}
 
 	public void tellRespawnTime(Player player) {
@@ -309,7 +327,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void setRespawnTimer(int ticksUntilRespawn) {
-		if (ticksUntilRespawn < 0) {
+		if (ticksUntilRespawn <= 0) {
 			respawn();
 		} else {
 			mTicksLeft = ticksUntilRespawn;
@@ -415,5 +433,28 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 	public void setSpawnerBreakTrigger(SpawnerBreakTrigger trigger) {
 		mSpawnerBreakTrigger = trigger;
+	}
+
+	public boolean registerZone() {
+		ZoneLayer zoneLayerInside = mPlugin.mRespawnManager.mZoneLayerInside;
+		ZoneLayer zoneLayerNearby = mPlugin.mRespawnManager.mZoneLayerNearby;
+
+		Zone insideZone = new Zone(zoneLayerInside,
+		                           mInnerBounds.mLowerCorner.clone(),
+		                           mInnerBounds.mUpperCorner.clone(),
+		                           mName,
+		                           new LinkedHashSet<String>());
+		Zone nearbyZone = new Zone(zoneLayerNearby,
+		                           mOuterBounds.mLowerCorner.clone(),
+		                           mOuterBounds.mUpperCorner.clone(),
+		                           mName,
+		                           new LinkedHashSet<String>());
+		zoneLayerInside.addZone(insideZone);
+		zoneLayerNearby.addZone(nearbyZone);
+
+		mPlugin.mRespawnManager.registerRespawningStructureZone(insideZone, this);
+		mPlugin.mRespawnManager.registerRespawningStructureZone(nearbyZone, this);
+
+		return true;
 	}
 }

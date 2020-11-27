@@ -23,6 +23,8 @@ public class ReloadStructures implements CommandExecutor {
 
 		mPlugin.reloadConfig();
 
+		sender.sendMessage(ChatColor.GREEN + "Structures reloaded");
+
 		return true;
 	}
 }

@@ -1,14 +1,51 @@
 package com.playmonumenta.epicstructures.utils;
 
+import java.io.File;
+import java.nio.file.Paths;
+import java.util.regex.Pattern;
+
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ProxiedCommandSender;
 import org.bukkit.entity.Entity;
-import org.bukkit.Location;
-import org.bukkit.World;
+import org.bukkit.plugin.Plugin;
+
+import dev.jorel.commandapi.CommandAPI;
+import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
 public class CommandUtils {
+	private static final String BASE_FOLDER_NAME = "structures";
+
+	public static String getSchematicPath(Plugin plugin, String baseName) {
+		return Paths.get(plugin.getDataFolder().toString(), BASE_FOLDER_NAME, baseName + ".schematic").toString();
+	}
+
+	public static File getAndValidateSchematicPath(Plugin plugin, String baseName, boolean failIfNotExist) throws WrapperCommandSyntaxException {
+		final Pattern invalidPathPattern = Pattern.compile("[^-/_a-zA-Z0-9]");
+
+		if (baseName == null || baseName.isEmpty()) {
+			CommandAPI.fail("Path is null or empty");
+		}
+
+		if (invalidPathPattern.matcher(baseName).find()) {
+			CommandAPI.fail("Path contains illegal characters");
+		}
+
+		if (baseName.contains("..")) {
+			CommandAPI.fail("Path cannot contain '..'");
+		}
+
+		final String fileName = getSchematicPath(plugin, baseName);
+		File file = new File(fileName);
+		if (failIfNotExist && !file.exists()) {
+			CommandAPI.fail("Path '" + baseName + "' does not exist (full path '" + fileName + "')");
+		}
+		return file;
+	}
+
 	public static int parseIntFromString(CommandSender sender, String str) throws Exception {
 		int value = 0;
 

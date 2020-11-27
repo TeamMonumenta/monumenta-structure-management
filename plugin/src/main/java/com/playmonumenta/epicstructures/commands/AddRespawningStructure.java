@@ -1,77 +1,56 @@
 package com.playmonumenta.epicstructures.commands;
 
-import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.util.Vector;
-import org.bukkit.World;
+import java.util.LinkedHashMap;
 
 import com.playmonumenta.epicstructures.Plugin;
 import com.playmonumenta.epicstructures.utils.CommandUtils;
 
-public class AddRespawningStructure implements CommandExecutor {
-	Plugin mPlugin;
-	World mWorld;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.command.CommandSender;
 
-	public AddRespawningStructure(Plugin plugin, World world) {
-		mPlugin = plugin;
-		mWorld = world;
+import dev.jorel.commandapi.CommandAPI;
+import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.CommandPermission;
+import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.IntegerArgument;
+import dev.jorel.commandapi.arguments.LocationArgument;
+import dev.jorel.commandapi.arguments.StringArgument;
+import dev.jorel.commandapi.arguments.TextArgument;
+import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
+
+public class AddRespawningStructure {
+	public static void register(Plugin plugin) {
+		final String command = "addrespawningstructure";
+		final CommandPermission perms = CommandPermission.fromString("epicstructures");
+
+		/* First one of these includes coordinate arguments */
+		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
+
+		arguments.put("label", new StringArgument());
+		arguments.put("path", new TextArgument()); // TODO: Path arguments autocomplete?
+		arguments.put("location", new LocationArgument());
+		arguments.put("extraRadius", new IntegerArgument(0));
+		arguments.put("respawnTime", new IntegerArgument(20));
+		arguments.put("name", new TextArgument());
+		new CommandAPICommand(command)
+			.withPermission(perms)
+			.withArguments(arguments)
+			.executes((sender, args) -> {
+				add(sender, plugin, (String)args[0], (String)args[1], (Location)args[2], (Integer)args[3], (Integer)args[4], (String)args[5]);
+			})
+			.register();
 	}
 
-	@Override
-	public boolean onCommand(CommandSender sender, Command command, String arg2, String[] arg3) {
-		if (arg3.length < 8) {
-			sender.sendMessage(ChatColor.RED + "Invalid number of parameters! Need at least 8");
-			return false;
-		}
-
-		String configLabel = arg3[0];
-		String path = arg3[1];
-
-		// Parse the integer values
-		Vector loadPos;
-		try {
-			loadPos = CommandUtils.parseLocationFromString(sender, mWorld, arg3[2], arg3[3], arg3[4]).toVector();
-		} catch (Exception e) {
-			sender.sendMessage(ChatColor.RED + "Failed to parse coordinates");
-			return false;
-		}
-
-		int extraRadius;
-		try {
-			extraRadius = CommandUtils.parseIntFromString(sender, arg3[5]);
-		} catch (Exception e) {
-			sender.sendMessage(ChatColor.RED + "Failed to parse extra detection radius");
-			return false;
-		}
-
-		int respawnTime;
-		try {
-			respawnTime = CommandUtils.parseIntFromString(sender, arg3[6]);
-		} catch (Exception e) {
-			sender.sendMessage(ChatColor.RED + "Failed to parse respawn time");
-			return false;
-		}
-
-		// Accumulate the name of the POI from remaining arguments
-		String name = "";
-		for (int i = 7; i < arg3.length; i++) {
-			if (i > 7) {
-				name += " ";
-			}
-			name += arg3[i].replaceAll("\"", "");
-		}
+	public static void add(CommandSender sender, Plugin plugin, String label, String path, Location loc, int extraRadius, int respawnTime, String name) throws WrapperCommandSyntaxException {
+		CommandUtils.getAndValidateSchematicPath(plugin, path, true);
 
 		try {
-			mPlugin.mRespawnManager.addStructure(extraRadius, configLabel, name, path, loadPos, respawnTime);
+			plugin.mRespawnManager.addStructure(extraRadius, label, name, path, loc.toVector(), respawnTime);
 		} catch (Exception e) {
-			sender.sendMessage(ChatColor.RED + "Failed to add structure: " + e.getMessage());
-			return false;
+			CommandAPI.fail(ChatColor.RED + "Failed to add structure: " + e.getMessage());
 		}
 
 		sender.sendMessage("Structure added successfully");
-
-		return true;
 	}
 }
