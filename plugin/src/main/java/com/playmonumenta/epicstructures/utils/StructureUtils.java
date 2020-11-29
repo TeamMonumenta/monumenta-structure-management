@@ -1,6 +1,7 @@
 package com.playmonumenta.epicstructures.utils;
 
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -8,6 +9,7 @@ import java.util.function.Consumer;
 
 import com.bergerkiller.bukkit.common.wrappers.LongHashSet;
 import com.bergerkiller.bukkit.lightcleaner.lighting.LightingService;
+import com.bergerkiller.bukkit.lightcleaner.lighting.LightingService.ScheduleArguments;
 import com.boydti.fawe.util.EditSessionBuilder;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
@@ -45,6 +47,8 @@ import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 
 public class StructureUtils {
+	private static final HashMap<Long, Integer> CHUNK_TICKET_REFERENCE_COUNT = new HashMap<>();
+
 	// Ignores structure void, leaving the original block in place
 	public static void paste(final Plugin plugin, final BlockArrayClipboard clipboard, final World world, final BlockVector3 to, final boolean includeEntities) {
 
@@ -68,6 +72,23 @@ public class StructureUtils {
 		/* This chunk consumer removes entities and sets spawners/brewstands/furnaces to air */
 		final Consumer<Chunk> chunkConsumer = (final Chunk chunk) -> {
 			numRemaining.decrementAndGet();
+
+			/*
+			 * Mark this chunk so it will stay loaded. Keep a reference count so chunks definitely stay loaded, even when
+			 * multiple overlapping structures are pasted simultaneously
+			 */
+			Long key = chunk.getChunkKey();
+			Integer references = CHUNK_TICKET_REFERENCE_COUNT.get(key);
+			if (references == null || references == 0) {
+				references = 1;
+				if (!chunk.addPluginChunkTicket(plugin)) {
+					plugin.getLogger().warning("BUG: Plugin already has chunk ticket for " + chunk.getX() + "," + chunk.getZ());
+				}
+			} else {
+				references += 1;
+			}
+			CHUNK_TICKET_REFERENCE_COUNT.put(key, references);
+
 			for (final BlockState state : chunk.getTileEntities(true)) {
 				if (state instanceof CreatureSpawner || state instanceof BrewingStand || state instanceof Furnace || state instanceof Chest || state instanceof ShulkerBox) {
 					final org.bukkit.Location loc = state.getLocation();
@@ -189,9 +210,32 @@ public class StructureUtils {
 							for (final BlockVector2 chunk : lightingChunks) {
 								lightCleanerChunks.add(chunk.getX(), chunk.getZ());
 							}
-							LightingService.schedule(world, lightCleanerChunks);
+							ScheduleArguments args = new ScheduleArguments();
+							args.setWorld(world);
+							args.setChunks(lightCleanerChunks);
+							args.setLoadedChunksOnly(true);
+							LightingService.schedule(args);
 
-							plugin.getLogger().info("scheduleLighting took " + Long.toString(System.currentTimeMillis() - lightTime) + " milliseconds (async)"); // STOP -->
+							plugin.getLogger().info("scheduleLighting took " + Long.toString(System.currentTimeMillis() - lightTime) + " milliseconds (main thread)"); // STOP -->
+
+							/* 10s later, unmark all chunks as force loaded */
+							Bukkit.getScheduler().runTaskLater(plugin, () -> {
+								for (final BlockVector2 chunkCoords : shiftedRegion.getChunks()) {
+									world.getChunkAtAsync(chunkCoords.getX(), chunkCoords.getZ(), (final Chunk chunk) -> {
+										Long key = chunk.getChunkKey();
+										Integer references = CHUNK_TICKET_REFERENCE_COUNT.remove(key);
+										if (references == null || references <= 0) {
+											plugin.getLogger().warning("BUG: Chunk reference was cleared before it should have been: " + chunk.getX() + "," + chunk.getZ());
+										} else if (references == 1) {
+											if (!chunk.removePluginChunkTicket(plugin)) {
+												plugin.getLogger().warning("BUG: Chunk ticket was already removed: " + chunk.getX() + "," + chunk.getZ());
+											}
+										} else {
+											CHUNK_TICKET_REFERENCE_COUNT.put(key, references - 1);
+										}
+									});
+								}
+							}, 200);
 						});
 					});
 				}
