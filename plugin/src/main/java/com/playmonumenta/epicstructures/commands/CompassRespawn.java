@@ -36,7 +36,11 @@ public class CompassRespawn {
 			return;
 		}
 		try {
-			plugin.mRespawnManager.compassRespawn((Player) sender, label, true);
+			Player player = (Player) sender;
+			if (player.hasMetadata("ForceReset")) {
+				plugin.mRespawnManager.compassRespawn(player, label);
+			}
+
 		} catch (Exception e) {
 			sender.sendMessage(ChatColor.RED + "Got error while attempting to force respawn on structure: " + e.getMessage());
 		}

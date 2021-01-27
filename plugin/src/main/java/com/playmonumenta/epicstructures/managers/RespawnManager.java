@@ -237,8 +237,8 @@ public class RespawnManager {
 		}
 	}
 
-	public void compassRespawn(Player player, String label, boolean forced) throws Exception {
-		_getStructure(label).forcedRespawn(player, forced);
+	public void compassRespawn(Player player, String label) throws Exception {
+		_getStructure(label).forcedRespawn(player);
 	}
 
 	public void cleanup() {

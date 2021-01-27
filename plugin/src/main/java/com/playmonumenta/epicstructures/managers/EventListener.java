@@ -116,8 +116,8 @@ public class EventListener implements Listener {
 		List<RespawningStructure> structs = mPlugin.mRespawnManager.getStructures(loc, false);
 		if (structs != null) {
 			for (RespawningStructure s : structs) {
-				if (s.getTicksLeft() < 20 * 6) {
-					s.setRespawnTimer(20 * 6);
+				if (s.getTicksLeft() < 20 * 6 * 60) {
+					s.setRespawnTimer(20 * 6 * 60);
 				}
 			}
 		}
