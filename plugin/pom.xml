@@ -17,6 +17,14 @@
         <minecraft.server.version>1.15.2-R0.1-SNAPSHOT</minecraft.server.version>
     </properties>
 
+	<distributionManagement>
+		<repository>
+			<id>github</id>
+			<name>GitHub OWNER Apache Maven Packages</name>
+			<url>https://maven.pkg.github.com/TeamMonumenta/monumenta-structure-management</url>
+		</repository>
+	</distributionManagement>
+
     <repositories>
         <repository>
             <id>repo</id>
@@ -30,19 +38,19 @@
             <url>file://${project.baseUri}/repo</url>
         </repository>
         <repository>
+            <id>scripted-quests</id>
+            <url>https://maven.pkg.github.com/TeamMonumenta/scripted-quests/</url>
+        </repository>
+        <repository>
             <id>spigotmc-repo</id>
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
+
         <repository>
             <id>papermc</id>
             <url>https://papermc.io/repo/repository/maven-public/</url>
         </repository>
-<!--
-        <repository>
-            <id>fawe-repo</id>
-            <url>http://ci.athion.net/job/FastAsyncWorldEdit-1.13/ws/mvn/</url>
-        </repository>
--->
+
         <repository>
             <id>commandapi</id>
             <url>https://raw.githubusercontent.com/JorelAli/CommandAPI/mvn-repo/</url>
@@ -68,13 +76,6 @@
             <version>1.16-414</version>
             <scope>provided</scope>
         </dependency>
-<!--
-        <dependency>
-            <groupId>com.boydti</groupId>
-            <artifactId>fawe-api</artifactId>
-            <version>latest</version>
-        </dependency>
--->
 
         <dependency>
             <groupId>com.bergerkiller.bukkit</groupId>
