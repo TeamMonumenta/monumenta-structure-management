@@ -9,7 +9,6 @@ import java.util.Random;
 import java.util.logging.Level;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -20,12 +19,16 @@ import org.bukkit.util.Vector;
 
 import com.playmonumenta.epicstructures.Plugin;
 import com.playmonumenta.epicstructures.utils.StructureUtils;
+import com.playmonumenta.scriptedquests.zones.Zone;
+import com.playmonumenta.scriptedquests.zones.ZoneLayer;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Region;
 
-import com.playmonumenta.scriptedquests.zones.ZoneLayer;
-import com.playmonumenta.scriptedquests.zones.Zone;
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.ClickEvent.Action;
+import net.md_5.bungee.api.chat.TextComponent;
 
 public class RespawningStructure implements Comparable<RespawningStructure> {
 	public class StructureBounds {
@@ -220,7 +223,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		}
 
 		mTicksLeft = mRespawnTime;
-		
+
 		// Ensure player is not inside
 		for (Player player : Bukkit.getOnlinePlayers()) {
 			if (mInnerBounds.within(player.getLocation().toVector())) {
@@ -262,19 +265,19 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 						if (mSpawnerBreakTrigger != null) {
 							mSpawnerBreakTrigger.resetCount();
 						}
-						
+
 						mForcedRespawn = false;
 					}
 				}.runTask(mPlugin);
 			}
 		}.runTaskAsynchronously(mPlugin);
 	}
-	
+
 	public void forcedRespawn(Player player, boolean forced) {
 		if (forced) {
 			player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "This Point of Interest is already forced to respawn!");
 		} else {
-			if (mSpawnerRatio < 0.2) {
+			if (mSpawnerBreakTrigger.getSpawnerRatio() < 0.2) {
 				mForcedRespawn = true;
 				mTicksLeft = 5 * 20;
 				player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + "has been forced to respawn in 5 minutes!");
@@ -320,13 +323,15 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			message += " [within]";
 		}
 
+		message = color + message;
+
 		TextComponent clickable = new TextComponent("[Force " + mName + " to respawn]");
 		clickable.setColor(ChatColor.DARK_PURPLE);
 		clickable.setClickEvent(new ClickEvent(Action.RUN_COMMAND, "/compassrespawn " + mConfigLabel));
-		
-		player.spigot().sendMessage(color + message, clickable);
+
+		player.spigot().sendMessage(new TextComponent(message), clickable);
 	}
-	
+
 	public int getTicksLeft() {
 		return mTicksLeft;
 	}
@@ -438,7 +443,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	public void setSpawnerBreakTrigger(SpawnerBreakTrigger trigger) {
 		mSpawnerBreakTrigger = trigger;
 	}
-	
+
 	public void conquerStructure() {
 		mTicksLeft = 0;
 		for (Player player : Bukkit.getOnlinePlayers()) {

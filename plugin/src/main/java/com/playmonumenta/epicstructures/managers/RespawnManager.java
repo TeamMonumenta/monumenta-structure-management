@@ -22,10 +22,10 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import com.playmonumenta.epicstructures.Plugin;
-import com.playmonumenta.scriptedquests.zones.ZoneManager;
-import com.playmonumenta.scriptedquests.zones.ZoneLayer;
 import com.playmonumenta.scriptedquests.zones.Zone;
 import com.playmonumenta.scriptedquests.zones.ZoneFragment;
+import com.playmonumenta.scriptedquests.zones.ZoneLayer;
+import com.playmonumenta.scriptedquests.zones.ZoneManager;
 
 public class RespawnManager {
 	public static final String ZONE_LAYER_NAME_INSIDE = "Respawning Structures Inside";
@@ -156,7 +156,7 @@ public class RespawnManager {
 		mZoneManager.replacePluginZoneLayer(mZoneLayerNearby);
 	}
 
-	private List<RespawningStructure> getStructures(Vector loc, boolean includeNearby) {
+	public List<RespawningStructure> getStructures(Vector loc, boolean includeNearby) {
 		List<RespawningStructure> structures = new ArrayList<RespawningStructure>();
 		ZoneFragment zoneFragment = mZoneManager.getZoneFragment(loc);
 		if (zoneFragment == null) {
@@ -236,8 +236,8 @@ public class RespawnManager {
 			player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "You are not within range of a respawning area");
 		}
 	}
-	
-	public void compassRespawn(Player player, String label, boolean forced) {
+
+	public void compassRespawn(Player player, String label, boolean forced) throws Exception {
 		_getStructure(label).forcedRespawn(player, forced);
 	}
 

@@ -16,6 +16,7 @@ import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
@@ -102,16 +103,16 @@ public class EventListener implements Listener {
 			}
 		}
 	}
-	
+
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void playerDeathEvent(PlayerDeathEvent event) {
 		Player player = event.getEntity();
-		Vector loc = plyaer.getLocation().toVector();
-		
+		Vector loc = player.getLocation().toVector();
+
 		if (player.getHealth() > 0) {
 			return;
 		}
-		
+
 		List<RespawningStructure> structs = mPlugin.mRespawnManager.getStructures(loc, false);
 		if (structs != null) {
 			for (RespawningStructure s : structs) {

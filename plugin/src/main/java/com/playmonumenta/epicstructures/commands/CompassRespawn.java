@@ -2,15 +2,15 @@ package com.playmonumenta.epicstructures.commands;
 
 import java.util.LinkedHashMap;
 
-import com.playmonumenta.epicstructures.Plugin;
-
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+
+import com.playmonumenta.epicstructures.Plugin;
 
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.Argument;
-import dev.jorel.commandapi.arguments.IntegerArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 
 public class CompassRespawn {
@@ -26,17 +26,17 @@ public class CompassRespawn {
 			.withPermission(perms)
 			.withArguments(arguments)
 			.executes((sender, args) -> {
-				forceRespawn(sender, plugin, args[0]);
+				forceRespawn(sender, plugin, (String)args[0]);
 			})
 			.register();
 	}
-	
+
 	private static void forceRespawn(CommandSender sender, Plugin plugin, String label) {
 		if (plugin.mRespawnManager == null) {
 			return;
 		}
 		try {
-			plugin.mRespawnManager.compassRespawn((Player) sender, true);
+			plugin.mRespawnManager.compassRespawn((Player) sender, label, true);
 		} catch (Exception e) {
 			sender.sendMessage(ChatColor.RED + "Got error while attempting to force respawn on structure: " + e.getMessage());
 		}
