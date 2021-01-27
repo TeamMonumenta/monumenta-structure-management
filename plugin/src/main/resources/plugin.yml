@@ -1,7 +1,8 @@
 name: EpicStructureManagement
 main: com.playmonumenta.epicstructures.Plugin
 version: 1.0
-api-version: 1.13
+api-version: 1.15
+depend: [ScriptedQuests]
 softdepend: [LightCleaner]
 commands:
   saveStructure:

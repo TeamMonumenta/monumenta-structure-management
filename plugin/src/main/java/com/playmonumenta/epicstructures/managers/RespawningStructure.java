@@ -2,6 +2,7 @@ package com.playmonumenta.epicstructures.managers;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -22,6 +23,9 @@ import com.playmonumenta.epicstructures.utils.StructureUtils;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Region;
+
+import com.playmonumenta.scriptedquests.zones.ZoneLayer;
+import com.playmonumenta.scriptedquests.zones.Zone;
 
 public class RespawningStructure implements Comparable<RespawningStructure> {
 	public class StructureBounds {
@@ -116,14 +120,14 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		                               config.getString("name"), config.getStringList("structure_paths"),
 		                               new Vector(config.getInt("x"), config.getInt("y"), config.getInt("z")),
 		                               config.getInt("respawn_period"), config.getInt("ticks_until_respawn"),
-									   postRespawnCommand, specialPaths, nextRespawnPath, spawnerBreakTrigger);
+		                               postRespawnCommand, specialPaths, nextRespawnPath, spawnerBreakTrigger);
 	}
 
 	public RespawningStructure(Plugin plugin, World world, int extraRadius,
-	                           String configLabel, String name, List<String> genericPaths,
-	                           Vector loadPos, int respawnTime, int ticksLeft,
-							   String postRespawnCommand, List<String> specialPaths,
-							   String nextRespawnPath, SpawnerBreakTrigger spawnerBreakTrigger) throws Exception {
+		                       String configLabel, String name, List<String> genericPaths,
+		                       Vector loadPos, int respawnTime, int ticksLeft,
+		                       String postRespawnCommand, List<String> specialPaths,
+		                       String nextRespawnPath, SpawnerBreakTrigger spawnerBreakTrigger) throws Exception {
 		mPlugin = plugin;
 		mWorld = world;
 		mRandom = new Random();
@@ -174,16 +178,18 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		Vector extraRadiusVec = new Vector(extraRadius, extraRadius, extraRadius);
 		mOuterBounds = new StructureBounds(mInnerBounds.mLowerCorner.clone().subtract(extraRadiusVec),
 		                                   mInnerBounds.mUpperCorner.clone().add(extraRadiusVec));
+
+		registerZone();
 	}
 
 	public String getInfoString() {
 		return "name='" + mName + "' pos=(" + Integer.toString((int)mLoadPos.getX()) + " " +
 		       Integer.toString((int)mLoadPos.getY()) + " " + Integer.toString((int)mLoadPos.getZ()) +
-			   ") paths={" + String.join(" ", mGenericVariants) + "} period=" + Integer.toString(mRespawnTime) + " ticksleft=" +
-			   Integer.toString(mTicksLeft) +
-			   (mPostRespawnCommand == null ? "" : " respawnCmd='" + mPostRespawnCommand + "'") +
-			   (mSpecialVariants.isEmpty() ? "" : " specialPaths={" + String.join(" ", mSpecialVariants) + "}") +
-			   (mSpawnerBreakTrigger == null ? "" : " spawnerTrigger={" + mSpawnerBreakTrigger.getInfoString() + "}");
+		       ") paths={" + String.join(" ", mGenericVariants) + "} period=" + Integer.toString(mRespawnTime) + " ticksleft=" +
+		       Integer.toString(mTicksLeft) +
+		       (mPostRespawnCommand == null ? "" : " respawnCmd='" + mPostRespawnCommand + "'") +
+		       (mSpecialVariants.isEmpty() ? "" : " specialPaths={" + String.join(" ", mSpecialVariants) + "}") +
+		       (mSpawnerBreakTrigger == null ? "" : " spawnerTrigger={" + mSpawnerBreakTrigger.getInfoString() + "}");
 	}
 
 	public void activateSpecialStructure(String nextRespawnPath) throws Exception {
@@ -313,7 +319,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void setRespawnTimer(int ticksUntilRespawn) {
-		if (ticksUntilRespawn < 0) {
+		if (ticksUntilRespawn <= 0) {
 			respawn();
 		} else {
 			mTicksLeft = ticksUntilRespawn;
@@ -390,5 +396,28 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 	public void setSpawnerBreakTrigger(SpawnerBreakTrigger trigger) {
 		mSpawnerBreakTrigger = trigger;
+	}
+
+	public boolean registerZone() {
+		ZoneLayer zoneLayerInside = mPlugin.mRespawnManager.mZoneLayerInside;
+		ZoneLayer zoneLayerNearby = mPlugin.mRespawnManager.mZoneLayerNearby;
+
+		Zone insideZone = new Zone(zoneLayerInside,
+		                           mInnerBounds.mLowerCorner.clone(),
+		                           mInnerBounds.mUpperCorner.clone(),
+		                           mName,
+		                           new LinkedHashSet<String>());
+		Zone nearbyZone = new Zone(zoneLayerNearby,
+		                           mOuterBounds.mLowerCorner.clone(),
+		                           mOuterBounds.mUpperCorner.clone(),
+		                           mName,
+		                           new LinkedHashSet<String>());
+		zoneLayerInside.addZone(insideZone);
+		zoneLayerNearby.addZone(nearbyZone);
+
+		mPlugin.mRespawnManager.registerRespawningStructureZone(insideZone, this);
+		mPlugin.mRespawnManager.registerRespawningStructureZone(nearbyZone, this);
+
+		return true;
 	}
 }

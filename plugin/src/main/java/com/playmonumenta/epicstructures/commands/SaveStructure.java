@@ -1,15 +1,15 @@
 package com.playmonumenta.epicstructures.commands;
 
+import com.playmonumenta.epicstructures.Plugin;
+import com.playmonumenta.epicstructures.utils.CommandUtils;
+import com.playmonumenta.epicstructures.utils.MessagingUtils;
+import com.sk89q.worldedit.math.BlockVector3;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-
-import com.playmonumenta.epicstructures.Plugin;
-import com.playmonumenta.epicstructures.utils.CommandUtils;
-import com.playmonumenta.epicstructures.utils.MessagingUtils;
-import com.sk89q.worldedit.math.BlockVector3;
 
 public class SaveStructure implements CommandExecutor {
 	Plugin mPlugin;

@@ -3,10 +3,10 @@
   <groupId>com.bergerkiller.bukkit</groupId>
   <artifactId>BKCommonLib</artifactId>
   <versioning>
-    <release>1.13.2-v1</release>
+    <release>1.15.2-v2</release>
     <versions>
-      <version>1.13.2-v1</version>
+      <version>1.15.2-v2</version>
     </versions>
-    <lastUpdated>20181112073656</lastUpdated>
+    <lastUpdated>20200516050309</lastUpdated>
   </versioning>
 </metadata>

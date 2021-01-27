@@ -1,23 +1,26 @@
 package com.playmonumenta.epicstructures.managers;
 
 import java.io.File;
-import java.nio.file.Paths;
+import java.io.FileOutputStream;
 import java.util.concurrent.ConcurrentSkipListMap;
 
-import com.boydti.fawe.object.schematic.Schematic;
+import com.boydti.fawe.object.clipboard.DiskOptimizedClipboard;
+import com.boydti.fawe.util.EditSessionBuilder;
 import com.playmonumenta.epicstructures.Plugin;
+import com.playmonumenta.epicstructures.utils.CommandUtils;
+import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats;
+import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
+import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.world.World;
 
 public class StructureManager {
-	private static final String BASE_FOLDER_NAME = "structures";
-
 	private final ConcurrentSkipListMap<String, BlockArrayClipboard> mSchematics = new ConcurrentSkipListMap<String, BlockArrayClipboard>();
 	private final Plugin mPlugin;
 	private final org.bukkit.World mWorld;
@@ -34,10 +37,6 @@ public class StructureManager {
 
 	/* It *should* be safe to call this async */
 	public BlockArrayClipboard loadSchematic(String baseName) throws Exception {
-		if (baseName == null || baseName.isEmpty()) {
-			throw new Exception("Structure name is empty!");
-		}
-
 		BlockArrayClipboard clipboard = null;
 		if (mUseStructureCache) {
 			clipboard = mSchematics.get(baseName);
@@ -45,18 +44,16 @@ public class StructureManager {
 		if (clipboard == null) {
 			// Schematic not already loaded - need to read it from disk and load it into RAM
 
-			final String fileName = _getFileName(baseName);
+			File file = CommandUtils.getAndValidateSchematicPath(mPlugin, baseName, true);
 
-			File file = new File(fileName);
-			if (!file.exists()) {
-				throw new Exception("Structure '" + baseName + "' does not exist");
+			Clipboard newClip = format.load(file);
+			if (newClip instanceof BlockArrayClipboard) {
+				clipboard = (BlockArrayClipboard)newClip;
+			} else if (newClip instanceof DiskOptimizedClipboard) {
+				clipboard = ((DiskOptimizedClipboard)newClip).toClipboard();
+			} else {
+				throw new Exception("Loaded unknown clipboard type: " + newClip.getClass().toString());
 			}
-
-			Clipboard newClip = format.load(file).getClipboard();
-			if (!(newClip instanceof BlockArrayClipboard)) {
-				throw new Exception("Clipboard is not a BlockArrayClipboard!");
-			}
-			clipboard = (BlockArrayClipboard)newClip;
 
 			if (mUseStructureCache) {
 				// Cache the schematic for fast access later
@@ -67,15 +64,8 @@ public class StructureManager {
 		return clipboard;
 	}
 
-	// This code adapted from forum post here: https://www.spigotmc.org/threads/saving-schematics-to-file-with-worldedit-api.276078/
 	public void saveSchematic(String baseName, BlockVector3 minpos, BlockVector3 maxpos, Runnable whenDone) throws Exception {
-		if (baseName == null || baseName.isEmpty()) {
-			throw new Exception("Structure name is empty!");
-		}
-
-		final String fileName = _getFileName(baseName);
-
-		File file = new File(fileName);
+		File file = CommandUtils.getAndValidateSchematicPath(mPlugin, baseName, false);
 		if (!file.exists()) {
 			file.getParentFile().mkdirs();
 			file.createNewFile();
@@ -83,8 +73,25 @@ public class StructureManager {
 
 		World world = new BukkitWorld(mWorld);
 		CuboidRegion cReg = new CuboidRegion(world, minpos, maxpos);
-		Schematic schem = new Schematic(cReg);
-		schem.save(file, format);
+		Clipboard clipboard = new BlockArrayClipboard(cReg);
+		clipboard.setOrigin(cReg.getMinimumPoint());
+
+		/* Copy the region (including entities and biomes) into the clipboard object */
+		EditSession extent = new EditSessionBuilder(world)
+			.autoQueue(true)
+			.fastmode(true)
+			.combineStages(true)
+			.changeSetNull()
+			.checkMemory(false)
+			.allowedRegionsEverywhere()
+			.limitUnlimited()
+			.build();
+		ForwardExtentCopy copy = new ForwardExtentCopy(extent, cReg, clipboard, cReg.getMinimumPoint());
+		copy.setCopyingEntities(true);
+		copy.setCopyingBiomes(false); // TODO: Re enable when FAWE supports this again
+		Operations.completeLegacy(copy);
+
+		format.write(new FileOutputStream(file), clipboard);
 
 		if (mUseStructureCache) {
 			// Re-load the schematic from disk into the cache
@@ -98,9 +105,5 @@ public class StructureManager {
 		 */
 		mPlugin.saveConfig();
 		mPlugin.reloadConfig();
-	}
-
-	private String _getFileName(String baseName) {
-		return Paths.get(mPlugin.getDataFolder().toString(), BASE_FOLDER_NAME, baseName + ".schematic").toString();
 	}
 }

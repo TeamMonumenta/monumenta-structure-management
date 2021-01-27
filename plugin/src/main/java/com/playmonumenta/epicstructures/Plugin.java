@@ -1,7 +1,12 @@
 package com.playmonumenta.epicstructures;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.logging.Level;
+
 import com.playmonumenta.epicstructures.commands.ActivateSpecialStructure;
 import com.playmonumenta.epicstructures.commands.AddRespawningStructure;
+import com.playmonumenta.epicstructures.commands.ForceloadLazy;
 import com.playmonumenta.epicstructures.commands.ListRespawningStructures;
 import com.playmonumenta.epicstructures.commands.LoadStructure;
 import com.playmonumenta.epicstructures.commands.ReloadStructures;
@@ -15,17 +20,12 @@ import com.playmonumenta.epicstructures.managers.EventListener;
 import com.playmonumenta.epicstructures.managers.RespawnManager;
 import com.playmonumenta.epicstructures.managers.StructureManager;
 
-import java.io.File;
-import java.io.IOException;
-
-import java.util.logging.Level;
-
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.plugin.PluginManager;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.World;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
 public class Plugin extends JavaPlugin {
 	public World mWorld;
@@ -45,8 +45,10 @@ public class Plugin extends JavaPlugin {
 		ListRespawningStructures.register(this);
 		SetPostRespawnCommand.register(this);
 		SetSpawnerBreakTrigger.register(this);
+		AddRespawningStructure.register(this);
 		RemoveRespawningStructure.register(this);
 		SetRespawnTimer.register(this);
+		ForceloadLazy.register(this);
 	}
 
 	@Override
@@ -54,10 +56,8 @@ public class Plugin extends JavaPlugin {
 		mWorld = Bukkit.getWorlds().get(0);
 
 		getCommand("SaveStructure").setExecutor(new SaveStructure(this, mWorld));
-		getCommand("AddRespawningStructure").setExecutor(new AddRespawningStructure(this, mWorld));
 		getCommand("ReloadStructures").setExecutor(new ReloadStructures(this));
 		//TODO: Command to add an alternate generic structure
-		//TODO: Command to set all timers to max ?
 
 		PluginManager manager = getServer().getPluginManager();
 		manager.registerEvents(new EventListener(this), this);
