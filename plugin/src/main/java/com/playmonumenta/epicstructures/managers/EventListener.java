@@ -1,6 +1,7 @@
 package com.playmonumenta.epicstructures.managers;
 
 import java.util.EnumSet;
+import java.util.List;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -98,6 +99,25 @@ public class EventListener implements Listener {
 			if (mPlugin.mRespawnManager.mZoneManager.getZone(loc, zoneLayerNameInside) != null) {
 				event.setCancelled(true);
 				return;
+			}
+		}
+	}
+	
+	@EventHandler(priority = EventPriority.HIGHEST)
+	public void playerDeathEvent(PlayerDeathEvent event) {
+		Player player = event.getEntity();
+		Vector loc = plyaer.getLocation().toVector();
+		
+		if (player.getHealth() > 0) {
+			return;
+		}
+		
+		List<RespawningStructure> structs = mPlugin.mRespawnManager.getStructures(loc, false);
+		if (structs != null) {
+			for (RespawningStructure s : structs) {
+				if (s.getTicksLeft() < 20 * 6) {
+					s.setRespawnTimer(20 * 6);
+				}
 			}
 		}
 	}

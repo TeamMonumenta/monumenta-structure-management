@@ -76,6 +76,13 @@ public class SpawnerBreakTrigger {
 				}
 			}
 		}
+		if (getSpawnerRatio() <= 0.2) {
+			structure.conquerStructure();
+		}
+	}
+	
+	public double getSpawnerRatio() {
+		return (double) mSpawnerCountRemaining / mSpawnerCount;
 	}
 
 	public void resetCount() {

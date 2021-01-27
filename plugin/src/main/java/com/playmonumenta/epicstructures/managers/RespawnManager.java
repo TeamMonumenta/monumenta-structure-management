@@ -236,6 +236,10 @@ public class RespawnManager {
 			player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "You are not within range of a respawning area");
 		}
 	}
+	
+	public void compassRespawn(Player player, String label, boolean forced) {
+		_getStructure(label).forcedRespawn(player, forced);
+	}
 
 	public void cleanup() {
 		if (taskScheduled) {
