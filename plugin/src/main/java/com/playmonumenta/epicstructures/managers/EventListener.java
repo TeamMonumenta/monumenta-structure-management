@@ -119,6 +119,9 @@ public class EventListener implements Listener {
 				if (s.getTicksLeft() < Math.min(20 * 11 * 60, s.getRespawnTime())) {
 					s.setRespawnTimer(Math.min(20 * 11 * 60, s.getRespawnTime()));
 				}
+				if (s.isForced()) {
+					s.undoForce();
+				}
 			}
 		}
 	}

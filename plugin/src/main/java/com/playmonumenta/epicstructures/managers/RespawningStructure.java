@@ -449,6 +449,10 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 		mTicksLeft -= ticks;
 
+		if (mForcedRespawn && mName.isEmpty()) {
+			mTicksLeft = 0;
+		}
+
 		if (mTicksLeft < 0) {
 			for (Player player : Bukkit.getOnlinePlayers()) {
 				if (player.getGameMode() != GameMode.SPECTATOR &&
@@ -486,6 +490,14 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 	public boolean isConquered() {
 		return mConquered;
+	}
+
+	public boolean isForced() {
+		return mForcedRespawn;
+	}
+
+	public void undoForce() {
+		mForcedRespawn = false;
 	}
 
 	public int getRespawnTime() {
