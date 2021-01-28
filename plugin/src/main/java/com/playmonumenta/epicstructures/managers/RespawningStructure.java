@@ -453,7 +453,14 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 		mTicksLeft -= ticks;
 
-		if (mForcedRespawn && mName.isEmpty()) {
+		boolean empty = true;
+		for (Player player : Bukkit.getOnlinePlayers()) {
+			if (mInnerBounds.within(player.getLocation().toVector())) {
+				empty = false;
+			}
+		}
+
+		if (mForcedRespawn && empty) {
 			mTicksLeft = 0;
 		}
 
