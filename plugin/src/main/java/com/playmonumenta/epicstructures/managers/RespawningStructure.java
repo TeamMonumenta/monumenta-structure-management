@@ -488,6 +488,10 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		return mConquered;
 	}
 
+	public int getRespawnTime() {
+		return mRespawnTime;
+	}
+
 	public boolean registerZone() {
 		ZoneLayer zoneLayerInside = mPlugin.mRespawnManager.mZoneLayerInside;
 		ZoneLayer zoneLayerNearby = mPlugin.mRespawnManager.mZoneLayerNearby;
