@@ -335,10 +335,14 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		}
 
 		if (mInnerBounds.within(player.getLocation().toVector())) {
-			message += " [within]";
+			message += " [Within]";
 		}
 
 		message = color + message;
+
+		if (mForcedRespawn) {
+			message += " " + ChatColor.RED + "" + ChatColor.BOLD + "[Forced Respawn]";
+		}
 
 		TextComponent clickable = new TextComponent("[Force " + mName + " to respawn]");
 		clickable.setColor(ChatColor.LIGHT_PURPLE);
