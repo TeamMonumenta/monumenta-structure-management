@@ -1,6 +1,7 @@
 package com.playmonumenta.epicstructures.managers;
 
 import java.util.EnumSet;
+import java.util.List;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -15,6 +16,7 @@ import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
@@ -98,6 +100,28 @@ public class EventListener implements Listener {
 			if (mPlugin.mRespawnManager.mZoneManager.getZone(loc, zoneLayerNameInside) != null) {
 				event.setCancelled(true);
 				return;
+			}
+		}
+	}
+
+	@EventHandler(priority = EventPriority.MONITOR)
+	public void playerDeathEvent(PlayerDeathEvent event) {
+		Player player = event.getEntity();
+		Vector loc = player.getLocation().toVector();
+
+		if (player.getHealth() > 0 || event.isCancelled()) {
+			return;
+		}
+
+		List<RespawningStructure> structs = mPlugin.mRespawnManager.getStructures(loc, false);
+		if (structs != null) {
+			for (RespawningStructure s : structs) {
+				if (s.getTicksLeft() < Math.min(20 * 11 * 60, s.getRespawnTime())) {
+					s.setRespawnTimer(Math.min(20 * 11 * 60, s.getRespawnTime()));
+				}
+				if (s.isForced()) {
+					s.undoForce();
+				}
 			}
 		}
 	}

@@ -1,19 +1,17 @@
 package com.playmonumenta.epicstructures.managers;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-
-import com.playmonumenta.epicstructures.Plugin;
-import com.playmonumenta.scriptedquests.quests.components.QuestComponent;
-
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.playmonumenta.epicstructures.Plugin;
+import com.playmonumenta.scriptedquests.quests.components.QuestComponent;
 
 public class SpawnerBreakTrigger {
 	// Number of spawners remaining when the POI resets / is fresh
@@ -76,6 +74,13 @@ public class SpawnerBreakTrigger {
 				}
 			}
 		}
+		if (getSpawnerRatio() <= 0 && !structure.isConquered()) {
+			structure.conquerStructure();
+		}
+	}
+
+	public double getSpawnerRatio() {
+		return (double) mSpawnerCountRemaining / mSpawnerCount;
 	}
 
 	public void resetCount() {
