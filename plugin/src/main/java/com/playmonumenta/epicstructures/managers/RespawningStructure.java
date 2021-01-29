@@ -293,7 +293,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 				mTicksLeft = 5 * 20 * 60;
 				for (Player p : Bukkit.getOnlinePlayers()) {
 					if (mOuterBounds.within(p.getLocation().toVector())) {
-						player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + "has been forced to respawn in 5 minutes!");
+						player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + " has been forced to respawn in 5 minutes!");
 					}
 				}
 
