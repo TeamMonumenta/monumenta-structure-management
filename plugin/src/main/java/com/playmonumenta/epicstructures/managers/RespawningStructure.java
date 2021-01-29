@@ -281,7 +281,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		if (player.hasMetadata("ForceResetPOI") && mOuterBounds.within(player.getLocation().toVector())) {
 			player.removeMetadata("ForceResetPOI", mPlugin);
 		} else {
-			player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "Waited too long! Try again.");
+			player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "You must be nearby the POI to force its respawn.");
 			return;
 		}
 

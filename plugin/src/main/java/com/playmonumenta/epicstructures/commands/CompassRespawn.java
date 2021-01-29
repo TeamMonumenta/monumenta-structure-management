@@ -42,6 +42,8 @@ public class CompassRespawn {
 			if (player.hasMetadata("ForceResetPOI")) {
 				String label = (String)player.getMetadata("ForceResetPOI").get(0).value();
 				plugin.mRespawnManager.compassRespawn(player, label);
+			} else {
+				player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "Waited too long!");
 			}
 
 		} catch (Exception e) {
