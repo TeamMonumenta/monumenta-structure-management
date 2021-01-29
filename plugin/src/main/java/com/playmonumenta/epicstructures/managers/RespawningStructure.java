@@ -286,7 +286,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		}
 
 		if (mForcedRespawn) {
-			player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "This Point of Interest is already forced to respawn!");
+			player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + " is already forced to respawn!");
 		} else {
 			if (mSpawnerBreakTrigger.getSpawnerRatio() <= 0) {
 				mForcedRespawn = true;
@@ -349,7 +349,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 		player.spigot().sendMessage(new TextComponent(message));
 		if (mConquered) {
-			player.setMetadata("ForceResetPOI", new FixedMetadataValue(mPlugin, mName));
+			player.setMetadata("ForceResetPOI", new FixedMetadataValue(mPlugin, mConfigLabel));
 			player.spigot().sendMessage(clickable);
 		}
 
