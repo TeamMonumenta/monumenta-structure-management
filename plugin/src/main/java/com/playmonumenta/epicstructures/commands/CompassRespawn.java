@@ -40,7 +40,7 @@ public class CompassRespawn {
 		try {
 			Player player = (Player) sender;
 			if (player.hasMetadata("ForceResetPOI")) {
-				String label = (String)player.getMetadata("MetadataKey").get(0).value();
+				String label = (String)player.getMetadata("ForceResetPOI").get(0).value();
 				plugin.mRespawnManager.compassRespawn(player, label);
 			}
 
