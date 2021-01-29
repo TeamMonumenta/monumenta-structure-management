@@ -16,7 +16,7 @@ import dev.jorel.commandapi.arguments.StringArgument;
 public class CompassRespawn {
 	public static void register(Plugin plugin) {
 		final String command = "compassrespawn";
-		final CommandPermission perms = CommandPermission.fromString("compassrespawn");
+		final CommandPermission perms = CommandPermission.fromString("epicstructures.compassrespawn");
 
 		/* First one of these includes coordinate arguments */
 		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
