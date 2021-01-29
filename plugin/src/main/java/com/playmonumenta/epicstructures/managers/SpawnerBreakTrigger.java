@@ -74,7 +74,7 @@ public class SpawnerBreakTrigger {
 				}
 			}
 		}
-		if (getSpawnerRatio() <= 0.2 && !structure.isConquered()) {
+		if (getSpawnerRatio() <= 0 && !structure.isConquered()) {
 			structure.conquerStructure();
 		}
 	}

@@ -104,12 +104,12 @@ public class EventListener implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.HIGHEST)
+	@EventHandler(priority = EventPriority.MONITOR)
 	public void playerDeathEvent(PlayerDeathEvent event) {
 		Player player = event.getEntity();
 		Vector loc = player.getLocation().toVector();
 
-		if (player.getHealth() > 0) {
+		if (player.getHealth() > 0 || event.isCancelled()) {
 			return;
 		}
 

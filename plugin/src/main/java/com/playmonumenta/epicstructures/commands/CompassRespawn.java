@@ -16,7 +16,7 @@ import dev.jorel.commandapi.arguments.StringArgument;
 public class CompassRespawn {
 	public static void register(Plugin plugin) {
 		final String command = "compassrespawn";
-		final CommandPermission perms = CommandPermission.fromString("epicstructures");
+		final CommandPermission perms = CommandPermission.fromString("compassrespawn");
 
 		/* First one of these includes coordinate arguments */
 		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
@@ -26,18 +26,21 @@ public class CompassRespawn {
 			.withPermission(perms)
 			.withArguments(arguments)
 			.executes((sender, args) -> {
-				forceRespawn(sender, plugin, (String)args[0]);
+				if (sender instanceof Player) {
+					forceRespawn(sender, plugin);
+				}
 			})
 			.register();
 	}
 
-	private static void forceRespawn(CommandSender sender, Plugin plugin, String label) {
+	private static void forceRespawn(CommandSender sender, Plugin plugin) {
 		if (plugin.mRespawnManager == null) {
 			return;
 		}
 		try {
 			Player player = (Player) sender;
-			if (player.hasMetadata("ForceReset")) {
+			if (player.hasMetadata("ForceResetPOI")) {
+				String label = (String)player.getMetadata("MetadataKey").get(0).value();
 				plugin.mRespawnManager.compassRespawn(player, label);
 			}
 
