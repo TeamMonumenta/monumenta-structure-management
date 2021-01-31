@@ -229,11 +229,13 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			mNextRespawnPath = null;
 		}
 
-		// Ensure player is not inside
-		for (Player player : Bukkit.getOnlinePlayers()) {
-			if (mInnerBounds.within(player.getLocation().toVector())) {
-				if (!mForcedRespawn) {
-					return;
+		// Ensure player is not inside unless amped
+		if (mNextRespawnPath == null) {
+			for (Player player : Bukkit.getOnlinePlayers()) {
+				if (mInnerBounds.within(player.getLocation().toVector())) {
+					if (!mForcedRespawn) {
+						return;
+					}
 				}
 			}
 		}
@@ -357,7 +359,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 		message = color + message;
 
-		if (mForcedRespawn) {
+		if (mForcedRespawn || mNextRespawnPath != null) {
 			message += " " + ChatColor.RED + "" + ChatColor.BOLD + "[Forced Respawn]";
 		}
 
