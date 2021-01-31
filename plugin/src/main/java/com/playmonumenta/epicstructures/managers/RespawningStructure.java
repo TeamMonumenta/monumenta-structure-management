@@ -518,8 +518,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		for (Player player : Bukkit.getOnlinePlayers()) {
 			if (player.getGameMode() != GameMode.SPECTATOR &&
 			    mOuterBounds.within(player.getLocation().toVector())) {
-				player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + "This Point of Interest has been conquered! It will respawn once all players leave the area.");
-				player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + mName +" has been conquered!");
+				player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + mName +" has been conquered! It will respawn once all players leave the area.");
 			}
 		}
 	}
