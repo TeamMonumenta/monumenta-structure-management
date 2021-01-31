@@ -489,12 +489,23 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void conquerStructure() {
+<<<<<<< Updated upstream
 		mTicksLeft = 0;
+=======
+		// Count how long it took to conquer POI, only set to zero if greater than minimum respawn time
+		int ticksToConquer = mRespawnTime - mTicksLeft;
+		mTicksLeft = ticksToConquer < mMinimumRespawnTime ? mMinimumRespawnTime - ticksToConquer : 0;
+
+>>>>>>> Stashed changes
 		mConquered = true;
 		for (Player player : Bukkit.getOnlinePlayers()) {
 			if (player.getGameMode() != GameMode.SPECTATOR &&
 			    mOuterBounds.within(player.getLocation().toVector())) {
+<<<<<<< Updated upstream
 				player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + "This Point of Interest has been conquered! It will respawn once all players leave the area.");
+=======
+				player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + mName +" has been conquered!");
+>>>>>>> Stashed changes
 			}
 		}
 	}
