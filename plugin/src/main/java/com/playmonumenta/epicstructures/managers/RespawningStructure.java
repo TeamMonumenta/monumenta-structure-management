@@ -59,10 +59,12 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	private StructureBounds mOuterBounds; // The bounding box for the nearby area around the structure
 	private int mExtraRadius;             // Radius around the structure that still gets messages
 	private int mTicksLeft;               // How many ticks remaining until respawn
+	private int mMinimumRespawnTime;      // Minimum ticks between respawns
 	private int mRespawnTime;             // How many ticks between respawns
 	private String mPostRespawnCommand;   // Command run via the console after respawning structure
 	private boolean mForcedRespawn;       // Was this set to have a forced respawn via compass
 	private boolean mConquered;           // Is the POI conquered
+	private String mLastPlayerRespawn;    // Player who last forced a respawn
 
 	// Path String -> BlockArrayClipboard maps
 	private final List<String> mGenericVariants = new ArrayList<String>();
@@ -142,11 +144,13 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		mLoadPos = loadPos;
 		mExtraRadius = extraRadius;
 		mRespawnTime = respawnTime;
+		mMinimumRespawnTime = 0;
 		mTicksLeft = ticksLeft;
 		mPostRespawnCommand = postRespawnCommand;
 		mSpawnerBreakTrigger = spawnerBreakTrigger;
 		mForcedRespawn = false;
 		mConquered = false;
+		mLastPlayerRespawn = null;
 
 		if (mRespawnTime < 200) {
 			throw new Exception("Minimum respawn_period value is 200 ticks");
@@ -225,11 +229,13 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			mNextRespawnPath = null;
 		}
 
-		// Ensure player is not inside
-		for (Player player : Bukkit.getOnlinePlayers()) {
-			if (mInnerBounds.within(player.getLocation().toVector())) {
-				if (!mForcedRespawn) {
-					return;
+		// Ensure player is not inside unless amped
+		if (mNextRespawnPath == null) {
+			for (Player player : Bukkit.getOnlinePlayers()) {
+				if (mInnerBounds.within(player.getLocation().toVector())) {
+					if (!mForcedRespawn) {
+						return;
+					}
 				}
 			}
 		}
@@ -269,6 +275,16 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 							mSpawnerBreakTrigger.resetCount();
 						}
 
+						if (!mForcedRespawn) {
+							mLastPlayerRespawn = null;
+						}
+
+						if (mConquered && !mForcedRespawn) {
+							mMinimumRespawnTime = Math.min(mMinimumRespawnTime + 5 * 60 * 20, mRespawnTime / 2);
+						} else if (!mForcedRespawn) {
+							mMinimumRespawnTime = Math.max(mMinimumRespawnTime - 5 * 60 * 20, 0);
+						}
+
 						mForcedRespawn = false;
 						mConquered = false;
 					}
@@ -289,14 +305,18 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + " is already forced to respawn!");
 		} else {
 			if (mSpawnerBreakTrigger.getSpawnerRatio() <= 0) {
-				mForcedRespawn = true;
-				mTicksLeft = 5 * 20 * 60;
-				for (Player p : Bukkit.getOnlinePlayers()) {
-					if (mOuterBounds.within(p.getLocation().toVector())) {
-						player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + " has been forced to respawn in 5 minutes!");
+				if (player.getDisplayName() == mLastPlayerRespawn) {
+					player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "You cannot force a POI to respawn twice in a row.");
+				} else {
+					mLastPlayerRespawn = player.getDisplayName();
+					mForcedRespawn = true;
+					mTicksLeft = 5 * 20 * 60;
+					for (Player p : Bukkit.getOnlinePlayers()) {
+						if (mOuterBounds.within(p.getLocation().toVector())) {
+							player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + " has been forced to respawn in 5 minutes!");
+						}
 					}
 				}
-
 			} else {
 				player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "You cannot force a respawn on a Point of Interest that has not been conquered!");
 			}
@@ -339,7 +359,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 		message = color + message;
 
-		if (mForcedRespawn) {
+		if (mForcedRespawn || mNextRespawnPath != null) {
 			message += " " + ChatColor.RED + "" + ChatColor.BOLD + "[Forced Respawn]";
 		}
 
@@ -490,11 +510,15 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 	public void conquerStructure() {
 		mTicksLeft = 0;
+		// Count how long it took to conquer POI, only set to zero if greater than minimum respawn time
+		int ticksToConquer = mRespawnTime - mTicksLeft;
+		mTicksLeft = ticksToConquer < mMinimumRespawnTime ? mMinimumRespawnTime - ticksToConquer : 0;
+
 		mConquered = true;
 		for (Player player : Bukkit.getOnlinePlayers()) {
 			if (player.getGameMode() != GameMode.SPECTATOR &&
 			    mOuterBounds.within(player.getLocation().toVector())) {
-				player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + "This Point of Interest has been conquered! It will respawn once all players leave the area.");
+				player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + mName +" has been conquered! It will respawn once all players leave the area.");
 			}
 		}
 	}
