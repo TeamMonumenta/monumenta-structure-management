@@ -509,7 +509,6 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void conquerStructure() {
-		mTicksLeft = 0;
 		// Count how long it took to conquer POI, only set to zero if greater than minimum respawn time
 		int ticksToConquer = mRespawnTime - mTicksLeft;
 		mTicksLeft = ticksToConquer < mMinimumRespawnTime ? mMinimumRespawnTime - ticksToConquer : 0;
