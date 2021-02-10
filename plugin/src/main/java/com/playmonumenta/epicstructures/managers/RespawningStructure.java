@@ -232,7 +232,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		// Ensure player is not inside unless amped
 		if (mNextRespawnPath == null) {
 			for (Player player : Bukkit.getOnlinePlayers()) {
-				if (mInnerBounds.within(player.getLocation().toVector())) {
+				if (!player.getGameMode().equals(GameMode.SPECTATOR) && mInnerBounds.within(player.getLocation().toVector())) {
 					if (!mForcedRespawn) {
 						return;
 					}
@@ -418,6 +418,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 	public void setRespawnTimer(int ticksUntilRespawn) {
 		if (ticksUntilRespawn <= 0) {
+			mForcedRespawn = true;
 			respawn();
 		} else {
 			mTicksLeft = ticksUntilRespawn;
