@@ -1,7 +1,5 @@
 package com.playmonumenta.epicstructures.commands;
 
-import java.util.LinkedHashMap;
-
 import com.playmonumenta.epicstructures.Plugin;
 import com.playmonumenta.epicstructures.utils.CommandUtils;
 
@@ -12,7 +10,6 @@ import org.bukkit.command.CommandSender;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
-import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.IntegerArgument;
 import dev.jorel.commandapi.arguments.LocationArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
@@ -24,18 +21,14 @@ public class AddRespawningStructure {
 		final String command = "addrespawningstructure";
 		final CommandPermission perms = CommandPermission.fromString("epicstructures");
 
-		/* First one of these includes coordinate arguments */
-		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
-
-		arguments.put("label", new StringArgument());
-		arguments.put("path", new TextArgument()); // TODO: Path arguments autocomplete?
-		arguments.put("location", new LocationArgument());
-		arguments.put("extraRadius", new IntegerArgument(0));
-		arguments.put("respawnTime", new IntegerArgument(20));
-		arguments.put("name", new TextArgument());
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(arguments)
+			.withArguments(new StringArgument("label"))
+			.withArguments(new TextArgument("path")) // TODO: Path arguments autocomplete?
+			.withArguments(new LocationArgument("location"))
+			.withArguments(new IntegerArgument("extraRadius", 0))
+			.withArguments(new IntegerArgument("respawnTime", 20))
+			.withArguments(new TextArgument("name"))
 			.executes((sender, args) -> {
 				add(sender, plugin, (String)args[0], (String)args[1], (Location)args[2], (Integer)args[3], (Integer)args[4], (String)args[5]);
 			})

@@ -64,7 +64,7 @@ public class StructureManager {
 		return clipboard;
 	}
 
-	public void saveSchematic(String baseName, BlockVector3 minpos, BlockVector3 maxpos, Runnable whenDone) throws Exception {
+	public void saveSchematic(String baseName, BlockVector3 minpos, BlockVector3 maxpos) throws Exception {
 		File file = CommandUtils.getAndValidateSchematicPath(mPlugin, baseName, false);
 		if (!file.exists()) {
 			file.getParentFile().mkdirs();

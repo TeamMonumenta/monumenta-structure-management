@@ -1,69 +1,55 @@
 package com.playmonumenta.epicstructures.commands;
 
 import com.playmonumenta.epicstructures.Plugin;
-import com.playmonumenta.epicstructures.utils.CommandUtils;
 import com.playmonumenta.epicstructures.utils.MessagingUtils;
 import com.sk89q.worldedit.math.BlockVector3;
 
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
-public class SaveStructure implements CommandExecutor {
-	Plugin mPlugin;
-	org.bukkit.World mWorld;
+import dev.jorel.commandapi.CommandAPI;
+import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.CommandPermission;
+import dev.jorel.commandapi.arguments.LocationArgument;
+import dev.jorel.commandapi.arguments.TextArgument;
+import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
-	public SaveStructure(Plugin plugin, org.bukkit.World world) {
-		mPlugin = plugin;
-		mWorld = world;
+public class SaveStructure {
+	public static void register(Plugin plugin) {
+		new CommandAPICommand("savestructure")
+			.withPermission(CommandPermission.fromString("epicstructures"))
+			.withArguments(new LocationArgument("pos1"))
+			.withArguments(new LocationArgument("pos2"))
+			.withArguments(new TextArgument("path"))
+			.executes((sender, args) -> {
+				save(sender, plugin, (Location)args[0], (Location)args[1], (String)args[2]);
+			})
+			.register();
 	}
 
-	@Override
-	public boolean onCommand(CommandSender sender, Command command, String arg2, String[] arg3) {
-		if (arg3.length != 7) {
-			sender.sendMessage(ChatColor.RED + "This command requires exactly seven arguments");
-			return false;
-		}
-
-		if (arg3[0].contains("..")) {
-			sender.sendMessage(ChatColor.RED + "Paths containing '..' are not allowed");
-			return false;
+	private static void save(CommandSender sender, Plugin plugin, Location loc1, Location loc2, String path) throws WrapperCommandSyntaxException {
+		if (path.contains("..")) {
+			CommandAPI.fail("Paths containing '..' are not allowed");
 		}
 
 		// Parse the coordinates of the structure to save
-		BlockVector3 minpos;
-		BlockVector3 maxpos;
-		try {
-			Location loc1 = CommandUtils.parseLocationFromString(sender, mWorld, arg3[1], arg3[2], arg3[3]);
-			Location loc2 = CommandUtils.parseLocationFromString(sender, mWorld, arg3[4], arg3[5], arg3[6]);
+		BlockVector3 pos1 = BlockVector3.at(loc1.getBlockX(), loc1.getBlockY(), loc1.getBlockZ());
+		BlockVector3 pos2 = BlockVector3.at(loc2.getBlockX(), loc2.getBlockY(), loc2.getBlockZ());
 
-			BlockVector3 pos1 = BlockVector3.at(loc1.getBlockX(), loc1.getBlockY(), loc1.getBlockZ());
-			BlockVector3 pos2 = BlockVector3.at(loc2.getBlockX(), loc2.getBlockY(), loc2.getBlockZ());
-
-			minpos = pos1.getMinimum(pos2);
-			maxpos = pos1.getMaximum(pos2);
-		} catch (Exception e) {
-			sender.sendMessage(ChatColor.RED + "Failed to parse coordinates");
-			MessagingUtils.sendStackTrace(sender, e);
-			return false;
-		}
+		BlockVector3 minpos = pos1.getMinimum(pos2);
+		BlockVector3 maxpos = pos1.getMaximum(pos2);
 
 		// Save it
 		try {
-			mPlugin.mStructureManager.saveSchematic(arg3[0], minpos, maxpos, null);
+			plugin.mStructureManager.saveSchematic(path, minpos, maxpos);
 		} catch (Exception e) {
-			mPlugin.getLogger().severe("Caught exception: " + e);
+			plugin.getLogger().severe("Caught exception saving structure: " + e.getMessage());
 			e.printStackTrace();
 
-			sender.sendMessage(ChatColor.RED + "Failed to save structure");
 			MessagingUtils.sendStackTrace(sender, e);
-			return false;
+			CommandAPI.fail("Failed to save structure" + e.getMessage());
 		}
 
-		sender.sendMessage("Saved structure '" + arg3[0] + "'");
-
-		return true;
+		sender.sendMessage("Saved structure '" + path + "'");
 	}
 }

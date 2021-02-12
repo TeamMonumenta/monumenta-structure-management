@@ -45,17 +45,14 @@
             <id>spigotmc-repo</id>
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
-
         <repository>
             <id>papermc</id>
             <url>https://papermc.io/repo/repository/maven-public/</url>
         </repository>
-
         <repository>
             <id>commandapi</id>
             <url>https://raw.githubusercontent.com/JorelAli/CommandAPI/mvn-repo/</url>
         </repository>
-
         <repository>
             <id>monumenta-scripted-quests</id>
 			<url>https://raw.githubusercontent.com/TeamMonumenta/scripted-quests/master/mvn-repo/</url>
@@ -94,7 +91,7 @@
         <dependency>
             <groupId>dev.jorel</groupId>
             <artifactId>commandapi-core</artifactId>
-            <version>4.3</version>
+            <version>5.2</version>
             <scope>provided</scope>
         </dependency>
 

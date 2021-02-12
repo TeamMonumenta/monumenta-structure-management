@@ -1,7 +1,5 @@
 package com.playmonumenta.epicstructures.commands;
 
-import java.util.LinkedHashMap;
-
 import com.playmonumenta.epicstructures.Plugin;
 import com.playmonumenta.epicstructures.managers.SpawnerBreakTrigger;
 
@@ -10,7 +8,6 @@ import org.bukkit.command.CommandSender;
 
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
-import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.IntegerArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
@@ -20,23 +17,19 @@ public class SetSpawnerBreakTrigger {
 		final String command = "setspawnerbreaktrigger";
 		final CommandPermission perms = CommandPermission.fromString("epicstructures");
 
-		/* First one of these includes coordinate arguments */
-		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
-
-		arguments.put("label", new StringArgument().overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}));
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(arguments)
+			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}))
 			.executes((sender, args) -> {
 				setTrigger(sender, plugin, (String)args[0], 0, null);
 			})
 			.register();
 
-		arguments.put("spawner_count", new IntegerArgument(0));
-		arguments.put("quest_component", new GreedyStringArgument());
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(arguments)
+			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}))
+			.withArguments(new IntegerArgument("spawner_count", 0))
+			.withArguments(new GreedyStringArgument("quest_component"))
 			.executes((sender, args) -> {
 				setTrigger(sender, plugin, (String)args[0], (Integer)args[1], (String)args[2]);
 			})

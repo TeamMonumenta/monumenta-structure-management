@@ -1,7 +1,5 @@
 package com.playmonumenta.epicstructures.commands;
 
-import java.util.LinkedHashMap;
-
 import com.playmonumenta.epicstructures.Plugin;
 
 import org.bukkit.ChatColor;
@@ -9,7 +7,6 @@ import org.bukkit.command.CommandSender;
 
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
-import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.IntegerArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 
@@ -18,22 +15,18 @@ public class RespawnStructure {
 		final String command = "respawnstructure";
 		final CommandPermission perms = CommandPermission.fromString("epicstructures");
 
-		/* First one of these includes coordinate arguments */
-		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
-
-		arguments.put("label", new StringArgument().overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}));
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(arguments)
+			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}))
 			.executes((sender, args) -> {
 				respawn(sender, plugin, (String)args[0], 600); // Default 30s
 			})
 			.register();
 
-		arguments.put("ticks_until_respawn", new IntegerArgument(0));
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(arguments)
+			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}))
+			.withArguments(new IntegerArgument("ticks_until_respawn", 0))
 			.executes((sender, args) -> {
 				respawn(sender, plugin, (String)args[0], (Integer)args[1]);
 			})

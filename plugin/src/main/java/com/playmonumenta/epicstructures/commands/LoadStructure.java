@@ -1,6 +1,5 @@
 package com.playmonumenta.epicstructures.commands;
 
-import java.util.LinkedHashMap;
 import java.util.logging.Level;
 
 import com.playmonumenta.epicstructures.Plugin;
@@ -17,7 +16,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
-import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.BooleanArgument;
 import dev.jorel.commandapi.arguments.LocationArgument;
 import dev.jorel.commandapi.arguments.TextArgument;
@@ -28,24 +26,20 @@ public class LoadStructure {
 		final String command = "loadstructure";
 		final CommandPermission perms = CommandPermission.fromString("epicstructures");
 
-		/* First one of these includes coordinate arguments */
-		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
-
-		arguments.put("path", new TextArgument());
-		arguments.put("position", new LocationArgument());
-
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(arguments)
+			.withArguments(new TextArgument("path"))
+			.withArguments(new LocationArgument("position"))
 			.executes((sender, args) -> {
 				load(sender, plugin, (String)args[0], (Location)args[1], false);
 			})
 			.register();
 
-		arguments.put("includeEntities", new BooleanArgument());
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(arguments)
+			.withArguments(new TextArgument("path"))
+			.withArguments(new LocationArgument("position"))
+			.withArguments(new BooleanArgument("includeEntities"))
 			.executes((sender, args) -> {
 				load(sender, plugin, (String)args[0], (Location)args[1], (Boolean)args[2]);
 			})

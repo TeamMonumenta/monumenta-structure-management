@@ -1,7 +1,5 @@
 package com.playmonumenta.epicstructures.commands;
 
-import java.util.LinkedHashMap;
-
 import com.playmonumenta.epicstructures.Plugin;
 
 import org.bukkit.ChatColor;
@@ -9,7 +7,6 @@ import org.bukkit.command.CommandSender;
 
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
-import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.StringArgument;
 
 public class ListRespawningStructures {
@@ -17,21 +14,16 @@ public class ListRespawningStructures {
 		final String command = "listrespawningstructures";
 		final CommandPermission perms = CommandPermission.fromString("epicstructures");
 
-		/* First one of these includes coordinate arguments */
-		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
-
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(arguments)
 			.executes((sender, args) -> {
 				list(sender, plugin, null);
 			})
 			.register();
 
-		arguments.put("label", new StringArgument().overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}));
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(arguments)
+			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}))
 			.executes((sender, args) -> {
 				list(sender, plugin, (String)args[0]);
 			})

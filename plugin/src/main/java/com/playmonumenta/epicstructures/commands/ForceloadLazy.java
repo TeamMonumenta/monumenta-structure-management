@@ -1,6 +1,5 @@
 package com.playmonumenta.epicstructures.commands;
 
-import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -15,10 +14,9 @@ import org.bukkit.command.CommandSender;
 
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
-import dev.jorel.commandapi.arguments.Argument;
-import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.Location2DArgument;
 import dev.jorel.commandapi.arguments.LocationType;
+import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import dev.jorel.commandapi.wrappers.Location2D;
 import net.md_5.bungee.api.ChatColor;
@@ -28,23 +26,22 @@ public class ForceloadLazy {
 		final CommandPermission perms = CommandPermission.fromString("epicstructures.forceloadlazy");
 
 		/* First one of these includes coordinate arguments */
-		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
-		arguments.put("addlazy", new LiteralArgument("addlazy"));
-		arguments.put("from", new Location2DArgument(LocationType.BLOCK_POSITION));
 		new CommandAPICommand("forceload")
 			.withPermission(perms)
-			.withArguments(arguments)
+			.withArguments(new MultiLiteralArgument("addlazy"))
+			.withArguments(new Location2DArgument("from", LocationType.BLOCK_POSITION))
 			.executes((sender, args) -> {
-				load(sender, plugin, (Location2D)args[0], (Location2D)args[0]); // Intentionally both the same argument
+				load(sender, plugin, (Location2D)args[1], (Location2D)args[1]); // Intentionally both the same argument
 			})
 			.register();
 
-		arguments.put("to", new Location2DArgument(LocationType.BLOCK_POSITION));
 		new CommandAPICommand("forceload")
 			.withPermission(perms)
-			.withArguments(arguments)
+			.withArguments(new MultiLiteralArgument("addlazy"))
+			.withArguments(new Location2DArgument("from", LocationType.BLOCK_POSITION))
+			.withArguments(new Location2DArgument("to", LocationType.BLOCK_POSITION))
 			.executes((sender, args) -> {
-				load(sender, plugin, (Location2D)args[0], (Location2D)args[1]);
+				load(sender, plugin, (Location2D)args[1], (Location2D)args[2]);
 			})
 			.register();
 	}
