@@ -1,16 +1,13 @@
 package com.playmonumenta.epicstructures.commands;
 
-import java.util.LinkedHashMap;
+import com.playmonumenta.epicstructures.Plugin;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import com.playmonumenta.epicstructures.Plugin;
-
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
-import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.StringArgument;
 
 public class CompassRespawn {
@@ -18,13 +15,9 @@ public class CompassRespawn {
 		final String command = "compassrespawn";
 		final CommandPermission perms = CommandPermission.fromString("epicstructures.compassrespawn");
 
-		/* First one of these includes coordinate arguments */
-		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
-
-		arguments.put("label", new StringArgument().overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}));
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(arguments)
+			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}))
 			.executes((sender, args) -> {
 				if (sender instanceof Player) {
 					forceRespawn(sender, plugin);

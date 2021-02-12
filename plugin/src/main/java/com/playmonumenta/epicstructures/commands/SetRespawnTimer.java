@@ -1,7 +1,5 @@
 package com.playmonumenta.epicstructures.commands;
 
-import java.util.LinkedHashMap;
-
 import com.playmonumenta.epicstructures.Plugin;
 
 import org.bukkit.ChatColor;
@@ -9,20 +7,15 @@ import org.bukkit.command.CommandSender;
 
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
-import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.IntegerArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 
 public class SetRespawnTimer {
 	public static void register(Plugin plugin) {
-		/* First one of these includes coordinate arguments */
-		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
-
-		arguments.put("label", new StringArgument().overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}));
-		arguments.put("ticks", new IntegerArgument(0));
 		new CommandAPICommand("setrespawntimer")
 			.withPermission(CommandPermission.fromString("epicstructures"))
-			.withArguments(arguments)
+			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}))
+			.withArguments(new IntegerArgument("ticks", 0))
 			.executes((sender, args) -> {
 				setTimer(sender, plugin, (String)args[0], (Integer)args[1]);
 			})
