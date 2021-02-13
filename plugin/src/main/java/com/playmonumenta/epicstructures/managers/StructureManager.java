@@ -1,5 +1,6 @@
 package com.playmonumenta.epicstructures.managers;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -14,24 +15,25 @@ import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats;
+import com.sk89q.worldedit.extent.clipboard.io.ClipboardWriter;
 import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
+import com.sk89q.worldedit.util.io.Closer;
 import com.sk89q.worldedit.world.World;
 
 public class StructureManager {
+	private static final String FORMAT = "sponge";
+
 	private final ConcurrentSkipListMap<String, BlockArrayClipboard> mSchematics = new ConcurrentSkipListMap<String, BlockArrayClipboard>();
 	private final Plugin mPlugin;
 	private final org.bukkit.World mWorld;
-	private final ClipboardFormat format;
 	private final boolean mUseStructureCache;
-
 
 	public StructureManager(Plugin plugin, org.bukkit.World world, boolean useStructureCache) {
 		mPlugin = plugin;
 		mWorld = world;
-		format = ClipboardFormats.findByAlias("sponge");
 		mUseStructureCache = useStructureCache;
 	}
 
@@ -46,6 +48,7 @@ public class StructureManager {
 
 			File file = CommandUtils.getAndValidateSchematicPath(mPlugin, baseName, true);
 
+			ClipboardFormat format = ClipboardFormats.findByAlias(FORMAT);
 			Clipboard newClip = format.load(file);
 			if (newClip instanceof BlockArrayClipboard) {
 				clipboard = (BlockArrayClipboard)newClip;
@@ -91,7 +94,15 @@ public class StructureManager {
 		copy.setCopyingBiomes(false); // TODO: Re enable when FAWE supports this again
 		Operations.completeLegacy(copy);
 
-		format.write(new FileOutputStream(file), clipboard);
+		try (Closer closer = Closer.create()) {
+			ClipboardFormat format = ClipboardFormats.findByAlias(FORMAT);
+			FileOutputStream fos = closer.register(new FileOutputStream(file));
+			BufferedOutputStream bos = closer.register(new BufferedOutputStream(fos));
+			ClipboardWriter writer = closer.register(format.getWriter(bos));
+			writer.write(clipboard);
+		} catch (Exception ex) {
+			throw ex;
+		}
 
 		if (mUseStructureCache) {
 			// Re-load the schematic from disk into the cache
