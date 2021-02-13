@@ -221,7 +221,7 @@ public class StructureUtils {
 							/* 10s later, unmark all chunks as force loaded */
 							Bukkit.getScheduler().runTaskLater(plugin, () -> {
 								for (final BlockVector2 chunkCoords : shiftedRegion.getChunks()) {
-									world.getChunkAtAsync(chunkCoords.getX(), chunkCoords.getZ(), (final Chunk chunk) -> {
+									final Consumer<Chunk> consumer = (final Chunk chunk) -> {
 										Long key = chunk.getChunkKey();
 										Integer references = CHUNK_TICKET_REFERENCE_COUNT.remove(key);
 										if (references == null || references <= 0) {
@@ -233,7 +233,8 @@ public class StructureUtils {
 										} else {
 											CHUNK_TICKET_REFERENCE_COUNT.put(key, references - 1);
 										}
-									});
+									};
+									world.getChunkAtAsync(chunkCoords.getX(), chunkCoords.getZ(), consumer);
 								}
 							}, 200);
 						});

@@ -25,7 +25,6 @@ import com.playmonumenta.epicstructures.Plugin;
 
 public class EventListener implements Listener {
 	private static final EnumSet<SpawnReason> DISALLOWED_STRUCTURE_SPAWN_REASONS = EnumSet.of(
-		SpawnReason.CHUNK_GEN,
 		SpawnReason.NATURAL,
 		SpawnReason.VILLAGE_DEFENSE,
 		SpawnReason.VILLAGE_INVASION
@@ -91,7 +90,6 @@ public class EventListener implements Listener {
 		Vector loc = entity.getLocation().toVector();
 
 		// We need to allow spawning mobs intentionally, but disable natural spawns.
-		// It's easier to check the intentional ways than the natural ones.
 		if (DISALLOWED_STRUCTURE_SPAWN_REASONS.contains(event.getSpawnReason())) {
 			// Only cancel spawns in respawning structures
 			String zoneLayerNameInside = RespawnManager.ZONE_LAYER_NAME_INSIDE;
