@@ -18,11 +18,11 @@ public class SaveStructure {
 	public static void register(Plugin plugin) {
 		new CommandAPICommand("savestructure")
 			.withPermission(CommandPermission.fromString("epicstructures"))
+			.withArguments(new TextArgument("path"))
 			.withArguments(new LocationArgument("pos1"))
 			.withArguments(new LocationArgument("pos2"))
-			.withArguments(new TextArgument("path"))
 			.executes((sender, args) -> {
-				save(sender, plugin, (Location)args[0], (Location)args[1], (String)args[2]);
+				save(sender, plugin, (Location)args[1], (Location)args[2], (String)args[0]);
 			})
 			.register();
 	}
