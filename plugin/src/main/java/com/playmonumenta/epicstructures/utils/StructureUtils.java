@@ -61,6 +61,7 @@ public class StructureUtils {
 		final BoundingBox box = new BoundingBox(pos1.getX(), pos1.getY(), pos1.getZ(), pos2.getX(), pos2.getY(), pos2.getZ());
 
 		final Region shiftedRegion = clipboard.getRegion().clone();
+		shiftedRegion.shift(shiftedRegion.getMinimumPoint().multiply(-1, -1, -1));
 		shiftedRegion.shift(to);
 
 		final Set<BlockVector2> chunks = shiftedRegion.getChunks();
@@ -136,7 +137,7 @@ public class StructureUtils {
 		};
 
 		/* Load all the chunks in the region and run the chunk consumer */
-		for (final BlockVector2 chunkCoords : shiftedRegion.getChunks()) {
+		for (final BlockVector2 chunkCoords : chunks) {
 			world.getChunkAtAsync(chunkCoords.getX(), chunkCoords.getZ(), chunkConsumer);
 		}
 
