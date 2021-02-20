@@ -60,8 +60,14 @@ public class StructureUtils {
 		final Vector pos2 = pos1.clone().add(new Vector(size.getX() + 1, size.getY() + 1, size.getZ() + 1));
 		final BoundingBox box = new BoundingBox(pos1.getX(), pos1.getY(), pos1.getZ(), pos2.getX(), pos2.getY(), pos2.getZ());
 
+		/*
+		 * Clipboards seem to be offset at their original save location now, rather than at 0 0 0
+		 * This offset can be added to a relative position to get the correct location within the clipboard
+		 */
 		final Region shiftedRegion = clipboard.getRegion().clone();
-		shiftedRegion.shift(shiftedRegion.getMinimumPoint().multiply(-1, -1, -1));
+		final BlockVector3 clipboardAddOffset = shiftedRegion.getMinimumPoint();
+		final Vector clipboardAddOffsetVec = new Vector(clipboardAddOffset.getX(), clipboardAddOffset.getY(), clipboardAddOffset.getZ());
+		shiftedRegion.shift(clipboardAddOffset.multiply(-1, -1, -1));
 		shiftedRegion.shift(to);
 
 		final Set<BlockVector2> chunks = shiftedRegion.getChunks();
@@ -93,7 +99,7 @@ public class StructureUtils {
 			for (final BlockState state : chunk.getTileEntities(true)) {
 				if (state instanceof CreatureSpawner || state instanceof BrewingStand || state instanceof Furnace || state instanceof Chest || state instanceof ShulkerBox) {
 					final org.bukkit.Location loc = state.getLocation();
-					final BlockVector3 relPos = BlockVector3.at(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()).subtract(to);
+					final BlockVector3 relPos = BlockVector3.at(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()).subtract(to).add(clipboardAddOffset);
 					if (box.contains(loc.toVector()) && !clipboard.getBlock(relPos).getBlockType().equals(BlockTypes.STRUCTURE_VOID)) {
 						if (state instanceof CreatureSpawner || state instanceof BrewingStand || state instanceof Furnace) {
 							// TODO: Work around a bug in FAWE that corrupts these blocks if they're not removed first
@@ -127,7 +133,7 @@ public class StructureUtils {
 			if (includeEntities) {
 				for (final Entity entity : chunk.getEntities()) {
 					if (box.contains(entity.getLocation().toVector()) && entityShouldBeRemoved(entity)) {
-						final Vector relPos = entity.getLocation().toVector().subtract(pos1);
+						final Vector relPos = entity.getLocation().toVector().subtract(pos1).add(clipboardAddOffsetVec);
 						if (!clipboard.getBlock(BlockVector3.at(relPos.getBlockX(), relPos.getBlockY(), relPos.getBlockZ())).getBlockType().equals(BlockTypes.STRUCTURE_VOID)) {
 							entity.remove();
 						}
