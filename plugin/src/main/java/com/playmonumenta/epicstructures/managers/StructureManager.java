@@ -3,7 +3,6 @@ package com.playmonumenta.epicstructures.managers;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.util.concurrent.ConcurrentSkipListMap;
 
 import com.boydti.fawe.object.clipboard.DiskOptimizedClipboard;
 import com.boydti.fawe.util.EditSessionBuilder;
@@ -90,9 +89,5 @@ public class StructureManager {
 		} catch (Exception ex) {
 			throw ex;
 		}
-
-		/* TODO: Remove reload */
-		mPlugin.saveConfig();
-		mPlugin.reloadConfig();
 	}
 }
