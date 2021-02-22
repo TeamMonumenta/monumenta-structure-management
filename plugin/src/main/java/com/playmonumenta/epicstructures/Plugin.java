@@ -22,21 +22,18 @@ import com.playmonumenta.epicstructures.managers.RespawnManager;
 import com.playmonumenta.epicstructures.managers.StructureManager;
 
 import org.bukkit.Bukkit;
-import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class Plugin extends JavaPlugin {
-	public World mWorld;
 	public StructureManager mStructureManager;
 
 	public RespawnManager mRespawnManager = null;
 
 	private File mConfigFile;
 	private YamlConfiguration mConfig;
-	private boolean mUseStructureCache;
 
 	@Override
 	public void onLoad() {
@@ -57,8 +54,6 @@ public class Plugin extends JavaPlugin {
 
 	@Override
 	public void onEnable() {
-		mWorld = Bukkit.getWorlds().get(0);
-
 		//TODO: Command to add an alternate generic structure
 
 		PluginManager manager = getServer().getPluginManager();
@@ -110,16 +105,9 @@ public class Plugin extends JavaPlugin {
 
 		mConfig = YamlConfiguration.loadConfiguration(mConfigFile);
 
-		// Load whether to use the structure cache
-		if (!mConfig.isBoolean("structure_cache_enabled")) {
-			getLogger().warning("No structure_cache_enabled setting specified - using default false");
-			mUseStructureCache = false;
-		} else {
-			mUseStructureCache = mConfig.getBoolean("structure_cache_enabled");
-		}
-
-		mStructureManager = new StructureManager(this, mWorld, mUseStructureCache);
-		mRespawnManager = new RespawnManager(this, mWorld, mConfig);
+		/* TODO: Non-hardcoded worlds! These should be saved into the respawning structure */
+		mStructureManager = new StructureManager(this);
+		mRespawnManager = new RespawnManager(this, Bukkit.getWorlds().get(0), mConfig);
 	}
 
 	@Override
@@ -127,7 +115,6 @@ public class Plugin extends JavaPlugin {
 		if (mRespawnManager != null) {
 			try {
 				mConfig = mRespawnManager.getConfig();
-				mConfig.set("structure_cache_enabled", mUseStructureCache);
 				mConfig.save(mConfigFile);
 			} catch (Exception ex) {
 				getLogger().log(Level.SEVERE, "Could not save config to " + mConfigFile, ex);
