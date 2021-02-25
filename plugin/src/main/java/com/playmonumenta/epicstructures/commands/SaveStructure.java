@@ -41,7 +41,7 @@ public class SaveStructure {
 
 		// Save it
 		try {
-			plugin.mStructureManager.saveSchematic(path, minpos, maxpos);
+			plugin.mStructureManager.saveSchematic(path, minpos, maxpos, loc1.getWorld());
 		} catch (Exception e) {
 			plugin.getLogger().severe("Caught exception saving structure: " + e.getMessage());
 			e.printStackTrace();

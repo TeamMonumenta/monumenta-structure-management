@@ -48,6 +48,12 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		}
 	}
 
+	private enum NearbyState {
+		UNKNOWN,
+		PLAYER_WITHIN,
+		NO_PLAYER_WITHIN
+	}
+
 	private Plugin mPlugin;
 	private World mWorld;
 	private Random mRandom;
@@ -63,6 +69,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	private int mRespawnTime;             // How many ticks between respawns
 	private String mPostRespawnCommand;   // Command run via the console after respawning structure
 	private boolean mForcedRespawn;       // Was this set to have a forced respawn via compass
+	private NearbyState mPlayerNearbyLastTick; // Was there a player nearby last tick while respawn time was < 0?
 	private boolean mConquered;           // Is the POI conquered
 	private String mLastPlayerRespawn;    // Player who last forced a respawn
 
@@ -149,6 +156,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		mPostRespawnCommand = postRespawnCommand;
 		mSpawnerBreakTrigger = spawnerBreakTrigger;
 		mForcedRespawn = false;
+		mPlayerNearbyLastTick = NearbyState.UNKNOWN;
 		mConquered = false;
 		mLastPlayerRespawn = null;
 
@@ -229,16 +237,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			mNextRespawnPath = null;
 		}
 
-		// Ensure player is not inside unless amped
-		if (mNextRespawnPath == null) {
-			for (Player player : Bukkit.getOnlinePlayers()) {
-				if (!player.getGameMode().equals(GameMode.SPECTATOR) && mInnerBounds.within(player.getLocation().toVector())) {
-					if (!mForcedRespawn) {
-						return;
-					}
-				}
-			}
-		}
+		mPlayerNearbyLastTick = NearbyState.UNKNOWN;
 
 		mTicksLeft = mRespawnTime;
 
@@ -312,7 +311,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 					mForcedRespawn = true;
 					mTicksLeft = 5 * 20 * 60;
 					for (Player p : Bukkit.getOnlinePlayers()) {
-						if (mOuterBounds.within(p.getLocation().toVector())) {
+						if (isNearby(p)) {
 							player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + " has been forced to respawn in 5 minutes!");
 						}
 					}
@@ -395,19 +394,11 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		return false;
 	}
 
-	public boolean isNearby(Location loc) {
-		return isNearby(loc);
-	}
-
 	public boolean isWithin(Player player) {
 		if (mInnerBounds.within(player.getLocation().toVector())) {
 			return true;
 		}
 		return false;
-	}
-
-	public boolean isWithin(Location loc) {
-		return isNearby(loc);
 	}
 
 	public void tellRespawnTimeIfNearby(Player player) {
@@ -465,7 +456,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		    ((mTicksLeft >= 2400 && (mTicksLeft - ticks) < 2400) ||
 		     (mTicksLeft >= 600 && (mTicksLeft - ticks) < 600))) {
 			for (Player player : Bukkit.getOnlinePlayers()) {
-				if (mOuterBounds.within(player.getLocation().toVector())) {
+				if (isNearby(player)) {
 					tellRespawnTime(player);
 				}
 			}
@@ -476,7 +467,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		if (mForcedRespawn) {
 			boolean empty = true;
 			for (Player player : Bukkit.getOnlinePlayers()) {
-				if (mInnerBounds.within(player.getLocation().toVector())) {
+				if (isWithin(player)) {
 					empty = false;
 				}
 			}
@@ -486,12 +477,38 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		}
 
 		if (mTicksLeft < 0) {
+			boolean isPlayerNearby = false;
+			boolean isPlayerWithin = false;
+			boolean isAmped = mNextRespawnPath != null;
+
 			for (Player player : Bukkit.getOnlinePlayers()) {
-				if (player.getGameMode() != GameMode.SPECTATOR &&
-				    mOuterBounds.within(player.getLocation().toVector())) {
-					respawn();
-					break;
+				if (player.getGameMode() != GameMode.SPECTATOR) {
+					if (isWithin(player)) {
+						isPlayerNearby = true;
+						isPlayerWithin = true;
+						break;
+					} else if (isNearby(player)) {
+						isPlayerNearby = true;
+						/* Don't break - another player might still be within */
+					}
 				}
+			}
+
+
+			/*
+			 * To respawn, a player must be nearby (within the outer detection zone)
+			 * AND one of the following conditions
+			 */
+			boolean shouldRespawn = isPlayerNearby &&
+					(mForcedRespawn || // The POI was forced to respawn by a player
+					 isAmped || // The POI is amplified for the next spawn
+					 mPlayerNearbyLastTick == NearbyState.NO_PLAYER_WITHIN || // There was no player nearby last check (they teleported in)
+					 isPlayerWithin); // There is no player within the POI itself, just nearby
+
+			mPlayerNearbyLastTick = isPlayerNearby ? NearbyState.PLAYER_WITHIN : NearbyState.NO_PLAYER_WITHIN;
+
+			if (shouldRespawn) {
+				respawn();
 			}
 		}
 	}
@@ -517,7 +534,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		mConquered = true;
 		for (Player player : Bukkit.getOnlinePlayers()) {
 			if (player.getGameMode() != GameMode.SPECTATOR &&
-			    mOuterBounds.within(player.getLocation().toVector())) {
+			    isNearby(player)) {
 				player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + mName +" has been conquered! It will respawn once all players leave the area.");
 			}
 		}
