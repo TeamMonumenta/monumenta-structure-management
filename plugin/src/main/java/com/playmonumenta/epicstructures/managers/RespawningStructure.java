@@ -10,7 +10,6 @@ import java.util.logging.Level;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
-import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
@@ -503,7 +502,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 					(mForcedRespawn || // The POI was forced to respawn by a player
 					 isAmped || // The POI is amplified for the next spawn
 					 mPlayerNearbyLastTick == NearbyState.NO_PLAYER_WITHIN || // There was no player nearby last check (they teleported in)
-					 isPlayerWithin); // There is no player within the POI itself, just nearby
+					 !isPlayerWithin); // There is no player within the POI itself, just nearby
 
 			mPlayerNearbyLastTick = isPlayerNearby ? NearbyState.PLAYER_WITHIN : NearbyState.NO_PLAYER_WITHIN;
 
