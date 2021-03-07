@@ -215,7 +215,6 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		//TODO: There needs to be a better way to register special versions!
 		if (nextRespawnPath != null && !mSpecialVariants.contains(nextRespawnPath)) {
 			mSpecialVariants.add(nextRespawnPath);
-			mPlugin.mStructureManager.loadSchematic(nextRespawnPath);
 		}
 		//TODO: Check that this structure is the same size!
 
@@ -240,6 +239,24 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 		mTicksLeft = mRespawnTime;
 
+		// If we are tracking spawners for this structure, reset the count
+		if (mSpawnerBreakTrigger != null) {
+			mSpawnerBreakTrigger.resetCount();
+		}
+
+		if (!mForcedRespawn) {
+			mLastPlayerRespawn = null;
+		}
+
+		if (mConquered && !mForcedRespawn) {
+			mMinimumRespawnTime = Math.min(mMinimumRespawnTime + 5 * 60 * 20, mRespawnTime / 2);
+		} else if (!mForcedRespawn) {
+			mMinimumRespawnTime = Math.max(mMinimumRespawnTime - 5 * 60 * 20, 0);
+		}
+
+		mForcedRespawn = false;
+		mConquered = false;
+
 		// Load the schematic asynchronously (this might access the disk!)
 		// Then switch back to the main thread to initiate pasting
 		new BukkitRunnable() {
@@ -261,30 +278,12 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 					public void run() {
 						// Load the structure
 						StructureUtils.paste(mPlugin, clipboard, mWorld,
-											 BlockVector3.at(mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ()), true);
-
-						// If a command was specified to run after, run it
-						if (mPostRespawnCommand != null) {
-							Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), mPostRespawnCommand);
-						}
-
-						// If we are tracking spawners for this structure, reset the count
-						if (mSpawnerBreakTrigger != null) {
-							mSpawnerBreakTrigger.resetCount();
-						}
-
-						if (!mForcedRespawn) {
-							mLastPlayerRespawn = null;
-						}
-
-						if (mConquered && !mForcedRespawn) {
-							mMinimumRespawnTime = Math.min(mMinimumRespawnTime + 5 * 60 * 20, mRespawnTime / 2);
-						} else if (!mForcedRespawn) {
-							mMinimumRespawnTime = Math.max(mMinimumRespawnTime - 5 * 60 * 20, 0);
-						}
-
-						mForcedRespawn = false;
-						mConquered = false;
+											 BlockVector3.at(mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ()), true, () -> {
+							// If a command was specified to run after, run it
+							if (mPostRespawnCommand != null) {
+								Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), mPostRespawnCommand);
+							}
+						}, null);
 					}
 				}.runTask(mPlugin);
 			}

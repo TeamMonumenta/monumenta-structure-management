@@ -1,28 +1,26 @@
 package com.playmonumenta.structures.commands;
 
-import java.util.logging.Level;
+import java.util.concurrent.CompletableFuture;
 
+import com.playmonumenta.structures.StructuresAPI;
 import com.playmonumenta.structures.StructuresPlugin;
-import com.playmonumenta.structures.utils.CommandUtils;
 import com.playmonumenta.structures.utils.MessagingUtils;
-import com.playmonumenta.structures.utils.StructureUtils;
-import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
-import com.sk89q.worldedit.math.BlockVector3;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.BooleanArgument;
+import dev.jorel.commandapi.arguments.FunctionArgument;
 import dev.jorel.commandapi.arguments.LocationArgument;
 import dev.jorel.commandapi.arguments.TextArgument;
-import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
+import dev.jorel.commandapi.wrappers.FunctionWrapper;
 
 public class LoadStructure {
-	public static void register(StructuresPlugin plugin) {
+	public static void register() {
 		final String command = "loadstructure";
 		final CommandPermission perms = CommandPermission.fromString("monumenta.structures");
 
@@ -31,7 +29,7 @@ public class LoadStructure {
 			.withArguments(new TextArgument("path"))
 			.withArguments(new LocationArgument("position"))
 			.executes((sender, args) -> {
-				load(sender, plugin, (String)args[0], (Location)args[1], false);
+				load(sender, (String)args[0], (Location)args[1], false, null);
 			})
 			.register();
 
@@ -41,51 +39,50 @@ public class LoadStructure {
 			.withArguments(new LocationArgument("position"))
 			.withArguments(new BooleanArgument("includeEntities"))
 			.executes((sender, args) -> {
-				load(sender, plugin, (String)args[0], (Location)args[1], (Boolean)args[2]);
+				load(sender, (String)args[0], (Location)args[1], (Boolean)args[2], null);
+			})
+			.register();
+
+		new CommandAPICommand(command)
+			.withPermission(perms)
+			.withArguments(new TextArgument("path"))
+			.withArguments(new LocationArgument("position"))
+			.withArguments(new BooleanArgument("includeEntities"))
+			.withArguments(new FunctionArgument("postLoadFunction"))
+			.executes((sender, args) -> {
+				load(sender, (String)args[0], (Location)args[1], (Boolean)args[2], (FunctionWrapper[])args[3]);
 			})
 			.register();
 	}
 
-	private static void load(CommandSender sender, StructuresPlugin plugin, String path, Location loadLoc, boolean includeEntities) throws WrapperCommandSyntaxException {
-		CommandUtils.getAndValidateSchematicPath(plugin, path, true);
+	private static void load(CommandSender sender, String path, Location loadLoc, boolean includeEntities, FunctionWrapper[] postFunc) {
+		CompletableFuture<Void> future = StructuresAPI.loadStructureAsync(path, loadLoc, includeEntities);
 
-		if (plugin.mStructureManager == null) {
-			return;
-		}
+		if (sender != null || postFunc != null) {
+			/* Only actually wait for the result if there's someone to talk to about the result */
 
-		BlockVector3 loadPos = BlockVector3.at(loadLoc.getBlockX(), loadLoc.getBlockY(), loadLoc.getBlockZ());
-
-		// Load the schematic asynchronously (this might access the disk!)
-		// Then switch back to the main thread to initiate pasting
-		new BukkitRunnable() {
-			@Override
-			public void run() {
-				final BlockArrayClipboard clipboard;
-
+			Bukkit.getScheduler().runTaskAsynchronously(StructuresPlugin.getInstance(), () -> {
 				try {
-					clipboard = plugin.mStructureManager.loadSchematic(path);
-				} catch (Exception e) {
-					plugin.asyncLog(Level.SEVERE, "Failed to load schematic '" + path + "'", e);
-
-					if (sender != null) {
-						sender.sendMessage(ChatColor.RED + "Failed to load structure");
-						MessagingUtils.sendStackTrace(sender, e);
-					}
-					return;
-				}
-
-				/* Once the schematic is loaded, this task is used to paste it */
-				new BukkitRunnable() {
-					@Override
-					public void run() {
-						StructureUtils.paste(plugin, clipboard, loadLoc.getWorld(), loadPos, includeEntities);
-
-						if (sender != null) {
-							sender.sendMessage("Loaded structure '" + path + "' at " + loadPos);
+					future.get();
+					Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> {
+						if (postFunc != null) {
+							for (FunctionWrapper func : postFunc) {
+								func.run();
+							}
 						}
-					}
-				}.runTask(plugin);
-			}
-		}.runTaskAsynchronously(plugin);
+						if (sender != null) {
+							sender.sendMessage("Loaded structure '" + path + "' at (" + loadLoc.getBlockX() + " " + loadLoc.getBlockY() + " " + loadLoc.getBlockZ() + ")");
+						}
+					});
+				} catch (Exception e) {
+					Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> {
+						if (sender != null) {
+							sender.sendMessage(ChatColor.RED + "Failed to load structure: " + e.getMessage());
+							MessagingUtils.sendStackTrace(sender, e);
+						}
+					});
+				}
+			});
+		}
 	}
 }

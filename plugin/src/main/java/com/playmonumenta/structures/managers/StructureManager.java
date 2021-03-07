@@ -31,23 +31,20 @@ public class StructureManager {
 		mPlugin = plugin;
 	}
 
-	/* It *should* be safe to call this async */
+	/* This function should be called async - it will likely block to read data from the filesystem */
 	public BlockArrayClipboard loadSchematic(String baseName) throws Exception {
-		BlockArrayClipboard clipboard = null;
-		if (clipboard == null) {
-			// Schematic not already loaded - need to read it from disk and load it into RAM
+		final BlockArrayClipboard clipboard;
 
-			File file = CommandUtils.getAndValidateSchematicPath(mPlugin, baseName, true);
+		File file = CommandUtils.getAndValidateSchematicPath(mPlugin, baseName, true);
 
-			ClipboardFormat format = ClipboardFormats.findByAlias(FORMAT);
-			Clipboard newClip = format.load(file);
-			if (newClip instanceof BlockArrayClipboard) {
-				clipboard = (BlockArrayClipboard)newClip;
-			} else if (newClip instanceof DiskOptimizedClipboard) {
-				clipboard = ((DiskOptimizedClipboard)newClip).toClipboard();
-			} else {
-				throw new Exception("Loaded unknown clipboard type: " + newClip.getClass().toString());
-			}
+		ClipboardFormat format = ClipboardFormats.findByAlias(FORMAT);
+		Clipboard newClip = format.load(file);
+		if (newClip instanceof BlockArrayClipboard) {
+			clipboard = (BlockArrayClipboard)newClip;
+		} else if (newClip instanceof DiskOptimizedClipboard) {
+			clipboard = ((DiskOptimizedClipboard)newClip).toClipboard();
+		} else {
+			throw new Exception("Loaded unknown clipboard type: " + newClip.getClass().toString());
 		}
 
 		return clipboard;

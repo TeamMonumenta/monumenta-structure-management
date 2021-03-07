@@ -28,9 +28,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class StructuresPlugin extends JavaPlugin {
-	public StructureManager mStructureManager;
-
+	public StructureManager mStructureManager = null;
 	public RespawnManager mRespawnManager = null;
+
+	private static StructuresPlugin INSTANCE = null;
 
 	private File mConfigFile;
 	private YamlConfiguration mConfig;
@@ -42,11 +43,11 @@ public class StructuresPlugin extends JavaPlugin {
 		CompassRespawn.register();
 		ForceloadLazy.register();
 		ListRespawningStructures.register();
-		LoadStructure.register(this);
+		LoadStructure.register();
 		ReloadStructures.register(this);
 		RemoveRespawningStructure.register();
 		RespawnStructure.register();
-		SaveStructure.register(this);
+		SaveStructure.register();
 		SetPostRespawnCommand.register();
 		SetRespawnTimer.register();
 		SetSpawnerBreakTrigger.register(this);
@@ -54,6 +55,8 @@ public class StructuresPlugin extends JavaPlugin {
 
 	@Override
 	public void onEnable() {
+		INSTANCE = this;
+
 		//TODO: Command to add an alternate generic structure
 
 		PluginManager manager = getServer().getPluginManager();
@@ -75,6 +78,8 @@ public class StructuresPlugin extends JavaPlugin {
 
 		// Cancel any remaining tasks
 		getServer().getScheduler().cancelTasks(this);
+
+		INSTANCE = null;
 	}
 
 	@Override
@@ -140,5 +145,9 @@ public class StructuresPlugin extends JavaPlugin {
 				getLogger().log(level, message, ex);
 			}
 		}.runTask(this);
+	}
+
+	public static StructuresPlugin getInstance() {
+		return INSTANCE;
 	}
 }

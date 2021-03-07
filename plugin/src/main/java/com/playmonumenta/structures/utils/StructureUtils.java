@@ -4,8 +4,11 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+
+import javax.annotation.Nullable;
 
 import com.bergerkiller.bukkit.common.wrappers.LongHashSet;
 import com.bergerkiller.bukkit.lightcleaner.lighting.LightingService;
@@ -49,9 +52,15 @@ import org.bukkit.util.Vector;
 public class StructureUtils {
 	private static final HashMap<Long, Integer> CHUNK_TICKET_REFERENCE_COUNT = new HashMap<>();
 
-	// Ignores structure void, leaving the original block in place
-	public static void paste(final Plugin plugin, final BlockArrayClipboard clipboard, final World world, final BlockVector3 to, final boolean includeEntities) {
-
+	/**
+	 * Pastes a schematic at the given location, ignoring structure void similarly to vanilla structure blocks.
+	 *
+	 * Should be run on the main thread, but will do its work asynchronously.
+	 *
+	 * @param whenDone If non-null, will be called when pasting is complete
+	 * @param onError If non-null, will be called in the event of an error
+	 */
+	public static void paste(final Plugin plugin, final BlockArrayClipboard clipboard, final World world, final BlockVector3 to, final boolean includeEntities, final @Nullable Runnable whenDone, final @Nullable Consumer<Throwable> onError) {
 		final long initialTime = System.currentTimeMillis(); // <-- START
 
 		final Region sourceRegion = clipboard.getRegion();
@@ -155,6 +164,9 @@ public class StructureUtils {
 				if (numTicksWaited >= 30 * 20) {
 					plugin.getLogger().severe("Timed out waiting for chunks to load to paste structure!");
 					this.cancel();
+					if (onError != null) {
+						onError.accept(new Exception("Timed out waiting for chunks to load to paste structure!"));
+					}
 					return;
 				}
 				if (numRemaining.get() == 0) {
@@ -202,6 +214,13 @@ public class StructureUtils {
 							Operations.completeBlindly(copy);
 						}
 						plugin.getLogger().info("Loading structure took " + Long.toString(System.currentTimeMillis() - pasteTime) + " milliseconds (async)"); // STOP -->
+
+						if (whenDone != null) {
+							/* 2.5s later, signal caller that loading is complete */
+							Bukkit.getScheduler().runTaskLater(plugin, () -> {
+								whenDone.run();
+							}, 50);
+						}
 
 						/* Schedule light cleaning on the main thread so it can safely check plugin enabled status */
 						Bukkit.getScheduler().runTask(plugin, () -> {
