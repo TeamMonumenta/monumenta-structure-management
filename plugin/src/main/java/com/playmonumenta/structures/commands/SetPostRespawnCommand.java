@@ -1,6 +1,6 @@
-package com.playmonumenta.epicstructures.commands;
+package com.playmonumenta.structures.commands;
 
-import com.playmonumenta.epicstructures.Plugin;
+import com.playmonumenta.structures.Plugin;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -13,7 +13,7 @@ import dev.jorel.commandapi.arguments.TextArgument;
 public class SetPostRespawnCommand {
 	public static void register(Plugin plugin) {
 		final String command = "setpostrespawncommand";
-		final CommandPermission perms = CommandPermission.fromString("epicstructures");
+		final CommandPermission perms = CommandPermission.fromString("monumenta.structures");
 
 		new CommandAPICommand(command)
 			.withPermission(perms)

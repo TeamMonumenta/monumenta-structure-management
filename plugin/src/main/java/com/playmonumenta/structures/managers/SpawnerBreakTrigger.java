@@ -1,4 +1,4 @@
-package com.playmonumenta.epicstructures.managers;
+package com.playmonumenta.structures.managers;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -10,7 +10,7 @@ import org.bukkit.entity.Player;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.playmonumenta.epicstructures.Plugin;
+import com.playmonumenta.structures.Plugin;
 import com.playmonumenta.scriptedquests.quests.components.QuestComponent;
 
 public class SpawnerBreakTrigger {

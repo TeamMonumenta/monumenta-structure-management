@@ -1,4 +1,4 @@
-package com.playmonumenta.epicstructures.utils;
+package com.playmonumenta.structures.utils;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

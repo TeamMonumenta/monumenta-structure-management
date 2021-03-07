@@ -1,4 +1,4 @@
-package com.playmonumenta.epicstructures.managers;
+package com.playmonumenta.structures.managers;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -21,7 +21,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
-import com.playmonumenta.epicstructures.Plugin;
+import com.playmonumenta.structures.Plugin;
 
 public class EventListener implements Listener {
 	private static final EnumSet<SpawnReason> DISALLOWED_STRUCTURE_SPAWN_REASONS = EnumSet.of(

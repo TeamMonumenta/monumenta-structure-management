@@ -1,7 +1,7 @@
-package com.playmonumenta.epicstructures.commands;
+package com.playmonumenta.structures.commands;
 
-import com.playmonumenta.epicstructures.Plugin;
-import com.playmonumenta.epicstructures.utils.MessagingUtils;
+import com.playmonumenta.structures.Plugin;
+import com.playmonumenta.structures.utils.MessagingUtils;
 import com.sk89q.worldedit.math.BlockVector3;
 
 import org.bukkit.Location;
@@ -17,7 +17,7 @@ import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 public class SaveStructure {
 	public static void register(Plugin plugin) {
 		new CommandAPICommand("savestructure")
-			.withPermission(CommandPermission.fromString("epicstructures"))
+			.withPermission(CommandPermission.fromString("monumenta.structures"))
 			.withArguments(new TextArgument("path"))
 			.withArguments(new LocationArgument("pos1"))
 			.withArguments(new LocationArgument("pos2"))

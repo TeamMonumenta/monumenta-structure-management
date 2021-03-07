@@ -1,10 +1,10 @@
-package com.playmonumenta.epicstructures.commands;
+package com.playmonumenta.structures.commands;
 
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-import com.playmonumenta.epicstructures.Plugin;
+import com.playmonumenta.structures.Plugin;
 import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
@@ -23,7 +23,7 @@ import net.md_5.bungee.api.ChatColor;
 
 public class ForceloadLazy {
 	public static void register(Plugin plugin) {
-		final CommandPermission perms = CommandPermission.fromString("epicstructures.forceloadlazy");
+		final CommandPermission perms = CommandPermission.fromString("monumenta.structures.forceloadlazy");
 
 		/* First one of these includes coordinate arguments */
 		new CommandAPICommand("forceload")

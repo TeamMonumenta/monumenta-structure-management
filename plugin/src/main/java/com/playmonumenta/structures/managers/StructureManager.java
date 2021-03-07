@@ -1,4 +1,4 @@
-package com.playmonumenta.epicstructures.managers;
+package com.playmonumenta.structures.managers;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -6,8 +6,8 @@ import java.io.FileOutputStream;
 
 import com.boydti.fawe.object.clipboard.DiskOptimizedClipboard;
 import com.boydti.fawe.util.EditSessionBuilder;
-import com.playmonumenta.epicstructures.Plugin;
-import com.playmonumenta.epicstructures.utils.CommandUtils;
+import com.playmonumenta.structures.Plugin;
+import com.playmonumenta.structures.utils.CommandUtils;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;

@@ -1,4 +1,4 @@
-package com.playmonumenta.epicstructures.utils;
+package com.playmonumenta.structures.utils;
 
 import java.util.EnumSet;
 import java.util.HashMap;

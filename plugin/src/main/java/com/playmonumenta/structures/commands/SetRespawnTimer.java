@@ -1,6 +1,6 @@
-package com.playmonumenta.epicstructures.commands;
+package com.playmonumenta.structures.commands;
 
-import com.playmonumenta.epicstructures.Plugin;
+import com.playmonumenta.structures.Plugin;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -13,7 +13,7 @@ import dev.jorel.commandapi.arguments.StringArgument;
 public class SetRespawnTimer {
 	public static void register(Plugin plugin) {
 		new CommandAPICommand("setrespawntimer")
-			.withPermission(CommandPermission.fromString("epicstructures"))
+			.withPermission(CommandPermission.fromString("monumenta.structures"))
 			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}))
 			.withArguments(new IntegerArgument("ticks", 0))
 			.executes((sender, args) -> {

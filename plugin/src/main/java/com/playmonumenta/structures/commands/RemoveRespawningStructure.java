@@ -1,6 +1,6 @@
-package com.playmonumenta.epicstructures.commands;
+package com.playmonumenta.structures.commands;
 
-import com.playmonumenta.epicstructures.Plugin;
+import com.playmonumenta.structures.Plugin;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -12,7 +12,7 @@ import dev.jorel.commandapi.arguments.StringArgument;
 public class RemoveRespawningStructure {
 	public static void register(Plugin plugin) {
 		new CommandAPICommand("removerespawningstructure")
-			.withPermission(CommandPermission.fromString("epicstructures"))
+			.withPermission(CommandPermission.fromString("monumenta.structures"))
 			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}))
 			.executes((sender, args) -> {
 				remove(sender, plugin, (String)args[0]);

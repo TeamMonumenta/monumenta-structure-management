@@ -1,7 +1,7 @@
-package com.playmonumenta.epicstructures.commands;
+package com.playmonumenta.structures.commands;
 
-import com.playmonumenta.epicstructures.Plugin;
-import com.playmonumenta.epicstructures.utils.CommandUtils;
+import com.playmonumenta.structures.Plugin;
+import com.playmonumenta.structures.utils.CommandUtils;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -19,7 +19,7 @@ import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 public class AddRespawningStructure {
 	public static void register(Plugin plugin) {
 		final String command = "addrespawningstructure";
-		final CommandPermission perms = CommandPermission.fromString("epicstructures");
+		final CommandPermission perms = CommandPermission.fromString("monumenta.structures");
 
 		new CommandAPICommand(command)
 			.withPermission(perms)

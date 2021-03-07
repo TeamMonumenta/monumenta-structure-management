@@ -1,25 +1,25 @@
-package com.playmonumenta.epicstructures;
+package com.playmonumenta.structures;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
 
-import com.playmonumenta.epicstructures.commands.ActivateSpecialStructure;
-import com.playmonumenta.epicstructures.commands.AddRespawningStructure;
-import com.playmonumenta.epicstructures.commands.CompassRespawn;
-import com.playmonumenta.epicstructures.commands.ForceloadLazy;
-import com.playmonumenta.epicstructures.commands.ListRespawningStructures;
-import com.playmonumenta.epicstructures.commands.LoadStructure;
-import com.playmonumenta.epicstructures.commands.ReloadStructures;
-import com.playmonumenta.epicstructures.commands.RemoveRespawningStructure;
-import com.playmonumenta.epicstructures.commands.RespawnStructure;
-import com.playmonumenta.epicstructures.commands.SaveStructure;
-import com.playmonumenta.epicstructures.commands.SetPostRespawnCommand;
-import com.playmonumenta.epicstructures.commands.SetRespawnTimer;
-import com.playmonumenta.epicstructures.commands.SetSpawnerBreakTrigger;
-import com.playmonumenta.epicstructures.managers.EventListener;
-import com.playmonumenta.epicstructures.managers.RespawnManager;
-import com.playmonumenta.epicstructures.managers.StructureManager;
+import com.playmonumenta.structures.commands.ActivateSpecialStructure;
+import com.playmonumenta.structures.commands.AddRespawningStructure;
+import com.playmonumenta.structures.commands.CompassRespawn;
+import com.playmonumenta.structures.commands.ForceloadLazy;
+import com.playmonumenta.structures.commands.ListRespawningStructures;
+import com.playmonumenta.structures.commands.LoadStructure;
+import com.playmonumenta.structures.commands.ReloadStructures;
+import com.playmonumenta.structures.commands.RemoveRespawningStructure;
+import com.playmonumenta.structures.commands.RespawnStructure;
+import com.playmonumenta.structures.commands.SaveStructure;
+import com.playmonumenta.structures.commands.SetPostRespawnCommand;
+import com.playmonumenta.structures.commands.SetRespawnTimer;
+import com.playmonumenta.structures.commands.SetSpawnerBreakTrigger;
+import com.playmonumenta.structures.managers.EventListener;
+import com.playmonumenta.structures.managers.RespawnManager;
+import com.playmonumenta.structures.managers.StructureManager;
 
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;

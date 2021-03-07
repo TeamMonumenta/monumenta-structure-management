@@ -1,4 +1,4 @@
-package com.playmonumenta.epicstructures.managers;
+package com.playmonumenta.structures.managers;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -17,8 +17,8 @@ import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import com.playmonumenta.epicstructures.Plugin;
-import com.playmonumenta.epicstructures.utils.StructureUtils;
+import com.playmonumenta.structures.Plugin;
+import com.playmonumenta.structures.utils.StructureUtils;
 import com.playmonumenta.scriptedquests.zones.Zone;
 import com.playmonumenta.scriptedquests.zones.ZoneLayer;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
