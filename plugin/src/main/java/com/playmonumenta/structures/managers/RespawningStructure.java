@@ -17,7 +17,7 @@ import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import com.playmonumenta.structures.Plugin;
+import com.playmonumenta.structures.StructuresPlugin;
 import com.playmonumenta.structures.utils.StructureUtils;
 import com.playmonumenta.scriptedquests.zones.Zone;
 import com.playmonumenta.scriptedquests.zones.ZoneLayer;
@@ -53,7 +53,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		NO_PLAYER_WITHIN
 	}
 
-	private Plugin mPlugin;
+	private StructuresPlugin mPlugin;
 	private World mWorld;
 	private Random mRandom;
 
@@ -89,7 +89,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		return mConfigLabel.compareTo(other.mConfigLabel);
 	}
 
-	public static RespawningStructure fromConfig(Plugin plugin, World world, String configLabel,
+	public static RespawningStructure fromConfig(StructuresPlugin plugin, World world, String configLabel,
 	        ConfigurationSection config) throws Exception {
 		if (!config.isString("name")) {
 			throw new Exception("Invalid name");
@@ -137,7 +137,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		                               postRespawnCommand, specialPaths, nextRespawnPath, spawnerBreakTrigger);
 	}
 
-	public RespawningStructure(Plugin plugin, World world, int extraRadius,
+	public RespawningStructure(StructuresPlugin plugin, World world, int extraRadius,
 		                       String configLabel, String name, List<String> genericPaths,
 		                       Vector loadPos, int respawnTime, int ticksLeft,
 		                       String postRespawnCommand, List<String> specialPaths,

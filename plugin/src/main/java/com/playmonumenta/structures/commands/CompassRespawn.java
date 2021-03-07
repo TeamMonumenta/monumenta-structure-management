@@ -1,6 +1,6 @@
 package com.playmonumenta.structures.commands;
 
-import com.playmonumenta.structures.Plugin;
+import com.playmonumenta.structures.managers.RespawnManager;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -11,34 +11,30 @@ import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.StringArgument;
 
 public class CompassRespawn {
-	public static void register(Plugin plugin) {
+	public static void register() {
 		final String command = "compassrespawn";
 		final CommandPermission perms = CommandPermission.fromString("monumenta.structures.compassrespawn");
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}))
+			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return RespawnManager.getInstance().listStructures();}))
 			.executes((sender, args) -> {
 				if (sender instanceof Player) {
-					forceRespawn(sender, plugin);
+					forceRespawn(sender);
 				}
 			})
 			.register();
 	}
 
-	private static void forceRespawn(CommandSender sender, Plugin plugin) {
-		if (plugin.mRespawnManager == null) {
-			return;
-		}
+	private static void forceRespawn(CommandSender sender) {
 		try {
 			Player player = (Player) sender;
 			if (player.hasMetadata("ForceResetPOI")) {
 				String label = (String)player.getMetadata("ForceResetPOI").get(0).value();
-				plugin.mRespawnManager.compassRespawn(player, label);
+				RespawnManager.getInstance().compassRespawn(player, label);
 			} else {
 				player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "Waited too long!");
 			}
-
 		} catch (Exception e) {
 			sender.sendMessage(ChatColor.RED + "Got error while attempting to force respawn on structure: " + e.getMessage());
 		}

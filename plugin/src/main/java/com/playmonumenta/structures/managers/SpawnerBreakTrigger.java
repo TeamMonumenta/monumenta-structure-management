@@ -10,7 +10,7 @@ import org.bukkit.entity.Player;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.playmonumenta.structures.Plugin;
+import com.playmonumenta.structures.StructuresPlugin;
 import com.playmonumenta.scriptedquests.quests.components.QuestComponent;
 
 public class SpawnerBreakTrigger {
@@ -29,7 +29,7 @@ public class SpawnerBreakTrigger {
 	// sub-structures override that default. This would require a bit of restructuring...
 	//
 	// For now, all structures of the same label share this information
-	public static SpawnerBreakTrigger fromConfig(Plugin plugin,
+	public static SpawnerBreakTrigger fromConfig(StructuresPlugin plugin,
 	                                             ConfigurationSection config) throws Exception {
 		if (!config.isInt("spawner_count")) {
 			throw new Exception("Invalid spawner_count");
@@ -44,7 +44,7 @@ public class SpawnerBreakTrigger {
 
 	}
 
-	public SpawnerBreakTrigger(Plugin plugin, int spawnerCount, int spawnerCountRemaining,
+	public SpawnerBreakTrigger(StructuresPlugin plugin, int spawnerCount, int spawnerCountRemaining,
 	                           String questComponentStr) throws Exception {
 		mScriptedQuestsPlugin = (com.playmonumenta.scriptedquests.Plugin)Bukkit.getPluginManager().getPlugin("ScriptedQuests");
 		if (mScriptedQuestsPlugin == null) {

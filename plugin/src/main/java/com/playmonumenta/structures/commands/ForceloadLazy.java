@@ -4,7 +4,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-import com.playmonumenta.structures.Plugin;
 import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
@@ -22,7 +21,7 @@ import dev.jorel.commandapi.wrappers.Location2D;
 import net.md_5.bungee.api.ChatColor;
 
 public class ForceloadLazy {
-	public static void register(Plugin plugin) {
+	public static void register() {
 		final CommandPermission perms = CommandPermission.fromString("monumenta.structures.forceloadlazy");
 
 		/* First one of these includes coordinate arguments */
@@ -31,7 +30,7 @@ public class ForceloadLazy {
 			.withArguments(new MultiLiteralArgument("addlazy"))
 			.withArguments(new Location2DArgument("from", LocationType.BLOCK_POSITION))
 			.executes((sender, args) -> {
-				load(sender, plugin, (Location2D)args[1], (Location2D)args[1]); // Intentionally both the same argument
+				load(sender, (Location2D)args[1], (Location2D)args[1]); // Intentionally both the same argument
 			})
 			.register();
 
@@ -41,12 +40,12 @@ public class ForceloadLazy {
 			.withArguments(new Location2DArgument("from", LocationType.BLOCK_POSITION))
 			.withArguments(new Location2DArgument("to", LocationType.BLOCK_POSITION))
 			.executes((sender, args) -> {
-				load(sender, plugin, (Location2D)args[1], (Location2D)args[2]);
+				load(sender, (Location2D)args[1], (Location2D)args[2]);
 			})
 			.register();
 	}
 
-	private static void load(CommandSender sender, Plugin plugin, Location2D from, Location2D to) throws WrapperCommandSyntaxException {
+	private static void load(CommandSender sender, Location2D from, Location2D to) throws WrapperCommandSyntaxException {
 		CuboidRegion region = new CuboidRegion(BlockVector3.at(from.getBlockX(), 0, from.getBlockZ()), BlockVector3.at(to.getBlockX(), 255, to.getBlockZ()));
 		final Set<BlockVector2> chunks = region.getChunks();
 

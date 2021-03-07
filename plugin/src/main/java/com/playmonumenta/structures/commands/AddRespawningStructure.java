@@ -1,11 +1,12 @@
 package com.playmonumenta.structures.commands;
 
-import com.playmonumenta.structures.Plugin;
+import com.playmonumenta.structures.managers.RespawnManager;
 import com.playmonumenta.structures.utils.CommandUtils;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
+import org.bukkit.plugin.Plugin;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
@@ -39,7 +40,7 @@ public class AddRespawningStructure {
 		CommandUtils.getAndValidateSchematicPath(plugin, path, true);
 
 		try {
-			plugin.mRespawnManager.addStructure(extraRadius, label, name, path, loc.toVector(), respawnTime);
+			RespawnManager.getInstance().addStructure(extraRadius, label, name, path, loc.toVector(), respawnTime);
 		} catch (Exception e) {
 			CommandAPI.fail(ChatColor.RED + "Failed to add structure: " + e.getMessage());
 		}

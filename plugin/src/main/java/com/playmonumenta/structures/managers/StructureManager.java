@@ -6,7 +6,7 @@ import java.io.FileOutputStream;
 
 import com.boydti.fawe.object.clipboard.DiskOptimizedClipboard;
 import com.boydti.fawe.util.EditSessionBuilder;
-import com.playmonumenta.structures.Plugin;
+import com.playmonumenta.structures.StructuresPlugin;
 import com.playmonumenta.structures.utils.CommandUtils;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
@@ -25,9 +25,9 @@ import com.sk89q.worldedit.world.World;
 public class StructureManager {
 	private static final String FORMAT = "sponge";
 
-	private final Plugin mPlugin;
+	private final StructuresPlugin mPlugin;
 
-	public StructureManager(Plugin plugin) {
+	public StructureManager(StructuresPlugin plugin) {
 		mPlugin = plugin;
 	}
 

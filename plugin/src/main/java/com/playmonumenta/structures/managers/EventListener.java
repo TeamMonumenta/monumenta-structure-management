@@ -21,7 +21,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
-import com.playmonumenta.structures.Plugin;
+import com.playmonumenta.structures.StructuresPlugin;
 
 public class EventListener implements Listener {
 	private static final EnumSet<SpawnReason> DISALLOWED_STRUCTURE_SPAWN_REASONS = EnumSet.of(
@@ -30,9 +30,9 @@ public class EventListener implements Listener {
 		SpawnReason.VILLAGE_INVASION
 	);
 
-	Plugin mPlugin = null;
+	StructuresPlugin mPlugin = null;
 
-	public EventListener(Plugin plugin) {
+	public EventListener(StructuresPlugin plugin) {
 		mPlugin = plugin;
 	}
 

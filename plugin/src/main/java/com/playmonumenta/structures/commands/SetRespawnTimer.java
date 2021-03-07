@@ -1,6 +1,6 @@
 package com.playmonumenta.structures.commands;
 
-import com.playmonumenta.structures.Plugin;
+import com.playmonumenta.structures.managers.RespawnManager;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -11,23 +11,20 @@ import dev.jorel.commandapi.arguments.IntegerArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 
 public class SetRespawnTimer {
-	public static void register(Plugin plugin) {
+	public static void register() {
 		new CommandAPICommand("setrespawntimer")
 			.withPermission(CommandPermission.fromString("monumenta.structures"))
-			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}))
+			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return RespawnManager.getInstance().listStructures();}))
 			.withArguments(new IntegerArgument("ticks", 0))
 			.executes((sender, args) -> {
-				setTimer(sender, plugin, (String)args[0], (Integer)args[1]);
+				setTimer(sender, (String)args[0], (Integer)args[1]);
 			})
 			.register();
 	}
 
-	private static void setTimer(CommandSender sender, Plugin plugin, String label, int ticks) {
-		if (plugin.mRespawnManager == null) {
-			return;
-		}
+	private static void setTimer(CommandSender sender, String label, int ticks) {
 		try {
-			plugin.mRespawnManager.setTimerPeriod(label, ticks);
+			RespawnManager.getInstance().setTimerPeriod(label, ticks);
 		} catch (Exception e) {
 			sender.sendMessage(ChatColor.RED + "Got error while attempting to set post respawn command: " + e.getMessage());
 			return;

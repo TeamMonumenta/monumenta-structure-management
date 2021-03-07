@@ -1,6 +1,6 @@
 package com.playmonumenta.structures.commands;
 
-import com.playmonumenta.structures.Plugin;
+import com.playmonumenta.structures.StructuresPlugin;
 import com.playmonumenta.structures.utils.MessagingUtils;
 import com.sk89q.worldedit.math.BlockVector3;
 
@@ -15,7 +15,7 @@ import dev.jorel.commandapi.arguments.TextArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
 public class SaveStructure {
-	public static void register(Plugin plugin) {
+	public static void register(StructuresPlugin plugin) {
 		new CommandAPICommand("savestructure")
 			.withPermission(CommandPermission.fromString("monumenta.structures"))
 			.withArguments(new TextArgument("path"))
@@ -27,7 +27,7 @@ public class SaveStructure {
 			.register();
 	}
 
-	private static void save(CommandSender sender, Plugin plugin, Location loc1, Location loc2, String path) throws WrapperCommandSyntaxException {
+	private static void save(CommandSender sender, StructuresPlugin plugin, Location loc1, Location loc2, String path) throws WrapperCommandSyntaxException {
 		if (path.contains("..")) {
 			CommandAPI.fail("Paths containing '..' are not allowed");
 		}

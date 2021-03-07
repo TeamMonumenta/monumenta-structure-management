@@ -27,7 +27,7 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-public class Plugin extends JavaPlugin {
+public class StructuresPlugin extends JavaPlugin {
 	public StructureManager mStructureManager;
 
 	public RespawnManager mRespawnManager = null;
@@ -39,16 +39,16 @@ public class Plugin extends JavaPlugin {
 	public void onLoad() {
 		ActivateSpecialStructure.register(this);
 		AddRespawningStructure.register(this);
-		CompassRespawn.register(this);
-		ForceloadLazy.register(this);
-		ListRespawningStructures.register(this);
+		CompassRespawn.register();
+		ForceloadLazy.register();
+		ListRespawningStructures.register();
 		LoadStructure.register(this);
 		ReloadStructures.register(this);
-		RemoveRespawningStructure.register(this);
-		RespawnStructure.register(this);
+		RemoveRespawningStructure.register();
+		RespawnStructure.register();
 		SaveStructure.register(this);
-		SetPostRespawnCommand.register(this);
-		SetRespawnTimer.register(this);
+		SetPostRespawnCommand.register();
+		SetRespawnTimer.register();
 		SetSpawnerBreakTrigger.register(this);
 	}
 

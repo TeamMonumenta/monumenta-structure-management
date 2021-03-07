@@ -1,6 +1,6 @@
 package com.playmonumenta.structures.commands;
 
-import com.playmonumenta.structures.Plugin;
+import com.playmonumenta.structures.managers.RespawnManager;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -11,34 +11,31 @@ import dev.jorel.commandapi.arguments.IntegerArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 
 public class RespawnStructure {
-	public static void register(Plugin plugin) {
+	public static void register() {
 		final String command = "respawnstructure";
 		final CommandPermission perms = CommandPermission.fromString("monumenta.structures");
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}))
+			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return RespawnManager.getInstance().listStructures();}))
 			.executes((sender, args) -> {
-				respawn(sender, plugin, (String)args[0], 600); // Default 30s
+				respawn(sender, (String)args[0], 600); // Default 30s
 			})
 			.register();
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}))
+			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return RespawnManager.getInstance().listStructures();}))
 			.withArguments(new IntegerArgument("ticks_until_respawn", 0))
 			.executes((sender, args) -> {
-				respawn(sender, plugin, (String)args[0], (Integer)args[1]);
+				respawn(sender, (String)args[0], (Integer)args[1]);
 			})
 			.register();
 	}
 
-	private static void respawn(CommandSender sender, Plugin plugin, String label, Integer ticksUntilRespawn) {
-		if (plugin.mRespawnManager == null) {
-			return;
-		}
+	private static void respawn(CommandSender sender, String label, Integer ticksUntilRespawn) {
 		try {
-			plugin.mRespawnManager.setTimer(label, ticksUntilRespawn);
+			RespawnManager.getInstance().setTimer(label, ticksUntilRespawn);
 		} catch (Exception e) {
 			sender.sendMessage(ChatColor.RED + "Got error while attempting to respawn structure: " + e.getMessage());
 		}

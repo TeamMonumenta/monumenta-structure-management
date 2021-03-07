@@ -1,6 +1,6 @@
 package com.playmonumenta.structures.commands;
 
-import com.playmonumenta.structures.Plugin;
+import com.playmonumenta.structures.managers.RespawnManager;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -11,38 +11,35 @@ import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.arguments.TextArgument;
 
 public class SetPostRespawnCommand {
-	public static void register(Plugin plugin) {
+	public static void register() {
 		final String command = "setpostrespawncommand";
 		final CommandPermission perms = CommandPermission.fromString("monumenta.structures");
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}))
+			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return RespawnManager.getInstance().listStructures();}))
 			.executes((sender, args) -> {
-				setcommand(sender, plugin, (String)args[0], null);
+				setcommand(sender, (String)args[0], null);
 			})
 			.register();
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}))
+			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return RespawnManager.getInstance().listStructures();}))
 			.withArguments(new TextArgument("command"))
 			.executes((sender, args) -> {
-				setcommand(sender, plugin, (String)args[0], (String)args[1]);
+				setcommand(sender, (String)args[0], (String)args[1]);
 			})
 			.register();
 	}
 
-	private static void setcommand(CommandSender sender, Plugin plugin, String label, String command) {
-		if (plugin.mRespawnManager == null) {
-			return;
-		}
+	private static void setcommand(CommandSender sender, String label, String command) {
 		if (command != null && command.startsWith("/")) {
 			command = command.substring(1);
 		}
 
 		try {
-			plugin.mRespawnManager.setPostRespawnCommand(label, command);
+			RespawnManager.getInstance().setPostRespawnCommand(label, command);
 		} catch (Exception e) {
 			sender.sendMessage(ChatColor.RED + "Got error while attempting to set post respawn command: " + e.getMessage());
 			return;

@@ -21,7 +21,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import com.playmonumenta.structures.Plugin;
+import com.playmonumenta.structures.StructuresPlugin;
 import com.playmonumenta.scriptedquests.zones.Zone;
 import com.playmonumenta.scriptedquests.zones.ZoneFragment;
 import com.playmonumenta.scriptedquests.zones.ZoneLayer;
@@ -30,8 +30,9 @@ import com.playmonumenta.scriptedquests.zones.ZoneManager;
 public class RespawnManager {
 	public static final String ZONE_LAYER_NAME_INSIDE = "Respawning Structures Inside";
 	public static final String ZONE_LAYER_NAME_NEARBY = "Respawning Structures Nearby";
+	private static RespawnManager INSTANCE = null;
 
-	private final Plugin mPlugin;
+	private final StructuresPlugin mPlugin;
 	private final World mWorld;
 	protected final ZoneManager mZoneManager;
 
@@ -52,7 +53,8 @@ public class RespawnManager {
 	protected ZoneLayer mZoneLayerNearby = new ZoneLayer(ZONE_LAYER_NAME_NEARBY, true);
 	private Map<Zone, RespawningStructure> mStructuresByZone = new LinkedHashMap<Zone, RespawningStructure>();
 
-	public RespawnManager(Plugin plugin, World world, YamlConfiguration config) {
+	public RespawnManager(StructuresPlugin plugin, World world, YamlConfiguration config) {
+		INSTANCE = this;
 		mPlugin = plugin;
 		mWorld = world;
 
@@ -92,6 +94,10 @@ public class RespawnManager {
 				structuresLoaded = true;
 			}
 		}.runTaskAsynchronously(plugin);
+	}
+
+	public static RespawnManager getInstance() {
+		return INSTANCE;
 	}
 
 	/* It *should* be safe to call this async */

@@ -1,6 +1,7 @@
 package com.playmonumenta.structures.commands;
 
-import com.playmonumenta.structures.Plugin;
+import com.playmonumenta.structures.StructuresPlugin;
+import com.playmonumenta.structures.managers.RespawnManager;
 import com.playmonumenta.structures.managers.SpawnerBreakTrigger;
 
 import org.bukkit.ChatColor;
@@ -13,13 +14,13 @@ import dev.jorel.commandapi.arguments.IntegerArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 
 public class SetSpawnerBreakTrigger {
-	public static void register(Plugin plugin) {
+	public static void register(StructuresPlugin plugin) {
 		final String command = "setspawnerbreaktrigger";
 		final CommandPermission perms = CommandPermission.fromString("monumenta.structures");
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}))
+			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return RespawnManager.getInstance().listStructures();}))
 			.executes((sender, args) -> {
 				setTrigger(sender, plugin, (String)args[0], 0, null);
 			})
@@ -27,7 +28,7 @@ public class SetSpawnerBreakTrigger {
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return plugin.mRespawnManager.listStructures();}))
+			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return RespawnManager.getInstance().listStructures();}))
 			.withArguments(new IntegerArgument("spawner_count", 0))
 			.withArguments(new GreedyStringArgument("quest_component"))
 			.executes((sender, args) -> {
@@ -36,16 +37,13 @@ public class SetSpawnerBreakTrigger {
 			.register();
 	}
 
-	private static void setTrigger(CommandSender sender, Plugin plugin, String label, int spawnerCount, String questComponentStr) {
-		if (plugin.mRespawnManager == null) {
-			return;
-		}
+	private static void setTrigger(CommandSender sender, StructuresPlugin plugin, String label, int spawnerCount, String questComponentStr) {
 		try {
 			SpawnerBreakTrigger trigger = null;
 			if (questComponentStr != null) {
 				trigger = new SpawnerBreakTrigger(plugin, spawnerCount, spawnerCount, questComponentStr);
 			}
-			plugin.mRespawnManager.setSpawnerBreakTrigger(label, trigger);
+			RespawnManager.getInstance().setSpawnerBreakTrigger(label, trigger);
 		} catch (Exception e) {
 			sender.sendMessage(ChatColor.RED + "Got error while attempting to set spawner break trigger: " + e.getMessage());
 			return;

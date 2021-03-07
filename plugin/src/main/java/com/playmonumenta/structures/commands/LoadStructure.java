@@ -2,7 +2,7 @@ package com.playmonumenta.structures.commands;
 
 import java.util.logging.Level;
 
-import com.playmonumenta.structures.Plugin;
+import com.playmonumenta.structures.StructuresPlugin;
 import com.playmonumenta.structures.utils.CommandUtils;
 import com.playmonumenta.structures.utils.MessagingUtils;
 import com.playmonumenta.structures.utils.StructureUtils;
@@ -22,7 +22,7 @@ import dev.jorel.commandapi.arguments.TextArgument;
 import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 
 public class LoadStructure {
-	public static void register(Plugin plugin) {
+	public static void register(StructuresPlugin plugin) {
 		final String command = "loadstructure";
 		final CommandPermission perms = CommandPermission.fromString("monumenta.structures");
 
@@ -46,7 +46,7 @@ public class LoadStructure {
 			.register();
 	}
 
-	private static void load(CommandSender sender, Plugin plugin, String path, Location loadLoc, boolean includeEntities) throws WrapperCommandSyntaxException {
+	private static void load(CommandSender sender, StructuresPlugin plugin, String path, Location loadLoc, boolean includeEntities) throws WrapperCommandSyntaxException {
 		CommandUtils.getAndValidateSchematicPath(plugin, path, true);
 
 		if (plugin.mStructureManager == null) {
