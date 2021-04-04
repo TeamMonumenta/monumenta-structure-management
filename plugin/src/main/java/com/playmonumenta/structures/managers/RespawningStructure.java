@@ -13,7 +13,6 @@ import org.bukkit.GameMode;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
-import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
@@ -64,7 +63,6 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	private StructureBounds mOuterBounds; // The bounding box for the nearby area around the structure
 	private int mExtraRadius;             // Radius around the structure that still gets messages
 	private int mTicksLeft;               // How many ticks remaining until respawn
-	private int mMinimumRespawnTime;      // Minimum ticks between respawns
 	private int mRespawnTime;             // How many ticks between respawns
 	private String mPostRespawnCommand;   // Command run via the console after respawning structure
 	private boolean mForcedRespawn;       // Was this set to have a forced respawn via compass
@@ -151,7 +149,6 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		mLoadPos = loadPos;
 		mExtraRadius = extraRadius;
 		mRespawnTime = respawnTime;
-		mMinimumRespawnTime = 0;
 		mTicksLeft = ticksLeft;
 		mPostRespawnCommand = postRespawnCommand;
 		mSpawnerBreakTrigger = spawnerBreakTrigger;
@@ -250,16 +247,10 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			mLastPlayerRespawn = null;
 		}
 
-		if (mConquered || mForcedRespawn) {
+		if (mConquered) {
 			mTimesPlayerSpawned++;
 		} else {
 			mTimesPlayerSpawned = 0;
-		}
-
-		if (mTimesPlayerSpawned >= 1) {
-			mMinimumRespawnTime = Math.min(mTimesPlayerSpawned * 60 * 20, mRespawnTime / 2);
-		} else {
-			mMinimumRespawnTime = 0;
 		}
 
 		mForcedRespawn = false;
@@ -300,8 +291,6 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void forcedRespawn(Player player) {
-		int minutesLeft = 0;
-		String minutesPlural = "";
 		if (!mOuterBounds.within(player.getLocation().toVector())) {
 			player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "You must be nearby the POI to force its respawn.");
 			return;
@@ -310,7 +299,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		if (mForcedRespawn) {
 			player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + " is already forced to respawn!");
 		} else {
-			if (mSpawnerBreakTrigger.getSpawnerRatio() <= 0) {
+			if (isConquered()) {
 				if (player.getDisplayName() == mLastPlayerRespawn) {
 					player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "You cannot force a POI to respawn twice in a row.");
 				} else {
@@ -324,8 +313,8 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 							}
 						}
 					} else {
-						minutesLeft = mTicksLeft / (60 * 20);
-						minutesPlural = (minutesLeft > 1) ? "s" : "";
+						int minutesLeft = mTicksLeft / (60 * 20);
+						String minutesPlural = (minutesLeft > 1) ? "s" : "";
 						for (Player p : mWorld.getPlayers()) {
 							if (isNearby(p)) {
 								p.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + " will forcibly respawn in "
@@ -498,7 +487,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 					(mForcedRespawn || // The POI was force to respawn by a player
 					 isAmped || // The POI is amplified for the next spawn
 					 mPlayerNearbyLastTick == NearbyState.NO_PLAYER_WITHIN || // There was no player nearby last check (they teleported in)
-					 (!isPlayerWithin)); // There is no player within the POI itself, just nearby OR respawn is forced
+					 !isPlayerWithin); // There is no player within the POI itself, just nearby OR respawn is forced
 
 			mPlayerNearbyLastTick = isPlayerNearby ? NearbyState.PLAYER_WITHIN : NearbyState.NO_PLAYER_WITHIN;
 
