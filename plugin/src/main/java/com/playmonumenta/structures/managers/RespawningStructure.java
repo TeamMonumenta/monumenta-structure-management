@@ -13,7 +13,6 @@ import org.bukkit.GameMode;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
-import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
@@ -64,13 +63,13 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	private StructureBounds mOuterBounds; // The bounding box for the nearby area around the structure
 	private int mExtraRadius;             // Radius around the structure that still gets messages
 	private int mTicksLeft;               // How many ticks remaining until respawn
-	private int mMinimumRespawnTime;      // Minimum ticks between respawns
 	private int mRespawnTime;             // How many ticks between respawns
 	private String mPostRespawnCommand;   // Command run via the console after respawning structure
 	private boolean mForcedRespawn;       // Was this set to have a forced respawn via compass
 	private NearbyState mPlayerNearbyLastTick; // Was there a player nearby last tick while respawn time was < 0?
 	private boolean mConquered;           // Is the POI conquered
 	private String mLastPlayerRespawn;    // Player who last forced a respawn
+	private int mTimesPlayerSpawned;	  // How many times in a row it's been reset through conquered or force respawn
 
 	// Path String -> BlockArrayClipboard maps
 	private final List<String> mGenericVariants = new ArrayList<String>();
@@ -150,7 +149,6 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		mLoadPos = loadPos;
 		mExtraRadius = extraRadius;
 		mRespawnTime = respawnTime;
-		mMinimumRespawnTime = 0;
 		mTicksLeft = ticksLeft;
 		mPostRespawnCommand = postRespawnCommand;
 		mSpawnerBreakTrigger = spawnerBreakTrigger;
@@ -158,6 +156,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		mPlayerNearbyLastTick = NearbyState.UNKNOWN;
 		mConquered = false;
 		mLastPlayerRespawn = null;
+		mTimesPlayerSpawned = 0;
 
 		if (mRespawnTime < 200) {
 			throw new Exception("Minimum respawn_period value is 200 ticks");
@@ -248,14 +247,15 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			mLastPlayerRespawn = null;
 		}
 
-		if (mConquered && !mForcedRespawn) {
-			mMinimumRespawnTime = Math.min(mMinimumRespawnTime + 5 * 60 * 20, mRespawnTime / 2);
-		} else if (!mForcedRespawn) {
-			mMinimumRespawnTime = Math.max(mMinimumRespawnTime - 5 * 60 * 20, 0);
+		if (mConquered) {
+			mTimesPlayerSpawned++;
+		} else {
+			mTimesPlayerSpawned = 0;
 		}
 
 		mForcedRespawn = false;
 		mConquered = false;
+		
 
 		// Load the schematic asynchronously (this might access the disk!)
 		// Then switch back to the main thread to initiate pasting
@@ -291,9 +291,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void forcedRespawn(Player player) {
-		if (player.hasMetadata("ForceResetPOI") && mOuterBounds.within(player.getLocation().toVector())) {
-			player.removeMetadata("ForceResetPOI", mPlugin);
-		} else {
+		if (!mOuterBounds.within(player.getLocation().toVector())) {
 			player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "You must be nearby the POI to force its respawn.");
 			return;
 		}
@@ -301,16 +299,27 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		if (mForcedRespawn) {
 			player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + " is already forced to respawn!");
 		} else {
-			if (mSpawnerBreakTrigger.getSpawnerRatio() <= 0) {
+			if (isConquered()) {
 				if (player.getDisplayName() == mLastPlayerRespawn) {
 					player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "You cannot force a POI to respawn twice in a row.");
 				} else {
 					mLastPlayerRespawn = player.getDisplayName();
 					mForcedRespawn = true;
-					mTicksLeft = 5 * 20 * 60;
-					for (Player p : Bukkit.getOnlinePlayers()) {
-						if (isNearby(p)) {
-							player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + " has been forced to respawn in 5 minutes!");
+					if (mTicksLeft < 2 * 60 * 20) {
+						mTicksLeft = 2 * 60 * 20;
+						for (Player p : mWorld.getPlayers()) {
+							if (isNearby(p)) {
+								p.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + " will forcibly respawn in 2 minutes (timer set)");
+							}
+						}
+					} else {
+						int minutesLeft = mTicksLeft / (60 * 20);
+						String minutesPlural = (minutesLeft > 1) ? "s" : "";
+						for (Player p : mWorld.getPlayers()) {
+							if (isNearby(p)) {
+								p.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + " will forcibly respawn in "
+										+ minutesLeft + " minute" + minutesPlural + "!");
+							}
 						}
 					}
 				}
@@ -365,20 +374,9 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		clickable.setClickEvent(new ClickEvent(Action.RUN_COMMAND, "/compassrespawn " + mConfigLabel));
 
 		player.spigot().sendMessage(new TextComponent(message));
-		if (mConquered) {
-			player.setMetadata("ForceResetPOI", new FixedMetadataValue(mPlugin, mConfigLabel));
+		if (mConquered && !mForcedRespawn) {
 			player.spigot().sendMessage(clickable);
 		}
-
-		//Remove tag that allows command to be run 10s later
-		new BukkitRunnable() {
-			@Override
-			public void run() {
-				if (player.hasMetadata("ForceResetPOI")) {
-					player.removeMetadata("ForceResetPOI", mPlugin);
-				}
-			}
-		}.runTaskLater(mPlugin, 10 * 20);
 	}
 
 	public int getTicksLeft() {
@@ -453,7 +451,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		if (!mName.isEmpty() &&
 		    ((mTicksLeft >= 2400 && (mTicksLeft - ticks) < 2400) ||
 		     (mTicksLeft >= 600 && (mTicksLeft - ticks) < 600))) {
-			for (Player player : Bukkit.getOnlinePlayers()) {
+			for (Player player : mWorld.getPlayers()) {
 				if (isNearby(player)) {
 					tellRespawnTime(player);
 				}
@@ -462,24 +460,12 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 		mTicksLeft -= ticks;
 
-		if (mForcedRespawn) {
-			boolean empty = true;
-			for (Player player : Bukkit.getOnlinePlayers()) {
-				if (isWithin(player)) {
-					empty = false;
-				}
-			}
-			if (empty) {
-				mTicksLeft = 0;
-			}
-		}
-
 		if (mTicksLeft < 0) {
 			boolean isPlayerNearby = false;
 			boolean isPlayerWithin = false;
 			boolean isAmped = mNextRespawnPath != null;
 
-			for (Player player : Bukkit.getOnlinePlayers()) {
+			for (Player player : mWorld.getPlayers()) {
 				if (player.getGameMode() != GameMode.SPECTATOR) {
 					if (isWithin(player)) {
 						isPlayerNearby = true;
@@ -498,10 +484,10 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			 * AND one of the following conditions
 			 */
 			boolean shouldRespawn = isPlayerNearby &&
-					(mForcedRespawn || // The POI was forced to respawn by a player
+					(mForcedRespawn || // The POI was force to respawn by a player
 					 isAmped || // The POI is amplified for the next spawn
 					 mPlayerNearbyLastTick == NearbyState.NO_PLAYER_WITHIN || // There was no player nearby last check (they teleported in)
-					 !isPlayerWithin); // There is no player within the POI itself, just nearby
+					 !isPlayerWithin); // There is no player within the POI itself, just nearby OR respawn is forced
 
 			mPlayerNearbyLastTick = isPlayerNearby ? NearbyState.PLAYER_WITHIN : NearbyState.NO_PLAYER_WITHIN;
 
@@ -526,14 +512,18 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 	public void conquerStructure() {
 		// Count how long it took to conquer POI, only set to zero if greater than minimum respawn time
-		int ticksToConquer = mRespawnTime - mTicksLeft;
-		mTicksLeft = ticksToConquer < mMinimumRespawnTime ? mMinimumRespawnTime - ticksToConquer : 0;
+		int playerCausedDelay = mTimesPlayerSpawned * 5;
+		mTicksLeft = mTimesPlayerSpawned == 0 ? 0 : playerCausedDelay * 60 * 20;
 
 		mConquered = true;
-		for (Player player : Bukkit.getOnlinePlayers()) {
+		for (Player player : mWorld.getPlayers()) {
 			if (player.getGameMode() != GameMode.SPECTATOR &&
 			    isNearby(player)) {
-				player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + mName +" has been conquered! It will respawn once all players leave the area.");
+				if (mTicksLeft <= 0) {
+					player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + mName +" has been conquered! It will respawn once all players leave the area.");
+				} else {
+					player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + mName +" has been conquered! It will respawn in " + playerCausedDelay + " minutes!");
+				}
 			}
 		}
 	}
