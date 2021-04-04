@@ -261,9 +261,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		} else {
 			mMinimumRespawnTime = 0;
 		}
-		for (Player player : mWorld.getPlayers()) {
-			player.sendMessage("new mTimesPlayerSpawned is " + mTimesPlayerSpawned);
-		}
+
 		mForcedRespawn = false;
 		mConquered = false;
 		
