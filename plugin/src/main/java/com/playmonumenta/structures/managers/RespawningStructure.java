@@ -300,6 +300,8 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void forcedRespawn(Player player) {
+		int minutesLeft = 0;
+		String minutesPlural = "";
 		if (!mOuterBounds.within(player.getLocation().toVector())) {
 			player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "You must be nearby the POI to force its respawn.");
 			return;
@@ -318,13 +320,16 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 						mTicksLeft = 2 * 60 * 20;
 						for (Player p : mWorld.getPlayers()) {
 							if (isNearby(p)) {
-								p.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + " has been forced to respawn in 2 minutes!");
+								p.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + " will forcibly respawn in 2 minutes (timer set)");
 							}
 						}
 					} else {
+						minutesLeft = mTicksLeft / (60 * 20);
+						minutesPlural = (minutesLeft > 1) ? "s" : "";
 						for (Player p : mWorld.getPlayers()) {
 							if (isNearby(p)) {
-								p.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + " is already at the minimum time until respawn, but will force respawn!");
+								p.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + " will forcibly respawn in "
+										+ minutesLeft + " minute" + minutesPlural + "!");
 							}
 						}
 					}
@@ -380,7 +385,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		clickable.setClickEvent(new ClickEvent(Action.RUN_COMMAND, "/compassrespawn " + mConfigLabel));
 
 		player.spigot().sendMessage(new TextComponent(message));
-		if (mConquered) {
+		if (mConquered && !mForcedRespawn) {
 			player.spigot().sendMessage(clickable);
 		}
 	}
@@ -490,9 +495,10 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			 * AND one of the following conditions
 			 */
 			boolean shouldRespawn = isPlayerNearby &&
-					(isAmped || // The POI is amplified for the next spawn
+					(mForcedRespawn || // The POI was force to respawn by a player
+					 isAmped || // The POI is amplified for the next spawn
 					 mPlayerNearbyLastTick == NearbyState.NO_PLAYER_WITHIN || // There was no player nearby last check (they teleported in)
-					 (!isPlayerWithin || mForcedRespawn)); // There is no player within the POI itself, just nearby OR respawn is forced
+					 (!isPlayerWithin)); // There is no player within the POI itself, just nearby OR respawn is forced
 
 			mPlayerNearbyLastTick = isPlayerNearby ? NearbyState.PLAYER_WITHIN : NearbyState.NO_PLAYER_WITHIN;
 
