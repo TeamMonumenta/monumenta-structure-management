@@ -20,21 +20,16 @@ public class CompassRespawn {
 			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return RespawnManager.getInstance().listStructures();}))
 			.executes((sender, args) -> {
 				if (sender instanceof Player) {
-					forceRespawn(sender);
+					forceRespawn(sender, (String)args[0]);
 				}
 			})
 			.register();
 	}
 
-	private static void forceRespawn(CommandSender sender) {
+	private static void forceRespawn(CommandSender sender, String label) {
 		try {
 			Player player = (Player) sender;
-			if (player.hasMetadata("ForceResetPOI")) {
-				String label = (String)player.getMetadata("ForceResetPOI").get(0).value();
-				RespawnManager.getInstance().compassRespawn(player, label);
-			} else {
-				player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "Waited too long!");
-			}
+			RespawnManager.getInstance().compassRespawn(player, label);
 		} catch (Exception e) {
 			sender.sendMessage(ChatColor.RED + "Got error while attempting to force respawn on structure: " + e.getMessage());
 		}
