@@ -512,8 +512,11 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 	public void conquerStructure() {
 		// Count how long it took to conquer POI, only set to zero if greater than minimum respawn time
-		int playerCausedDelay = mTimesPlayerSpawned * 5;
-		mTicksLeft = mTimesPlayerSpawned == 0 ? 0 : playerCausedDelay * 60 * 20;
+		int playerCausedDelay = mTimesPlayerSpawned * 5 * 60 * 20;
+		mTicksLeft = playerCausedDelay <= (mRespawnTime / 2) ? playerCausedDelay : (mRespawnTime / 2);
+
+		int minutesLeft = mTicksLeft / (60 * 20);
+		String minutesPlural = (minutesLeft > 1) ? "s" : "";
 
 		mConquered = true;
 		for (Player player : mWorld.getPlayers()) {
@@ -522,7 +525,8 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 				if (mTicksLeft <= 0) {
 					player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + mName +" has been conquered! It will respawn once all players leave the area.");
 				} else {
-					player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + mName +" has been conquered! It will respawn in " + playerCausedDelay + " minutes!");
+					player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + mName +" has been conquered! It will  respawn in " +
+							minutesLeft + " minute" + minutesPlural + "!");
 				}
 			}
 		}
