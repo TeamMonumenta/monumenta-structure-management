@@ -74,7 +74,7 @@ public class StructureManager {
 			.build();
 		ForwardExtentCopy copy = new ForwardExtentCopy(extent, cReg, clipboard, cReg.getMinimumPoint());
 		copy.setCopyingEntities(true);
-		copy.setCopyingBiomes(false); // TODO: Re enable when FAWE supports this again
+		copy.setCopyingBiomes(true);
 		Operations.completeLegacy(copy);
 
 		try (Closer closer = Closer.create()) {
