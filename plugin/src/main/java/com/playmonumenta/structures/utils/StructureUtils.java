@@ -216,10 +216,10 @@ public class StructureUtils {
 						plugin.getLogger().info("Loading structure took " + Long.toString(System.currentTimeMillis() - pasteTime) + " milliseconds (async)"); // STOP -->
 
 						if (whenDone != null) {
-							/* 2.5s later, signal caller that loading is complete */
+							/* 6s later, signal caller that loading is complete */
 							Bukkit.getScheduler().runTaskLater(plugin, () -> {
 								whenDone.run();
-							}, 50);
+							}, 120);
 						}
 
 						/* Schedule light cleaning on the main thread so it can safely check plugin enabled status */
