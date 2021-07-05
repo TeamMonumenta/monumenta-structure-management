@@ -128,8 +128,8 @@ public class StructureUtils {
 							}
 							block.setType(Material.AIR);
 							block.setType(Material.DIRT);
-						} else if (state instanceof ShulkerBox || ((state instanceof Chest) && isNonemptyGrave((Chest)state))) {
-							/* Never overwrite shulker boxes or player graves with contents */
+						} else if (state instanceof ShulkerBox) {
+							/* Never overwrite shulker boxes */
 							final int relx = state.getX() - to.getX();
 							final int rely = state.getY() - to.getY();
 							final int relz = state.getZ() - to.getZ();
@@ -295,7 +295,7 @@ public class StructureUtils {
 			final ArmorStand stand = (ArmorStand)entity;
 			if ((stand.getCustomName() != null && !stand.getCustomName().isEmpty())
 			    || stand.isMarker()
-			    || (stand.getScoreboardTags() != null && !stand.getScoreboardTags().isEmpty())) {
+			    || (!stand.getScoreboardTags().isEmpty())) {
 				return false;
 			}
 		}
@@ -322,18 +322,4 @@ public class StructureUtils {
 		           ((long)(z & ((1 << 21) - 1)))
 		       );
 	}
-
-	private static boolean isNonemptyGrave(final Chest chest) {
-		if (chest.getCustomName() != null && chest.getCustomName().endsWith("'s Grave")) {
-			// Check if the grave has items inside. If it is empty, it can be overwritten.
-			for (final ItemStack item : chest.getInventory()) {
-				if (item != null) {
-					// This is a grave with items left - don't overwrite it
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
 }
