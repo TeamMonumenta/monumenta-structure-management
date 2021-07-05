@@ -308,6 +308,11 @@ public class StructureUtils {
 			}
 		}
 
+		/* Keep entities with the appropriate tag */
+		if (entity.getScoreboardTags().contains("RespawnPersistent")) {
+			return false;
+		}
+
 		/* Remove otherwise */
 		return true;
 	}
