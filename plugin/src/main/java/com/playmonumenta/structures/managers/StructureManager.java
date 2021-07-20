@@ -4,8 +4,8 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 
-import com.boydti.fawe.object.clipboard.DiskOptimizedClipboard;
-import com.boydti.fawe.util.EditSessionBuilder;
+import com.fastasyncworldedit.core.object.clipboard.DiskOptimizedClipboard;
+import com.fastasyncworldedit.core.util.EditSessionBuilder;
 import com.playmonumenta.structures.StructuresPlugin;
 import com.playmonumenta.structures.utils.CommandUtils;
 import com.sk89q.worldedit.EditSession;

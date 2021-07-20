@@ -17,13 +17,13 @@
         <minecraft.server.version>1.15.2-R0.1-SNAPSHOT</minecraft.server.version>
     </properties>
 
-	<distributionManagement>
-		<repository>
-			<id>github</id>
-			<name>GitHub OWNER Apache Maven Packages</name>
-			<url>https://maven.pkg.github.com/TeamMonumenta/monumenta-structure-management</url>
-		</repository>
-	</distributionManagement>
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub OWNER Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/TeamMonumenta/monumenta-structure-management</url>
+        </repository>
+    </distributionManagement>
 
     <repositories>
         <repository>
@@ -55,7 +55,12 @@
         </repository>
         <repository>
             <id>monumenta-scripted-quests</id>
-			<url>https://raw.githubusercontent.com/TeamMonumenta/scripted-quests/master/mvn-repo/</url>
+            <url>https://raw.githubusercontent.com/TeamMonumenta/scripted-quests/master/mvn-repo/</url>
+        </repository>
+        <!-- FAWE API-->
+        <repository>
+            <id>IntellectualSites</id>
+            <url>https://mvn.intellectualsites.com/content/groups/public/</url>
         </repository>
     </repositories>
 
@@ -67,11 +72,26 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- FAWE Core API -->
         <dependency>
-            <groupId>com.boydti</groupId>
-            <artifactId>FastAsyncWorldEdit-bukkit</artifactId>
-            <version>1.16-598</version>
+            <groupId>com.fastasyncworldedit</groupId>
+            <artifactId>FAWE-Core</artifactId>
+            <version>1.17-47</version>
             <scope>provided</scope>
+        </dependency>
+
+        <!-- FAWE Bukkit API -->
+        <dependency>
+            <groupId>com.fastasyncworldedit</groupId>
+            <artifactId>FAWE-Bukkit</artifactId>
+            <version>1.17-47</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>FAWE-Core</artifactId>
+                    <groupId>*</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
