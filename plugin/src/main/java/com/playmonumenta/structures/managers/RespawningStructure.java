@@ -255,7 +255,6 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 		mForcedRespawn = false;
 		mConquered = false;
-		
 
 		// Load the schematic asynchronously (this might access the disk!)
 		// Then switch back to the main thread to initiate pasting
@@ -525,7 +524,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 				if (mTicksLeft <= 0) {
 					player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + mName +" has been conquered! It will respawn once all players leave the area.");
 				} else {
-					player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + mName +" has been conquered! It will  respawn in " +
+					player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + mName +" has been conquered! It will respawn in " +
 							minutesLeft + " minute" + minutesPlural + "!");
 				}
 			}
