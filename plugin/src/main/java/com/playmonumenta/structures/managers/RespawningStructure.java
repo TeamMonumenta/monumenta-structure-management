@@ -510,6 +510,11 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void conquerStructure() {
+		if (mForcedRespawn) {
+			// POI was already scheduled to respawn forcibly - conquering does nothing at this point, no reason to increase timer
+			return;
+		}
+
 		// Count how long it took to conquer POI, only set to zero if greater than minimum respawn time
 		int playerCausedDelay = mTimesPlayerSpawned * 5 * 60 * 20;
 		mTicksLeft = playerCausedDelay <= (mRespawnTime / 2) ? playerCausedDelay : (mRespawnTime / 2);
