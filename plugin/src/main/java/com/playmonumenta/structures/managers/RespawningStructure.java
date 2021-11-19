@@ -16,8 +16,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
+import com.playmonumenta.structures.StructuresAPI;
 import com.playmonumenta.structures.StructuresPlugin;
-import com.playmonumenta.structures.utils.StructureUtils;
 import com.playmonumenta.scriptedquests.zones.Zone;
 import com.playmonumenta.scriptedquests.zones.ZoneLayer;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
@@ -172,7 +172,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			throw new Exception("No structures specified for '" + mConfigLabel + "'");
 		}
 		// Load the first schematic to get its size
-		clipboard = mPlugin.mStructureManager.loadSchematic(mGenericVariants.get(0));
+		clipboard = StructuresAPI.loadSchematic(mGenericVariants.get(0));
 
 		if (specialPaths != null) {
 			for (String path : specialPaths) {
@@ -264,7 +264,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 				final BlockArrayClipboard clipboard;
 
 				try {
-					clipboard = mPlugin.mStructureManager.loadSchematic(respawnPath);
+					clipboard = StructuresAPI.loadSchematic(respawnPath);
 				} catch (Exception e) {
 					mPlugin.asyncLog(Level.SEVERE, "Failed to load schematic '" + respawnPath +
 					                 "' for respawning structure '" + mConfigLabel + "'", e);
@@ -276,8 +276,8 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 					@Override
 					public void run() {
 						// Load the structure
-						StructureUtils.paste(mPlugin, clipboard, mWorld,
-											 BlockVector3.at(mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ()), true, () -> {
+						StructuresAPI.paste(clipboard, mWorld,
+											BlockVector3.at(mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ()), true, () -> {
 							// If a command was specified to run after, run it
 							if (mPostRespawnCommand != null) {
 								Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), mPostRespawnCommand);

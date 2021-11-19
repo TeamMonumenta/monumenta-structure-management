@@ -19,7 +19,6 @@ import com.playmonumenta.structures.commands.SetRespawnTimer;
 import com.playmonumenta.structures.commands.SetSpawnerBreakTrigger;
 import com.playmonumenta.structures.managers.EventListener;
 import com.playmonumenta.structures.managers.RespawnManager;
-import com.playmonumenta.structures.managers.StructureManager;
 
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -28,7 +27,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class StructuresPlugin extends JavaPlugin {
-	public StructureManager mStructureManager = null;
 	public RespawnManager mRespawnManager = null;
 
 	private static StructuresPlugin INSTANCE = null;
@@ -111,7 +109,6 @@ public class StructuresPlugin extends JavaPlugin {
 		mConfig = YamlConfiguration.loadConfiguration(mConfigFile);
 
 		/* TODO: Non-hardcoded worlds! These should be saved into the respawning structure */
-		mStructureManager = new StructureManager(this);
 		mRespawnManager = new RespawnManager(this, Bukkit.getWorlds().get(0), mConfig);
 	}
 
