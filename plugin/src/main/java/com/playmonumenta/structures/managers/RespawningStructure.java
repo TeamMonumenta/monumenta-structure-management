@@ -8,21 +8,22 @@ import java.util.Map;
 import java.util.Random;
 import java.util.logging.Level;
 
+import com.playmonumenta.scriptedquests.zones.Zone;
+import com.playmonumenta.scriptedquests.zones.ZoneLayer;
+import com.playmonumenta.structures.StructuresAPI;
+import com.playmonumenta.structures.StructuresPlugin;
+import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.regions.Region;
+
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
-
-import com.playmonumenta.structures.StructuresAPI;
-import com.playmonumenta.structures.StructuresPlugin;
-import com.playmonumenta.scriptedquests.zones.Zone;
-import com.playmonumenta.scriptedquests.zones.ZoneLayer;
-import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
-import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldedit.regions.Region;
 
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.ClickEvent;
@@ -70,6 +71,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	private boolean mConquered;           // Is the POI conquered
 	private String mLastPlayerRespawn;    // Player who last forced a respawn
 	private int mTimesPlayerSpawned;	  // How many times in a row it's been reset through conquered or force respawn
+	private boolean mInitialized = false; // This structure has finished loading the initial schematic/dimensions
 
 	// Path String -> BlockArrayClipboard maps
 	private final List<String> mGenericVariants = new ArrayList<String>();
@@ -162,8 +164,6 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			throw new Exception("Minimum respawn_period value is 200 ticks");
 		}
 
-		// Load all of the supplied structures
-		BlockArrayClipboard clipboard = null;
 		for (String path : genericPaths) {
 			mGenericVariants.add(path);
 		}
@@ -171,33 +171,41 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		if (mGenericVariants.size() < 1) {
 			throw new Exception("No structures specified for '" + mConfigLabel + "'");
 		}
-		// Load the first schematic to get its size
-		clipboard = StructuresAPI.loadSchematic(mGenericVariants.get(0));
-
-		if (specialPaths != null) {
-			for (String path : specialPaths) {
-				mSpecialVariants.add(path);
-			}
-		}
-
-		// TODO: Add a check that these are all the same size
 
 		// Set the next respawn path (or not if null)
 		activateSpecialStructure(nextRespawnPath);
 
-		// Determine structure size
-		Region clipboardRegion = clipboard.getRegion().clone();
-		BlockVector3 structureSize = clipboardRegion.getMaximumPoint().subtract(clipboardRegion.getMinimumPoint());
+		// Load the first schematic to get its size
+		StructuresAPI.loadStructure(mGenericVariants.get(0)).whenComplete((clipboard, ex) -> {
+			if (ex != null) {
+				mPlugin.getLogger().severe("Failed to initialize structure '" + mConfigLabel + "': " + ex.getMessage());
+				ex.printStackTrace();
+			} else {
+				if (specialPaths != null) {
+					for (String path : specialPaths) {
+						mSpecialVariants.add(path);
+					}
+				}
 
-		// Create a bounding box for the structure itself, plus a slightly larger box to notify nearby players
-		mInnerBounds = new StructureBounds(mLoadPos, mLoadPos.clone().add(new Vector(structureSize.getX(),
-		                                                                             structureSize.getY(),
-		                                                                             structureSize.getZ())));
-		Vector extraRadiusVec = new Vector(extraRadius, extraRadius, extraRadius);
-		mOuterBounds = new StructureBounds(mInnerBounds.mLowerCorner.clone().subtract(extraRadiusVec),
-		                                   mInnerBounds.mUpperCorner.clone().add(extraRadiusVec));
+				// TODO: Add a check that these are all the same size
 
-		registerZone();
+				// Determine structure size
+				Region clipboardRegion = clipboard.getRegion().clone();
+				BlockVector3 structureSize = clipboardRegion.getMaximumPoint().subtract(clipboardRegion.getMinimumPoint());
+
+				// Create a bounding box for the structure itself, plus a slightly larger box to notify nearby players
+				mInnerBounds = new StructureBounds(mLoadPos, mLoadPos.clone().add(new Vector(structureSize.getX(),
+																							 structureSize.getY(),
+																							 structureSize.getZ())));
+				Vector extraRadiusVec = new Vector(extraRadius, extraRadius, extraRadius);
+				mOuterBounds = new StructureBounds(mInnerBounds.mLowerCorner.clone().subtract(extraRadiusVec),
+												   mInnerBounds.mUpperCorner.clone().add(extraRadiusVec));
+
+				registerZone();
+
+				mInitialized = true;
+			}
+		});
 	}
 
 	public String getInfoString() {
@@ -221,6 +229,11 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void respawn() {
+		if (!mInitialized) {
+			mPlugin.getLogger().warning("Attempted to respawn structure '" + mConfigLabel + "' before it finished initializing");
+			return;
+		}
+
 		final String respawnPath;
 
 		if (mNextRespawnPath == null) {
@@ -256,37 +269,14 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		mForcedRespawn = false;
 		mConquered = false;
 
-		// Load the schematic asynchronously (this might access the disk!)
-		// Then switch back to the main thread to initiate pasting
-		new BukkitRunnable() {
-			@Override
-			public void run() {
-				final BlockArrayClipboard clipboard;
-
-				try {
-					clipboard = StructuresAPI.loadSchematic(respawnPath);
-				} catch (Exception e) {
-					mPlugin.asyncLog(Level.SEVERE, "Failed to load schematic '" + respawnPath +
-					                 "' for respawning structure '" + mConfigLabel + "'", e);
-					return;
-				}
-
-				/* Once the schematic is loaded, this task is used to paste it */
-				new BukkitRunnable() {
-					@Override
-					public void run() {
-						// Load the structure
-						StructuresAPI.paste(clipboard, mWorld,
-											BlockVector3.at(mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ()), true, () -> {
-							// If a command was specified to run after, run it
-							if (mPostRespawnCommand != null) {
-								Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), mPostRespawnCommand);
-							}
-						}, null);
-					}
-				}.runTask(mPlugin);
+		StructuresAPI.loadAndPasteStructure(respawnPath, new Location(mWorld, mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ()), true).whenComplete((unused, exception) -> {
+			if (exception != null) {
+				mPlugin.getLogger().severe("Failed to respawn structure '" + mConfigLabel + "'");
+				exception.printStackTrace();
+			} else {
+				Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), mPostRespawnCommand);
 			}
-		}.runTaskAsynchronously(mPlugin);
+		});
 	}
 
 	public void forcedRespawn(Player player) {
@@ -329,6 +319,11 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void tellRespawnTime(Player player) {
+		if (!mInitialized) {
+			mPlugin.getLogger().warning("Attempted to tell respawn time for structure '" + mConfigLabel + "' before it finished initializing");
+			return;
+		}
+
 		int minutes = mTicksLeft / (60 * 20);
 		int seconds = (mTicksLeft / 20) % 60;
 		String message = mName + " is respawning in ";
@@ -447,6 +442,11 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void tick(int ticks) {
+		if (!mInitialized) {
+			mPlugin.getLogger().warning("Attempted to tick structure '" + mConfigLabel + "' before it finished initializing");
+			return;
+		}
+
 		if (!mName.isEmpty() &&
 		    ((mTicksLeft >= 2400 && (mTicksLeft - ticks) < 2400) ||
 		     (mTicksLeft >= 600 && (mTicksLeft - ticks) < 600))) {
@@ -499,6 +499,11 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	// This event is called every time a spawner is broken anywhere
 	// Have to test that it was within this structure
 	public void spawnerBreakEvent(Vector vec) {
+		if (!mInitialized) {
+			mPlugin.getLogger().warning("Got spawner break event for structure '" + mConfigLabel + "' before it finished initializing");
+			return;
+		}
+
 		// Only care about tracking spawners if there is a trigger
 		if (mSpawnerBreakTrigger != null && mInnerBounds.within(vec)) {
 			mSpawnerBreakTrigger.spawnerBreakEvent(this);
@@ -510,6 +515,11 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void conquerStructure() {
+		if (!mInitialized) {
+			mPlugin.getLogger().warning("Attempted to conquer structure '" + mConfigLabel + "' before it finished initializing");
+			return;
+		}
+
 		if (mForcedRespawn) {
 			// POI was already scheduled to respawn forcibly - conquering does nothing at this point, no reason to increase timer
 			return;

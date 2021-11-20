@@ -56,33 +56,30 @@ public class LoadStructure {
 	}
 
 	private static void load(CommandSender sender, String path, Location loadLoc, boolean includeEntities, FunctionWrapper[] postFunc) {
-		CompletableFuture<Void> future = StructuresAPI.loadStructureAsync(path, loadLoc, includeEntities);
+		sender.sendMessage("Started loading structure '" + path + "' at (" + loadLoc.getBlockX() + " " + loadLoc.getBlockY() + " " + loadLoc.getBlockZ() + ")");
 
-		if (sender != null || postFunc != null) {
-			/* Only actually wait for the result if there's someone to talk to about the result */
+		Bukkit.getScheduler().runTaskAsynchronously(StructuresPlugin.getInstance(), () -> {
+			try {
+				StructuresAPI.loadAndPasteStructure(path, loadLoc, includeEntities).get();
 
-			Bukkit.getScheduler().runTaskAsynchronously(StructuresPlugin.getInstance(), () -> {
-				try {
-					future.get();
-					Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> {
-						if (postFunc != null) {
-							for (FunctionWrapper func : postFunc) {
-								func.run();
-							}
+				Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> {
+					if (postFunc != null) {
+						for (FunctionWrapper func : postFunc) {
+							func.run();
 						}
-						if (sender != null) {
-							sender.sendMessage("Loaded structure '" + path + "' at (" + loadLoc.getBlockX() + " " + loadLoc.getBlockY() + " " + loadLoc.getBlockZ() + ")");
-						}
-					});
-				} catch (Exception e) {
-					Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> {
-						if (sender != null) {
-							sender.sendMessage(ChatColor.RED + "Failed to load structure: " + e.getMessage());
-							MessagingUtils.sendStackTrace(sender, e);
-						}
-					});
-				}
-			});
-		}
+					}
+					if (sender != null) {
+						sender.sendMessage("Loaded structure '" + path + "' at (" + loadLoc.getBlockX() + " " + loadLoc.getBlockY() + " " + loadLoc.getBlockZ() + ")");
+					}
+				});
+			} catch (Exception e) {
+				Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> {
+					if (sender != null) {
+						sender.sendMessage(ChatColor.RED + "Failed to load structure: " + e.getMessage());
+						MessagingUtils.sendStackTrace(sender, e);
+					}
+				});
+			}
+		});
 	}
 }

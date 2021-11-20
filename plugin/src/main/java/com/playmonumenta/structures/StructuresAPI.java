@@ -13,9 +13,8 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.logging.Level;
 
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 
 import com.bergerkiller.bukkit.common.wrappers.LongHashSet;
 import com.bergerkiller.bukkit.lightcleaner.lighting.LightingService;
@@ -64,58 +63,159 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 
-import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
-
 public class StructuresAPI {
 	public static final String FORMAT = "sponge";
 
 	/**
-	 * Trigger a structure to be loaded asynchronously at the specified location.
+	 * Convenience function to combine both loadStructure() and pasteStructure() into one operation.
 	 *
-	 * Can be called from the main thread or an async thread.
+	 * See the details of those functions for more information
+	 */
+	public static CompletableFuture<Void> loadAndPasteStructure(@Nonnull String path, @Nonnull Location loc, boolean includeEntities) {
+		return loadStructure(path).thenAccept((clipboard) -> pasteStructure(clipboard, loc, includeEntities));
+	}
+
+	/**
+	 * Loads a structure from the disk and returns it.
+	 *
+	 * Can be called from the main thread or an async thread, will return immediately and do its work on an async thread
 	 *
 	 * @param path Relative path under the structures/ folder of the structure to load, not including the extension
-	 * @param loadLoc Minimum corner where the structure should be loaded
-	 * @param includeEntities Whether or not entities saved in the structure will be pasted in
 	 *
-	 * @return Returns a future which will be completed when loading is complete or an error occurs.
-	 *         If you need to do something with the result, suggest calling .get() on the result in an async thread,
-	 *         which will block until complete or an exception is generated
+	 * @return Returns a future which will be completed on the main thread when loading is complete or an error occurs.
+	 *         Suggest chaining on .whenComplete((clipboard, ex) -> your code) to consume the result on the main thread
+	 *         clipboard will be non-null on success, otherwise ex will be a non-null exception if something went wrong
 	 */
-	public static CompletableFuture<Void> loadStructureAsync(String path, Location loadLoc, boolean includeEntities) {
-		StructuresPlugin plugin = StructuresPlugin.getInstance();
+	public static CompletableFuture<BlockArrayClipboard> loadStructure(@Nonnull String path) {
+		CompletableFuture<BlockArrayClipboard> future = new CompletableFuture<>();
 
-		CompletableFuture<Void> future = new CompletableFuture<>();
-
-		// Load the structure asynchronously (this might access the disk!)
-		// Then switch back to the main thread to initiate pasting
-		Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+		Bukkit.getScheduler().runTaskAsynchronously(StructuresPlugin.getInstance(), () -> {
 			final BlockArrayClipboard clipboard;
 
 			try {
-				CommandUtils.getAndValidateSchematicPath(plugin, path, true);
-			} catch (WrapperCommandSyntaxException e) {
-				future.completeExceptionally(e);
-				return;
-			}
+				File file = CommandUtils.getAndValidateSchematicPath(StructuresPlugin.getInstance(), path, true);
 
-			BlockVector3 loadPos = BlockVector3.at(loadLoc.getBlockX(), loadLoc.getBlockY(), loadLoc.getBlockZ());
+				ClipboardFormat format = ClipboardFormats.findByAlias(FORMAT);
+				Clipboard newClip = format.load(file);
+				if (newClip instanceof BlockArrayClipboard) {
+					clipboard = (BlockArrayClipboard)newClip;
+				} else if (newClip instanceof DiskOptimizedClipboard) {
+					clipboard = ((DiskOptimizedClipboard)newClip).toClipboard();
+				} else {
+					future.completeExceptionally(new Exception("Loaded unknown clipboard type: " + newClip.getClass().toString()));
+					return;
+				}
 
-			try {
-				clipboard = loadSchematic(path);
-			} catch (Exception e) {
-				plugin.asyncLog(Level.SEVERE, "Failed to load schematic '" + path + "'", e);
-				future.completeExceptionally(e);
-				return;
-			}
-
-			/* Once the schematic is loaded, this task is used to paste it */
-			Bukkit.getScheduler().runTask(plugin, () -> {
-				paste(clipboard, loadLoc.getWorld(), loadPos, includeEntities, () -> {
-					future.complete(null);
-				}, (e) -> {
-					future.completeExceptionally(e);
+				Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> {
+					future.complete(clipboard);
 				});
+			} catch (Exception ex) {
+				Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> {
+					future.completeExceptionally(ex);
+				});
+			}
+		});
+
+		return future;
+	}
+
+	/**
+	 * Save a structure given a bounding box at the specified path.
+	 *
+	 * Can be called from the main thread or an async thread, will return immediately and do its work on an async thread
+	 *
+	 * @param path Relative path under the structures/ folder of the structure to load, not including the extension
+	 * @param loc1 One corner of the bounding box to save
+	 * @param loc2 The opposite corner
+	 *
+	 * @return Returns a future which will be completed on the main thread when the operation is complete or an error occurs.
+	 *         Suggest chaining on .whenComplete((unused, ex) -> your code) to continue after the operation is complete
+	 *         unused will always be null, ex will be a non-null exception if something went wrong
+	 */
+	public static CompletableFuture<Void> copyAreaAndSaveStructure(@Nonnull String path, @Nonnull Location loc1, @Nonnull Location loc2) {
+		CompletableFuture<Void> future = new CompletableFuture<>();
+
+		if (!loc1.getWorld().equals(loc2.getWorld())) {
+			future.completeExceptionally(new Exception("Locations must have the same world"));
+			return future;
+		}
+
+		Bukkit.getScheduler().runTaskAsynchronously(StructuresPlugin.getInstance(), () -> {
+			// Create file to save under
+			try (Closer closer = Closer.create()) {
+				File file = CommandUtils.getAndValidateSchematicPath(StructuresPlugin.getInstance(), path, false);
+				if (!file.exists()) {
+					file.getParentFile().mkdirs();
+					file.createNewFile();
+				}
+
+				Clipboard clipboard = copyArea(loc1, loc2).get();
+
+				ClipboardFormat format = ClipboardFormats.findByAlias(FORMAT);
+				FileOutputStream fos = closer.register(new FileOutputStream(file));
+				BufferedOutputStream bos = closer.register(new BufferedOutputStream(fos));
+				ClipboardWriter writer = closer.register(format.getWriter(bos));
+				writer.write(clipboard);
+
+				Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> {
+					future.complete(null);
+				});
+			} catch (Exception ex) {
+				Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> {
+					future.completeExceptionally(ex);
+				});
+			}
+		});
+
+		return future;
+	}
+
+	/**
+	 * Copies a bounding box to a clipboard that can be used with pasteStructure().
+	 *
+	 * Can be called from the main thread or an async thread, will return immediately and do its work on an async thread
+	 *
+	 * @param loc1 One corner of the bounding box to save
+	 * @param loc2 The opposite corner
+	 */
+	public static CompletableFuture<BlockArrayClipboard> copyArea(@Nonnull Location loc1, @Nonnull Location loc2) {
+		CompletableFuture<BlockArrayClipboard> future = new CompletableFuture<>();
+
+		if (!loc1.getWorld().equals(loc2.getWorld())) {
+			future.completeExceptionally(new Exception("Locations must have the same world"));
+			return future;
+		}
+
+		Bukkit.getScheduler().runTaskAsynchronously(StructuresPlugin.getInstance(), () -> {
+			// Parse the coordinates of the structure to save
+			BlockVector3 pos1 = BlockVector3.at(loc1.getBlockX(), loc1.getBlockY(), loc1.getBlockZ());
+			BlockVector3 pos2 = BlockVector3.at(loc2.getBlockX(), loc2.getBlockY(), loc2.getBlockZ());
+
+			BlockVector3 minpos = pos1.getMinimum(pos2);
+			BlockVector3 maxpos = pos1.getMaximum(pos2);
+
+			World world = new BukkitWorld(loc1.getWorld());
+			CuboidRegion cReg = new CuboidRegion(world, minpos, maxpos);
+			BlockArrayClipboard clipboard = new BlockArrayClipboard(cReg);
+			clipboard.setOrigin(cReg.getMinimumPoint());
+
+			/* Copy the region (including entities and biomes) into the clipboard object */
+			EditSession extent = new EditSessionBuilder(world)
+				.autoQueue(true)
+				.fastmode(true)
+				.combineStages(true)
+				.changeSetNull()
+				.checkMemory(false)
+				.allowedRegionsEverywhere()
+				.limitUnlimited()
+				.build();
+			ForwardExtentCopy copy = new ForwardExtentCopy(extent, cReg, clipboard, cReg.getMinimumPoint());
+			copy.setCopyingEntities(true);
+			copy.setCopyingBiomes(true);
+			Operations.completeLegacy(copy);
+
+			Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> {
+				future.complete(clipboard);
 			});
 		});
 
@@ -123,108 +223,27 @@ public class StructuresAPI {
 	}
 
 	/**
-	 * Loads a schematic from the disk and returns it.
+	 * Pastes a structure at the given location, ignoring structure void similarly to vanilla structure blocks.
 	 *
-	 * This function should be called async - it will likely block to read data from the filesystem
+	 * Can be called from the main thread or an async thread, will return immediately and do its work on an async thread
 	 */
-	public static BlockArrayClipboard loadSchematic(String baseName) throws Exception {
-		final BlockArrayClipboard clipboard;
-
-		File file = CommandUtils.getAndValidateSchematicPath(StructuresPlugin.getInstance(), baseName, true);
-
-		ClipboardFormat format = ClipboardFormats.findByAlias(FORMAT);
-		Clipboard newClip = format.load(file);
-		if (newClip instanceof BlockArrayClipboard) {
-			clipboard = (BlockArrayClipboard)newClip;
-		} else if (newClip instanceof DiskOptimizedClipboard) {
-			clipboard = ((DiskOptimizedClipboard)newClip).toClipboard();
-		} else {
-			throw new Exception("Loaded unknown clipboard type: " + newClip.getClass().toString());
-		}
-
-		return clipboard;
-	}
-
-	/**
-	 * Save a structure given a bounding box at the specified path.
-	 *
-	 * Note that this function will block whatever thread it is called on, causing lag if that's the main thread.
-	 *
-	 * Can be called from the main thread or an async thread.
-	 *
-	 * @param path Relative path under the structures/ folder of the schematic to load, not including the extension
-	 * @param loc1 One corner of the bounding box to save
-	 * @param loc2 The opposite corner
-	 */
-	public static void save(String path, Location loc1, Location loc2) throws Exception {
-		if (path.contains("..")) {
-			throw new Exception("Paths containing '..' are not allowed");
-		}
-
-		if (!loc1.getWorld().equals(loc2.getWorld())) {
-			throw new Exception("Locations must have the same world");
-		}
-
-		// Parse the coordinates of the structure to save
-		BlockVector3 pos1 = BlockVector3.at(loc1.getBlockX(), loc1.getBlockY(), loc1.getBlockZ());
-		BlockVector3 pos2 = BlockVector3.at(loc2.getBlockX(), loc2.getBlockY(), loc2.getBlockZ());
-
-		BlockVector3 minpos = pos1.getMinimum(pos2);
-		BlockVector3 maxpos = pos1.getMaximum(pos2);
-
-		// Save it
-		File file = CommandUtils.getAndValidateSchematicPath(StructuresPlugin.getInstance(), path, false);
-		if (!file.exists()) {
-			file.getParentFile().mkdirs();
-			file.createNewFile();
-		}
-
-		World world = new BukkitWorld(loc1.getWorld());
-		CuboidRegion cReg = new CuboidRegion(world, minpos, maxpos);
-		Clipboard clipboard = new BlockArrayClipboard(cReg);
-		clipboard.setOrigin(cReg.getMinimumPoint());
-
-		/* Copy the region (including entities and biomes) into the clipboard object */
-		EditSession extent = new EditSessionBuilder(world)
-			.autoQueue(true)
-			.fastmode(true)
-			.combineStages(true)
-			.changeSetNull()
-			.checkMemory(false)
-			.allowedRegionsEverywhere()
-			.limitUnlimited()
-			.build();
-		ForwardExtentCopy copy = new ForwardExtentCopy(extent, cReg, clipboard, cReg.getMinimumPoint());
-		copy.setCopyingEntities(true);
-		copy.setCopyingBiomes(true);
-		Operations.completeLegacy(copy);
-
-		try (Closer closer = Closer.create()) {
-			ClipboardFormat format = ClipboardFormats.findByAlias(FORMAT);
-			FileOutputStream fos = closer.register(new FileOutputStream(file));
-			BufferedOutputStream bos = closer.register(new BufferedOutputStream(fos));
-			ClipboardWriter writer = closer.register(format.getWriter(bos));
-			writer.write(clipboard);
-		} catch (Exception ex) {
-			throw ex;
-		}
-	}
-
-	/**
-	 * Pastes a schematic at the given location, ignoring structure void similarly to vanilla structure blocks.
-	 *
-	 * Should be run on the main thread, but will do its work asynchronously.
-	 *
-	 * @param whenDone If non-null, will be called when pasting is complete
-	 * @param onError If non-null, will be called in the event of an error
-	 */
-	public static void paste(final BlockArrayClipboard clipboard, final org.bukkit.World world, final BlockVector3 to, final boolean includeEntities, final @Nullable Runnable whenDone, final @Nullable Consumer<Throwable> onError) {
+	public static CompletableFuture<Void> pasteStructure(@Nonnull BlockArrayClipboard clipboard, @Nonnull Location loc, boolean includeEntities) {
 		Plugin plugin = StructuresPlugin.getInstance();
+
+		/*
+		 * This is the future given to the caller - when it's completed it should be safe to interact with the pasted area
+		 * In particular there is a 6s delay after pasting before this is marked as completed
+		 */
+		CompletableFuture<Void> future = new CompletableFuture<>();
 		if (plugin == null) {
-			onError.accept(new Exception("MonumentaStructureManagement plugin isn't loaded"));
-			return;
+			future.completeExceptionally(new Exception("MonumentaStructureManagement plugin isn't loaded"));
+			return future;
 		}
 
+		/*
+		 * This future is used to signal the pasting system that this schematic has completed and the next one can start pasting
+		 * This does not have the 6s delay returned to the user
+		 */
 		CompletableFuture<Void> signal = new CompletableFuture<>();
 
 		PENDING_TASKS.add(new PendingTask(signal, () -> {
@@ -232,6 +251,8 @@ public class StructuresAPI {
 
 			final Region sourceRegion = clipboard.getRegion();
 			final BlockVector3 size = sourceRegion.getMaximumPoint().subtract(sourceRegion.getMinimumPoint());
+			final org.bukkit.World world = loc.getWorld();
+			final BlockVector3 to = BlockVector3.at(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
 			final Vector pos1 = new Vector((double)to.getX(), (double)to.getY(), (double)to.getZ());
 			final Vector pos2 = pos1.clone().add(new Vector(size.getX() + 1, size.getY() + 1, size.getZ() + 1));
 			final BoundingBox box = new BoundingBox(pos1.getX(), pos1.getY(), pos1.getZ(), pos2.getX(), pos2.getY(), pos2.getZ());
@@ -274,9 +295,9 @@ public class StructuresAPI {
 
 				for (final BlockState state : chunk.getTileEntities(true)) {
 					if (state instanceof CreatureSpawner || state instanceof BrewingStand || state instanceof Furnace || state instanceof Chest || state instanceof ShulkerBox) {
-						final org.bukkit.Location loc = state.getLocation();
-						final BlockVector3 relPos = BlockVector3.at(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()).subtract(to).add(clipboardAddOffset);
-						if (box.contains(loc.toVector()) && !clipboard.getBlock(relPos).getBlockType().equals(BlockTypes.STRUCTURE_VOID)) {
+						final Location sLoc = state.getLocation();
+						final BlockVector3 relPos = BlockVector3.at(sLoc.getBlockX(), sLoc.getBlockY(), sLoc.getBlockZ()).subtract(to).add(clipboardAddOffset);
+						if (box.contains(sLoc.toVector()) && !clipboard.getBlock(relPos).getBlockType().equals(BlockTypes.STRUCTURE_VOID)) {
 							if (state instanceof CreatureSpawner || state instanceof BrewingStand || state instanceof Furnace) {
 								// TODO: Work around a bug in FAWE that corrupts these blocks if they're not removed first
 								final Block block = state.getBlock();
@@ -329,12 +350,11 @@ public class StructuresAPI {
 				public void run() {
 					numTicksWaited++;
 					if (numTicksWaited >= 30 * 20) {
-						plugin.getLogger().severe("Timed out waiting for chunks to load to paste structure!");
+						String msg = "Timed out waiting for chunks to load to paste structure!";
+						plugin.getLogger().severe(msg);
 						this.cancel();
-						if (onError != null) {
-							signal.completeExceptionally(new Exception("Timed out waiting for chunks to load to paste structure!"));
-							onError.accept(new Exception("Timed out waiting for chunks to load to paste structure!"));
-						}
+						signal.completeExceptionally(new Exception(msg));
+						future.completeExceptionally(new Exception(msg));
 						return;
 					}
 					if (numRemaining.get() == 0) {
@@ -387,12 +407,9 @@ public class StructuresAPI {
 							signal.complete(null);
 
 							/* 6s later, signal caller that loading is complete */
-							if (whenDone != null) {
-								/* 6s later, signal caller that loading is complete */
-								Bukkit.getScheduler().runTaskLater(plugin, () -> {
-									whenDone.run();
-								}, 120);
-							}
+							Bukkit.getScheduler().runTaskLater(plugin, () -> {
+								future.complete(null);
+							}, 120);
 
 							/* Schedule light cleaning on the main thread so it can safely check plugin enabled status */
 							Bukkit.getScheduler().runTask(plugin, () -> {
@@ -443,6 +460,8 @@ public class StructuresAPI {
 		}));
 
 		ensureTask(plugin);
+
+		return future;
 	}
 
 	private static class PendingTask {
@@ -506,12 +525,11 @@ public class StructuresAPI {
 		return true;
 	}
 
-	/* TODO: This probably doesn't need so many bits for y */
 	private static Long compressToLong(final int x, final int y, final int z) {
 		return Long.valueOf(
-		           (((long)(x & ((1 << 21) - 1))) << 42) |
-		           (((long)(y & ((1 << 21) - 1))) << 21) |
-		           ((long)(z & ((1 << 21) - 1)))
+		           (((long)(x & ((1 << 24) - 1))) << 40) |
+		           (((long)(y & ((1 << 16) - 1))) << 24) |
+		           ((long)(z & ((1 << 24) - 1)))
 		       );
 	}
 
