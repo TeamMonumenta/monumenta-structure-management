@@ -72,7 +72,7 @@ public class StructuresAPI {
 	 * See the details of those functions for more information
 	 */
 	public static CompletableFuture<Void> loadAndPasteStructure(@Nonnull String path, @Nonnull Location loc, boolean includeEntities) {
-		return loadStructure(path).thenAccept((clipboard) -> pasteStructure(clipboard, loc, includeEntities));
+		return loadStructure(path).thenCompose((clipboard) -> pasteStructure(clipboard, loc, includeEntities));
 	}
 
 	/**
