@@ -8,6 +8,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
@@ -469,7 +470,7 @@ public class StructuresAPI {
 			 * Mark this chunk so it will stay loaded. Keep a reference count so chunks definitely stay loaded, even when
 			 * multiple overlapping structures use it simultaneously
 			 */
-			Long key = chunk.getChunkKey();
+			WorldChunkKey key = new WorldChunkKey(world.getUID(), chunk.getChunkKey());
 			Integer references = CHUNK_TICKET_REFERENCE_COUNT.get(key);
 			if (references == null || references == 0) {
 				references = 1;
@@ -532,7 +533,7 @@ public class StructuresAPI {
 
 		for (final BlockVector2 chunkCoords : region.getChunks()) {
 			final Consumer<Chunk> consumer = (final Chunk chunk) -> {
-				Long key = chunk.getChunkKey();
+				WorldChunkKey key = new WorldChunkKey(world.getUID(), chunk.getChunkKey());
 				Integer references = CHUNK_TICKET_REFERENCE_COUNT.remove(key);
 				if (references == null || references <= 0) {
 					plugin.getLogger().warning("BUG: Chunk reference was cleared before it should have been: " + chunk.getX() + "," + chunk.getZ());
@@ -558,7 +559,34 @@ public class StructuresAPI {
 		}
 	}
 
-	private static final HashMap<Long, Integer> CHUNK_TICKET_REFERENCE_COUNT = new HashMap<>();
+	public static class WorldChunkKey {
+		private final UUID mUUID;
+		private final long mChunkKey;
+
+		public WorldChunkKey(UUID uuid, long chunkKey) {
+			mUUID = uuid;
+			mChunkKey = chunkKey;
+		}
+
+		@Override
+		public int hashCode() {
+			return (int)(mUUID.getMostSignificantBits() * mChunkKey);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			WorldChunkKey other = (WorldChunkKey) obj;
+			return mUUID.equals(other.mUUID) && mChunkKey == other.mChunkKey;
+		}
+	}
+
+	private static final HashMap<WorldChunkKey, Integer> CHUNK_TICKET_REFERENCE_COUNT = new HashMap<>();
 	private static Deque<PendingTask> PENDING_TASKS = new ConcurrentLinkedDeque<>();
 	private static BukkitRunnable RUNNING_TASK = null;
 
