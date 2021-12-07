@@ -8,7 +8,6 @@ import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 
-import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.IntegerArgument;
@@ -39,12 +38,12 @@ public class AddRespawningStructure {
 	public static void add(CommandSender sender, Plugin plugin, String label, String path, Location loc, int extraRadius, int respawnTime, String name) throws WrapperCommandSyntaxException {
 		CommandUtils.getAndValidateSchematicPath(plugin, path, true);
 
-		try {
-			RespawnManager.getInstance().addStructure(extraRadius, label, name, path, loc.toVector(), respawnTime);
-		} catch (Exception e) {
-			CommandAPI.fail(ChatColor.RED + "Failed to add structure: " + e.getMessage());
-		}
-
-		sender.sendMessage("Structure added successfully");
+		RespawnManager.getInstance().addStructure(extraRadius, label, name, path, loc.toVector(), respawnTime).whenComplete((unused, ex) -> {
+			if (ex != null) {
+				sender.sendMessage(ChatColor.RED + "Failed to add structure: " + ex.getMessage());
+			} else {
+				sender.sendMessage("Structure added successfully");
+			}
+		});
 	}
 }

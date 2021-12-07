@@ -1,12 +1,8 @@
 package com.playmonumenta.structures.commands;
 
-import java.util.concurrent.CompletableFuture;
-
 import com.playmonumenta.structures.StructuresAPI;
-import com.playmonumenta.structures.StructuresPlugin;
 import com.playmonumenta.structures.utils.MessagingUtils;
 
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
@@ -58,27 +54,21 @@ public class LoadStructure {
 	private static void load(CommandSender sender, String path, Location loadLoc, boolean includeEntities, FunctionWrapper[] postFunc) {
 		sender.sendMessage("Started loading structure '" + path + "' at (" + loadLoc.getBlockX() + " " + loadLoc.getBlockY() + " " + loadLoc.getBlockZ() + ")");
 
-		Bukkit.getScheduler().runTaskAsynchronously(StructuresPlugin.getInstance(), () -> {
-			try {
-				StructuresAPI.loadAndPasteStructure(path, loadLoc, includeEntities).get();
-
-				Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> {
-					if (postFunc != null) {
-						for (FunctionWrapper func : postFunc) {
-							func.run();
-						}
+		StructuresAPI.loadAndPasteStructure(path, loadLoc, includeEntities).whenComplete((unused, ex) -> {
+			if (ex != null) {
+				if (sender != null) {
+					sender.sendMessage(ChatColor.RED + "Failed to load structure: " + ex.getMessage());
+					MessagingUtils.sendStackTrace(sender, ex);
+				}
+			} else {
+				if (postFunc != null) {
+					for (FunctionWrapper func : postFunc) {
+						func.run();
 					}
-					if (sender != null) {
-						sender.sendMessage("Loaded structure '" + path + "' at (" + loadLoc.getBlockX() + " " + loadLoc.getBlockY() + " " + loadLoc.getBlockZ() + ")");
-					}
-				});
-			} catch (Exception e) {
-				Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> {
-					if (sender != null) {
-						sender.sendMessage(ChatColor.RED + "Failed to load structure: " + e.getMessage());
-						MessagingUtils.sendStackTrace(sender, e);
-					}
-				});
+				}
+				if (sender != null) {
+					sender.sendMessage("Loaded structure '" + path + "' at (" + loadLoc.getBlockX() + " " + loadLoc.getBlockY() + " " + loadLoc.getBlockZ() + ")");
+				}
 			}
 		});
 	}

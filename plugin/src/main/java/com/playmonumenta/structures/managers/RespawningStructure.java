@@ -6,13 +6,12 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.logging.Level;
+import java.util.concurrent.CompletableFuture;
 
 import com.playmonumenta.scriptedquests.zones.Zone;
 import com.playmonumenta.scriptedquests.zones.ZoneLayer;
 import com.playmonumenta.structures.StructuresAPI;
 import com.playmonumenta.structures.StructuresPlugin;
-import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Region;
 
@@ -22,7 +21,6 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import net.md_5.bungee.api.ChatColor;
@@ -31,7 +29,7 @@ import net.md_5.bungee.api.chat.ClickEvent.Action;
 import net.md_5.bungee.api.chat.TextComponent;
 
 public class RespawningStructure implements Comparable<RespawningStructure> {
-	public class StructureBounds {
+	public static class StructureBounds {
 		public Vector mLowerCorner;
 		public Vector mUpperCorner;
 
@@ -90,59 +88,119 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		return mConfigLabel.compareTo(other.mConfigLabel);
 	}
 
-	public static RespawningStructure fromConfig(StructuresPlugin plugin, World world, String configLabel,
-	        ConfigurationSection config) throws Exception {
-		if (!config.isString("name")) {
-			throw new Exception("Invalid name");
-		} else if (!config.isList("structure_paths")) {
-			throw new Exception("Invalid structure_paths");
-		} else if (!config.isInt("x")) {
-			throw new Exception("Invalid x value");
-		} else if (!config.isInt("y")) {
-			throw new Exception("Invalid y value");
-		} else if (!config.isInt("z")) {
-			throw new Exception("Invalid z value");
-		} else if (!config.isInt("respawn_period")) {
-			throw new Exception("Invalid respawn_period value");
-		} else if (!config.isInt("ticks_until_respawn")) {
-			throw new Exception("Invalid ticks_until_respawn value");
-		} else if (!config.isInt("extra_detection_radius")) {
-			throw new Exception("Invalid extra_detection_radius value");
-		}
+	public static CompletableFuture<RespawningStructure> fromConfig(StructuresPlugin plugin, World world, String configLabel, ConfigurationSection config) {
+		CompletableFuture<RespawningStructure> future = new CompletableFuture<>();
 
-		String postRespawnCommand = null;
-		if (config.isString("post_respawn_command")) {
-			postRespawnCommand = config.getString("post_respawn_command");
-		}
+		try {
+			if (!config.isString("name")) {
+				throw new Exception("Invalid name");
+			} else if (!config.isList("structure_paths")) {
+				throw new Exception("Invalid structure_paths");
+			} else if (!config.isInt("x")) {
+				throw new Exception("Invalid x value");
+			} else if (!config.isInt("y")) {
+				throw new Exception("Invalid y value");
+			} else if (!config.isInt("z")) {
+				throw new Exception("Invalid z value");
+			} else if (!config.isInt("respawn_period")) {
+				throw new Exception("Invalid respawn_period value");
+			} else if (!config.isInt("ticks_until_respawn")) {
+				throw new Exception("Invalid ticks_until_respawn value");
+			} else if (!config.isInt("extra_detection_radius")) {
+				throw new Exception("Invalid extra_detection_radius value");
+			}
 
-		List<String> specialPaths = null;
-		if (config.isList("structure_special_paths")) {
-			specialPaths = config.getStringList("structure_special_paths");
-		}
+			String postRespawnCommand = null;
+			if (config.isString("post_respawn_command")) {
+				postRespawnCommand = config.getString("post_respawn_command");
+			}
 
-		String nextRespawnPath = null;
-		if (config.isString("next_respawn_path")) {
-			nextRespawnPath = config.getString("next_respawn_path");
-		}
+			List<String> specialPaths = null;
+			if (config.isList("structure_special_paths")) {
+				specialPaths = config.getStringList("structure_special_paths");
+			}
 
-		SpawnerBreakTrigger spawnerBreakTrigger = null;
-		if (config.isConfigurationSection("spawner_break_trigger")) {
-			spawnerBreakTrigger = SpawnerBreakTrigger.fromConfig(plugin,
-					config.getConfigurationSection("spawner_break_trigger"));
-		}
+			String nextRespawnPath = null;
+			if (config.isString("next_respawn_path")) {
+				nextRespawnPath = config.getString("next_respawn_path");
+			}
 
-		return new RespawningStructure(plugin, world, config.getInt("extra_detection_radius"), configLabel,
-		                               config.getString("name"), config.getStringList("structure_paths"),
-		                               new Vector(config.getInt("x"), config.getInt("y"), config.getInt("z")),
-		                               config.getInt("respawn_period"), config.getInt("ticks_until_respawn"),
-		                               postRespawnCommand, specialPaths, nextRespawnPath, spawnerBreakTrigger);
+			SpawnerBreakTrigger spawnerBreakTrigger = null;
+			if (config.isConfigurationSection("spawner_break_trigger")) {
+				spawnerBreakTrigger = SpawnerBreakTrigger.fromConfig(plugin,
+						config.getConfigurationSection("spawner_break_trigger"));
+			}
+
+			return withParameters(plugin, world, config.getInt("extra_detection_radius"), configLabel,
+								  config.getString("name"), config.getStringList("structure_paths"),
+								  new Vector(config.getInt("x"), config.getInt("y"), config.getInt("z")),
+								  config.getInt("respawn_period"), config.getInt("ticks_until_respawn"),
+								  postRespawnCommand, specialPaths, nextRespawnPath, spawnerBreakTrigger);
+		} catch (Exception ex) {
+			future.completeExceptionally(ex);
+			return future;
+		}
 	}
 
-	public RespawningStructure(StructuresPlugin plugin, World world, int extraRadius,
+	public static CompletableFuture<RespawningStructure> withParameters(StructuresPlugin plugin, World world, int extraRadius,
 		                       String configLabel, String name, List<String> genericPaths,
 		                       Vector loadPos, int respawnTime, int ticksLeft,
 		                       String postRespawnCommand, List<String> specialPaths,
-		                       String nextRespawnPath, SpawnerBreakTrigger spawnerBreakTrigger) throws Exception {
+		                       String nextRespawnPath, SpawnerBreakTrigger spawnerBreakTrigger) {
+
+		CompletableFuture<RespawningStructure> future = new CompletableFuture<>();
+
+		try {
+			if (respawnTime < 200) {
+				throw new Exception("Minimum respawn_period value is 200 ticks");
+			}
+
+			if (genericPaths.size() < 1) {
+				throw new Exception("No structures specified for '" + configLabel + "'");
+			}
+
+			RespawningStructure structure = new RespawningStructure(plugin, world, extraRadius,
+			                                                        configLabel, name, genericPaths,
+			                                                        loadPos, respawnTime, ticksLeft,
+			                                                        postRespawnCommand, specialPaths,
+			                                                        nextRespawnPath, spawnerBreakTrigger);
+
+			// Load the first schematic to get its size
+			return StructuresAPI.loadStructure(structure.mGenericVariants.get(0)).thenApply((clipboard) -> {
+				if (specialPaths != null) {
+					for (String path : specialPaths) {
+						structure.mSpecialVariants.add(path);
+					}
+				}
+
+				// TODO: Add a check that these are all the same size
+
+				// Determine structure size
+				Region clipboardRegion = clipboard.getRegion().clone();
+				BlockVector3 structureSize = clipboardRegion.getMaximumPoint().subtract(clipboardRegion.getMinimumPoint());
+
+				// Create a bounding box for the structure itself, plus a slightly larger box to notify nearby players
+				structure.mInnerBounds = new StructureBounds(structure.mLoadPos, structure.mLoadPos.clone().add(new Vector(structureSize.getX(), structureSize.getY(), structureSize.getZ())));
+				Vector extraRadiusVec = new Vector(structure.mExtraRadius, structure.mExtraRadius, structure.mExtraRadius);
+				structure.mOuterBounds = new StructureBounds(structure.mInnerBounds.mLowerCorner.clone().subtract(extraRadiusVec),
+															 structure.mInnerBounds.mUpperCorner.clone().add(extraRadiusVec));
+
+				structure.registerZone();
+				structure.mInitialized = true;
+
+				return structure;
+			});
+		} catch (Exception ex) {
+			future.completeExceptionally(ex);
+			return future;
+		}
+	}
+
+	private RespawningStructure(StructuresPlugin plugin, World world, int extraRadius,
+		                        String configLabel, String name, List<String> genericPaths,
+		                        Vector loadPos, int respawnTime, int ticksLeft,
+		                        String postRespawnCommand, List<String> specialPaths,
+		                        String nextRespawnPath, SpawnerBreakTrigger spawnerBreakTrigger) {
 		mPlugin = plugin;
 		mWorld = world;
 		mRandom = new Random();
@@ -160,52 +218,12 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		mLastPlayerRespawn = null;
 		mTimesPlayerSpawned = 0;
 
-		if (mRespawnTime < 200) {
-			throw new Exception("Minimum respawn_period value is 200 ticks");
-		}
-
 		for (String path : genericPaths) {
 			mGenericVariants.add(path);
 		}
 
-		if (mGenericVariants.size() < 1) {
-			throw new Exception("No structures specified for '" + mConfigLabel + "'");
-		}
-
 		// Set the next respawn path (or not if null)
 		activateSpecialStructure(nextRespawnPath);
-
-		// Load the first schematic to get its size
-		StructuresAPI.loadStructure(mGenericVariants.get(0)).whenComplete((clipboard, ex) -> {
-			if (ex != null) {
-				mPlugin.getLogger().severe("Failed to initialize structure '" + mConfigLabel + "': " + ex.getMessage());
-				ex.printStackTrace();
-			} else {
-				if (specialPaths != null) {
-					for (String path : specialPaths) {
-						mSpecialVariants.add(path);
-					}
-				}
-
-				// TODO: Add a check that these are all the same size
-
-				// Determine structure size
-				Region clipboardRegion = clipboard.getRegion().clone();
-				BlockVector3 structureSize = clipboardRegion.getMaximumPoint().subtract(clipboardRegion.getMinimumPoint());
-
-				// Create a bounding box for the structure itself, plus a slightly larger box to notify nearby players
-				mInnerBounds = new StructureBounds(mLoadPos, mLoadPos.clone().add(new Vector(structureSize.getX(),
-																							 structureSize.getY(),
-																							 structureSize.getZ())));
-				Vector extraRadiusVec = new Vector(extraRadius, extraRadius, extraRadius);
-				mOuterBounds = new StructureBounds(mInnerBounds.mLowerCorner.clone().subtract(extraRadiusVec),
-												   mInnerBounds.mUpperCorner.clone().add(extraRadiusVec));
-
-				registerZone();
-
-				mInitialized = true;
-			}
-		});
 	}
 
 	public String getInfoString() {
@@ -218,7 +236,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		       (mSpawnerBreakTrigger == null ? "" : " spawnerTrigger={" + mSpawnerBreakTrigger.getInfoString() + "}");
 	}
 
-	public void activateSpecialStructure(String nextRespawnPath) throws Exception {
+	public void activateSpecialStructure(String nextRespawnPath) {
 		//TODO: There needs to be a better way to register special versions!
 		if (nextRespawnPath != null && !mSpecialVariants.contains(nextRespawnPath)) {
 			mSpecialVariants.add(nextRespawnPath);
@@ -229,11 +247,6 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void respawn() {
-		if (!mInitialized) {
-			mPlugin.getLogger().warning("Attempted to respawn structure '" + mConfigLabel + "' before it finished initializing");
-			return;
-		}
-
 		final String respawnPath;
 
 		if (mNextRespawnPath == null) {
@@ -319,11 +332,6 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void tellRespawnTime(Player player) {
-		if (!mInitialized) {
-			mPlugin.getLogger().warning("Attempted to tell respawn time for structure '" + mConfigLabel + "' before it finished initializing");
-			return;
-		}
-
 		int minutes = mTicksLeft / (60 * 20);
 		int seconds = (mTicksLeft / 20) % 60;
 		String message = mName + " is respawning in ";
@@ -442,11 +450,6 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void tick(int ticks) {
-		if (!mInitialized) {
-			mPlugin.getLogger().warning("Attempted to tick structure '" + mConfigLabel + "' before it finished initializing");
-			return;
-		}
-
 		if (!mName.isEmpty() &&
 		    ((mTicksLeft >= 2400 && (mTicksLeft - ticks) < 2400) ||
 		     (mTicksLeft >= 600 && (mTicksLeft - ticks) < 600))) {
@@ -499,11 +502,6 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	// This event is called every time a spawner is broken anywhere
 	// Have to test that it was within this structure
 	public void spawnerBreakEvent(Vector vec) {
-		if (!mInitialized) {
-			mPlugin.getLogger().warning("Got spawner break event for structure '" + mConfigLabel + "' before it finished initializing");
-			return;
-		}
-
 		// Only care about tracking spawners if there is a trigger
 		if (mSpawnerBreakTrigger != null && mInnerBounds.within(vec)) {
 			mSpawnerBreakTrigger.spawnerBreakEvent(this);
@@ -515,11 +513,6 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void conquerStructure() {
-		if (!mInitialized) {
-			mPlugin.getLogger().warning("Attempted to conquer structure '" + mConfigLabel + "' before it finished initializing");
-			return;
-		}
-
 		if (mForcedRespawn) {
 			// POI was already scheduled to respawn forcibly - conquering does nothing at this point, no reason to increase timer
 			return;

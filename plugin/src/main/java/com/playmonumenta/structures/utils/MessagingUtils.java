@@ -13,7 +13,7 @@ import net.md_5.bungee.api.chat.ComponentBuilder;
 import org.bukkit.command.CommandSender;
 
 public class MessagingUtils {
-	public static void sendStackTrace(CommandSender sender, Exception e) {
+	public static void sendStackTrace(CommandSender sender, Throwable e) {
 		TextComponent formattedMessage;
 		String errorMessage = e.getLocalizedMessage();
 		if (errorMessage != null) {

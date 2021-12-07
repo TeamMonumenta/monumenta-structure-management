@@ -69,6 +69,8 @@ public class StructuresAPI {
 	/**
 	 * Convenience function to combine both loadStructure() and pasteStructure() into one operation.
 	 *
+	 * Must be called from main thread, will return immediately and do its work on an async thread
+	 *
 	 * See the details of those functions for more information
 	 */
 	public static CompletableFuture<Void> loadAndPasteStructure(@Nonnull String path, @Nonnull Location loc, boolean includeEntities) {
@@ -78,7 +80,7 @@ public class StructuresAPI {
 	/**
 	 * Loads a structure from the disk and returns it.
 	 *
-	 * Can be called from the main thread or an async thread, will return immediately and do its work on an async thread
+	 * Must be called from main thread, will return immediately and do its work on an async thread
 	 *
 	 * @param path Relative path under the structures/ folder of the structure to load, not including the extension
 	 *
@@ -122,7 +124,7 @@ public class StructuresAPI {
 	/**
 	 * Save a structure given a bounding box at the specified path.
 	 *
-	 * Can be called from the main thread or an async thread, will return immediately and do its work on an async thread
+	 * Must be called from main thread, will return immediately and do its work on an async thread
 	 *
 	 * @param path Relative path under the structures/ folder of the structure to load, not including the extension
 	 * @param loc1 One corner of the bounding box to save
@@ -173,7 +175,7 @@ public class StructuresAPI {
 	/**
 	 * Copies a bounding box to a clipboard that can be used with pasteStructure().
 	 *
-	 * Can be called from the main thread or an async thread, will return immediately and do its work on an async thread
+	 * Must be called from main thread, will return immediately and do its work on an async thread
 	 *
 	 * @param loc1 One corner of the bounding box to save
 	 * @param loc2 The opposite corner
@@ -181,42 +183,66 @@ public class StructuresAPI {
 	public static CompletableFuture<BlockArrayClipboard> copyArea(@Nonnull Location loc1, @Nonnull Location loc2) {
 		CompletableFuture<BlockArrayClipboard> future = new CompletableFuture<>();
 
+		Plugin plugin = StructuresPlugin.getInstance();
+		if (plugin == null) {
+			future.completeExceptionally(new Exception("MonumentaStructureManagement plugin isn't loaded"));
+			return future;
+		}
+
 		if (!loc1.getWorld().equals(loc2.getWorld())) {
 			future.completeExceptionally(new Exception("Locations must have the same world"));
 			return future;
 		}
 
-		Bukkit.getScheduler().runTaskAsynchronously(StructuresPlugin.getInstance(), () -> {
-			// Parse the coordinates of the structure to save
-			BlockVector3 pos1 = BlockVector3.at(loc1.getBlockX(), loc1.getBlockY(), loc1.getBlockZ());
-			BlockVector3 pos2 = BlockVector3.at(loc2.getBlockX(), loc2.getBlockY(), loc2.getBlockZ());
+		// Parse the coordinates of the structure to save
+		BlockVector3 pos1 = BlockVector3.at(loc1.getBlockX(), loc1.getBlockY(), loc1.getBlockZ());
+		BlockVector3 pos2 = BlockVector3.at(loc2.getBlockX(), loc2.getBlockY(), loc2.getBlockZ());
 
-			BlockVector3 minpos = pos1.getMinimum(pos2);
-			BlockVector3 maxpos = pos1.getMaximum(pos2);
+		BlockVector3 minpos = pos1.getMinimum(pos2);
+		BlockVector3 maxpos = pos1.getMaximum(pos2);
 
-			World world = new BukkitWorld(loc1.getWorld());
-			CuboidRegion cReg = new CuboidRegion(world, minpos, maxpos);
-			BlockArrayClipboard clipboard = new BlockArrayClipboard(cReg);
-			clipboard.setOrigin(cReg.getMinimumPoint());
+		org.bukkit.World world = loc1.getWorld();
+		World faweWorld = new BukkitWorld(world);
+		CuboidRegion cReg = new CuboidRegion(faweWorld, minpos, maxpos);
 
-			/* Copy the region (including entities and biomes) into the clipboard object */
-			EditSession extent = new EditSessionBuilder(world)
-				.autoQueue(true)
-				.fastmode(true)
-				.combineStages(true)
-				.changeSetNull()
-				.checkMemory(false)
-				.allowedRegionsEverywhere()
-				.limitUnlimited()
-				.build();
-			ForwardExtentCopy copy = new ForwardExtentCopy(extent, cReg, clipboard, cReg.getMinimumPoint());
-			copy.setCopyingEntities(true);
-			copy.setCopyingBiomes(true);
-			Operations.completeLegacy(copy);
+		markAndLoadChunks(world, cReg, null).whenComplete((unused, ex) -> {
+			if (ex != null) {
+				future.completeExceptionally(ex);
+			} else {
+				/* Copy on an async thread now that all chunks are loaded */
+				Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+					try {
+						BlockArrayClipboard clipboard = new BlockArrayClipboard(cReg);
+						clipboard.setOrigin(cReg.getMinimumPoint());
 
-			Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> {
-				future.complete(clipboard);
-			});
+						/* Copy the region (including entities and biomes) into the clipboard object */
+						EditSession extent = new EditSessionBuilder(faweWorld)
+							.autoQueue(true)
+							.fastmode(true)
+							.combineStages(true)
+							.changeSetNull()
+							.checkMemory(false)
+							.allowedRegionsEverywhere()
+							.limitUnlimited()
+							.build();
+						ForwardExtentCopy copy = new ForwardExtentCopy(extent, cReg, clipboard, cReg.getMinimumPoint());
+						copy.setCopyingEntities(true);
+						copy.setCopyingBiomes(true);
+						Operations.completeLegacy(copy);
+
+						Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> {
+							future.complete(clipboard);
+						});
+
+						/* 10s later, unmark all chunks as force loaded */
+						Bukkit.getScheduler().runTaskLater(plugin, () -> {
+							unmarkChunksAsync(world, cReg);
+						}, 200);
+					} catch (Exception e) {
+						future.completeExceptionally(e);
+					}
+				});
+			}
 		});
 
 		return future;
@@ -225,16 +251,16 @@ public class StructuresAPI {
 	/**
 	 * Pastes a structure at the given location, ignoring structure void similarly to vanilla structure blocks.
 	 *
-	 * Can be called from the main thread or an async thread, will return immediately and do its work on an async thread
+	 * Must be called from main thread, will return immediately and do its work on an async thread
 	 */
 	public static CompletableFuture<Void> pasteStructure(@Nonnull BlockArrayClipboard clipboard, @Nonnull Location loc, boolean includeEntities) {
-		Plugin plugin = StructuresPlugin.getInstance();
-
 		/*
 		 * This is the future given to the caller - when it's completed it should be safe to interact with the pasted area
 		 * In particular there is a 6s delay after pasting before this is marked as completed
 		 */
 		CompletableFuture<Void> future = new CompletableFuture<>();
+
+		Plugin plugin = StructuresPlugin.getInstance();
 		if (plugin == null) {
 			future.completeExceptionally(new Exception("MonumentaStructureManagement plugin isn't loaded"));
 			return future;
@@ -267,32 +293,11 @@ public class StructuresAPI {
 			shiftedRegion.shift(clipboardAddOffset.multiply(-1, -1, -1));
 			shiftedRegion.shift(to);
 
-			final Set<BlockVector2> chunks = shiftedRegion.getChunks();
-			final AtomicInteger numRemaining = new AtomicInteger(chunks.size());
-
 			/* Set of positions (relative to the clipboard / origin) that should not be overwritten when pasting */
 			final Set<Long> noLoadPositions = new HashSet<>();
 
 			/* This chunk consumer removes entities and sets spawners/brewstands/furnaces to air */
 			final Consumer<Chunk> chunkConsumer = (final Chunk chunk) -> {
-				numRemaining.decrementAndGet();
-
-				/*
-				 * Mark this chunk so it will stay loaded. Keep a reference count so chunks definitely stay loaded, even when
-				 * multiple overlapping structures are pasted simultaneously
-				 */
-				Long key = chunk.getChunkKey();
-				Integer references = CHUNK_TICKET_REFERENCE_COUNT.get(key);
-				if (references == null || references == 0) {
-					references = 1;
-					if (!chunk.addPluginChunkTicket(plugin)) {
-						plugin.getLogger().warning("BUG: Plugin already has chunk ticket for " + chunk.getX() + "," + chunk.getZ());
-					}
-				} else {
-					references += 1;
-				}
-				CHUNK_TICKET_REFERENCE_COUNT.put(key, references);
-
 				for (final BlockState state : chunk.getTileEntities(true)) {
 					if (state instanceof CreatureSpawner || state instanceof BrewingStand || state instanceof Furnace || state instanceof Chest || state instanceof ShulkerBox) {
 						final Location sLoc = state.getLocation();
@@ -339,129 +344,208 @@ public class StructuresAPI {
 				}
 			};
 
-			/* Load all the chunks in the region and run the chunk consumer */
-			for (final BlockVector2 chunkCoords : chunks) {
-				world.getChunkAtAsync(chunkCoords.getX(), chunkCoords.getZ(), chunkConsumer);
-			}
+			markAndLoadChunks(world, shiftedRegion, chunkConsumer).whenComplete((unused, ex) -> {
+				if (ex != null) {
+					signal.completeExceptionally(ex);
+					future.completeExceptionally(ex);
+				} else {
+					/* Actually load the structure asynchronously now that all the chunks have been processed for entities / blocks that shouldn't be replaced */
+					Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+						plugin.getLogger().info("Initial processing took " + Long.toString(System.currentTimeMillis() - initialTime) + " milliseconds (mostly async)"); // STOP -->
 
-			new BukkitRunnable() {
-				int numTicksWaited = 0;
-				@Override
-				public void run() {
-					numTicksWaited++;
-					if (numTicksWaited >= 30 * 20) {
-						String msg = "Timed out waiting for chunks to load to paste structure!";
-						plugin.getLogger().severe(msg);
-						this.cancel();
-						signal.completeExceptionally(new Exception(msg));
-						future.completeExceptionally(new Exception(msg));
-						return;
-					}
-					if (numRemaining.get() == 0) {
-						this.cancel();
+						final long pasteTime = System.currentTimeMillis(); // <-- START
+						try (EditSession extent = new EditSessionBuilder(new BukkitWorld(world))
+							.autoQueue(true)
+							.fastmode(true)
+							.combineStages(true)
+							.changeSetNull()
+							.checkMemory(false)
+							.allowedRegionsEverywhere()
+							.limitUnlimited()
+							.build()) {
 
-						/* Actually load the structure asynchronously now that all the chunks have been processed for entities / blocks that shouldn't be replaced */
-						Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-							plugin.getLogger().info("Initial processing took " + Long.toString(System.currentTimeMillis() - initialTime) + " milliseconds (mostly async)"); // STOP -->
+							/*
+							 * Filter function to skip some blocks from overwriting what exists in the world
+							 * If this function returns true, this location will be overwritten
+							 */
+							final RegionFunction filterFunction = position -> {
+								final BlockType newBlockType = clipboard.getBlock(position).getBlockType();
 
-							final long pasteTime = System.currentTimeMillis(); // <-- START
-							try (EditSession extent = new EditSessionBuilder(new BukkitWorld(world))
-								.autoQueue(true)
-								.fastmode(true)
-								.combineStages(true)
-								.changeSetNull()
-								.checkMemory(false)
-								.allowedRegionsEverywhere()
-								.limitUnlimited()
-								.build()) {
-
-								/*
-								 * Filter function to skip some blocks from overwriting what exists in the world
-								 * If this function returns true, this location will be overwritten
-								 */
-								final RegionFunction filterFunction = position -> {
-									final BlockType newBlockType = clipboard.getBlock(position).getBlockType();
-
-									if (newBlockType == null || !newBlockType.equals(BlockTypes.STRUCTURE_VOID)) {
-										// This position is not in structure void in the clipboard
-										if (!noLoadPositions.contains(compressToLong(position.getBlockX(), position.getBlockY(), position.getBlockZ()))) {
-											// This position is not in the list of blocks that should not be overwritten
-											return true;
-										}
+								if (newBlockType == null || !newBlockType.equals(BlockTypes.STRUCTURE_VOID)) {
+									// This position is not in structure void in the clipboard
+									if (!noLoadPositions.contains(compressToLong(position.getBlockX(), position.getBlockY(), position.getBlockZ()))) {
+										// This position is not in the list of blocks that should not be overwritten
+										return true;
 									}
+								}
 
-									// Don't overwrite by default
-									return false;
-								};
+								// Don't overwrite by default
+								return false;
+							};
 
 
-								final ForwardExtentCopy copy = new ForwardExtentCopy(clipboard, clipboard.getRegion(), clipboard.getOrigin(), extent, to);
-								copy.setCopyingBiomes(false);
-								copy.setFilterFunction(filterFunction);
-								copy.setCopyingEntities(includeEntities);
-								Operations.completeBlindly(copy);
+							final ForwardExtentCopy copy = new ForwardExtentCopy(clipboard, clipboard.getRegion(), clipboard.getOrigin(), extent, to);
+							copy.setCopyingBiomes(false);
+							copy.setFilterFunction(filterFunction);
+							copy.setCopyingEntities(includeEntities);
+							Operations.completeBlindly(copy);
+						}
+						plugin.getLogger().info("Loading structure took " + Long.toString(System.currentTimeMillis() - pasteTime) + " milliseconds (async)"); // STOP -->
+
+						/* Allow the next structure load task to start at this point */
+						signal.complete(null);
+
+						/* 6s later, signal caller that loading is complete */
+						Bukkit.getScheduler().runTaskLater(plugin, () -> {
+							future.complete(null);
+						}, 120);
+
+						/* Schedule light cleaning on the main thread so it can safely check plugin enabled status */
+						Bukkit.getScheduler().runTask(plugin, () -> {
+							if (!Bukkit.getPluginManager().isPluginEnabled("LightCleaner")) {
+								return;
 							}
-							plugin.getLogger().info("Loading structure took " + Long.toString(System.currentTimeMillis() - pasteTime) + " milliseconds (async)"); // STOP -->
 
-							/* Allow the next structure load task to start at this point */
-							signal.complete(null);
+							final long lightTime = System.currentTimeMillis(); // <-- START
 
-							/* 6s later, signal caller that loading is complete */
+							/* Relight an area 16 blocks bigger than the respawned area */
+							final Set<BlockVector2> lightingChunks = new CuboidRegion(to.subtract(16, 16, 16), to.add(size).add(16, 16, 16)).getChunks();
+							final LongHashSet lightCleanerChunks = new LongHashSet(lightingChunks.size());
+							for (final BlockVector2 chunk : lightingChunks) {
+								lightCleanerChunks.add(chunk.getX(), chunk.getZ());
+							}
+							ScheduleArguments args = new ScheduleArguments();
+							args.setWorld(world);
+							args.setChunks(lightCleanerChunks);
+							args.setLoadedChunksOnly(true);
+							LightingService.schedule(args);
+
+							plugin.getLogger().info("scheduleLighting took " + Long.toString(System.currentTimeMillis() - lightTime) + " milliseconds (main thread)"); // STOP -->
+
+							/* 10s later, unmark all chunks as force loaded */
 							Bukkit.getScheduler().runTaskLater(plugin, () -> {
-								future.complete(null);
-							}, 120);
-
-							/* Schedule light cleaning on the main thread so it can safely check plugin enabled status */
-							Bukkit.getScheduler().runTask(plugin, () -> {
-								if (!Bukkit.getPluginManager().isPluginEnabled("LightCleaner")) {
-									return;
-								}
-
-								final long lightTime = System.currentTimeMillis(); // <-- START
-
-								/* Relight an area 16 blocks bigger than the respawned area */
-								final Set<BlockVector2> lightingChunks = new CuboidRegion(to.subtract(16, 16, 16), to.add(size).add(16, 16, 16)).getChunks();
-								final LongHashSet lightCleanerChunks = new LongHashSet(lightingChunks.size());
-								for (final BlockVector2 chunk : lightingChunks) {
-									lightCleanerChunks.add(chunk.getX(), chunk.getZ());
-								}
-								ScheduleArguments args = new ScheduleArguments();
-								args.setWorld(world);
-								args.setChunks(lightCleanerChunks);
-								args.setLoadedChunksOnly(true);
-								LightingService.schedule(args);
-
-								plugin.getLogger().info("scheduleLighting took " + Long.toString(System.currentTimeMillis() - lightTime) + " milliseconds (main thread)"); // STOP -->
-
-								/* 10s later, unmark all chunks as force loaded */
-								Bukkit.getScheduler().runTaskLater(plugin, () -> {
-									for (final BlockVector2 chunkCoords : shiftedRegion.getChunks()) {
-										final Consumer<Chunk> consumer = (final Chunk chunk) -> {
-											Long key = chunk.getChunkKey();
-											Integer references = CHUNK_TICKET_REFERENCE_COUNT.remove(key);
-											if (references == null || references <= 0) {
-												plugin.getLogger().warning("BUG: Chunk reference was cleared before it should have been: " + chunk.getX() + "," + chunk.getZ());
-											} else if (references == 1) {
-												if (!chunk.removePluginChunkTicket(plugin)) {
-													plugin.getLogger().warning("BUG: Chunk ticket was already removed: " + chunk.getX() + "," + chunk.getZ());
-												}
-											} else {
-												CHUNK_TICKET_REFERENCE_COUNT.put(key, references - 1);
-											}
-										};
-										world.getChunkAtAsync(chunkCoords.getX(), chunkCoords.getZ(), consumer);
-									}
-								}, 200);
-							});
+								unmarkChunksAsync(world, shiftedRegion);
+							}, 200);
 						});
-					}
+					});
 				}
-			}.runTaskTimer(plugin, 0, 1);
+			});
 		}));
 
 		ensureTask(plugin);
 
 		return future;
+	}
+
+	/*
+	 * Causes an area of chunks to be loaded and then kept loaded by adding plugin tickets to them.
+	 *
+	 * Will run the provided chunk consumer on each chunk as they load. Will wait for all chunks to finish loading, then
+	 * complete the future on the main thread. This lets the caller chain on .whenComplete((unused, ex) -> code) to continue
+	 * processing when all chunks are loaded.
+	 *
+	 * Must be called from main thread, will return immediately and do its work on an async thread
+	 *
+	 * Has a 600 tick timeout - if chunks fail to load in that time the future will complete with an exception and no attempt
+	 * to repair this will be made. Those chunks will likely continue to load afterwards, and will stay loaded...
+	 */
+	public static CompletableFuture<Void> markAndLoadChunks(org.bukkit.World world, Region region, Consumer<Chunk> consumer) {
+		CompletableFuture<Void> future = new CompletableFuture<>();
+
+		Plugin plugin = StructuresPlugin.getInstance();
+		if (plugin == null) {
+			future.completeExceptionally(new Exception("MonumentaStructureManagement plugin isn't loaded"));
+			return future;
+		}
+
+		final Set<BlockVector2> chunks = region.getChunks();
+		final AtomicInteger numRemaining = new AtomicInteger(chunks.size());
+
+		/* This chunk consumer adds plugin chunk tickets to all the appropriate chunks to keep them loaded */
+		final Consumer<Chunk> chunkConsumer = (final Chunk chunk) -> {
+			numRemaining.decrementAndGet();
+
+			/*
+			 * Mark this chunk so it will stay loaded. Keep a reference count so chunks definitely stay loaded, even when
+			 * multiple overlapping structures use it simultaneously
+			 */
+			Long key = chunk.getChunkKey();
+			Integer references = CHUNK_TICKET_REFERENCE_COUNT.get(key);
+			if (references == null || references == 0) {
+				references = 1;
+				if (!chunk.addPluginChunkTicket(plugin)) {
+					plugin.getLogger().warning("BUG: Plugin already has chunk ticket for " + chunk.getX() + "," + chunk.getZ());
+				}
+			} else {
+				references += 1;
+			}
+			CHUNK_TICKET_REFERENCE_COUNT.put(key, references);
+
+			/* Chain on the caller provided consumer */
+			if (consumer != null) {
+				consumer.accept(chunk);
+			}
+		};
+
+		/* Load all the chunks in the region and run the chunk consumer */
+		for (final BlockVector2 chunkCoords : chunks) {
+			world.getChunkAtAsync(chunkCoords.getX(), chunkCoords.getZ(), chunkConsumer);
+		}
+
+		new BukkitRunnable() {
+			int numTicksWaited = 0;
+			@Override
+			public void run() {
+				numTicksWaited++;
+				if (numTicksWaited >= 30 * 20) {
+					String msg = "Timed out waiting for chunks to load";
+					plugin.getLogger().severe(msg);
+					this.cancel();
+					future.completeExceptionally(new Exception(msg));
+					return;
+				}
+				if (numRemaining.get() == 0) {
+					this.cancel();
+
+					future.complete(null);
+				}
+			}
+		}.runTaskTimer(plugin, 0, 1);
+
+		return future;
+	}
+
+	/*
+	 * Unmarks chunks so that they can be unloaded. (the opposite of markAndLoadChunks)
+	 *
+	 * Must be called from main thread
+	 *
+	 * Is intelligent - if multiple marks are placed on the same chunk it won't be unloaded until
+	 * the last user unmarks them.
+	 */
+	public static void unmarkChunksAsync(org.bukkit.World world, Region region) {
+		Plugin plugin = StructuresPlugin.getInstance();
+		if (plugin == null) {
+			/* Couldn't have marked things with this plugin anyway since it's unloaded */
+			return;
+		}
+
+		for (final BlockVector2 chunkCoords : region.getChunks()) {
+			final Consumer<Chunk> consumer = (final Chunk chunk) -> {
+				Long key = chunk.getChunkKey();
+				Integer references = CHUNK_TICKET_REFERENCE_COUNT.remove(key);
+				if (references == null || references <= 0) {
+					plugin.getLogger().warning("BUG: Chunk reference was cleared before it should have been: " + chunk.getX() + "," + chunk.getZ());
+				} else if (references == 1) {
+					if (!chunk.removePluginChunkTicket(plugin)) {
+						plugin.getLogger().warning("BUG: Chunk ticket was already removed: " + chunk.getX() + "," + chunk.getZ());
+					}
+				} else {
+					CHUNK_TICKET_REFERENCE_COUNT.put(key, references - 1);
+				}
+			};
+			world.getChunkAtAsync(chunkCoords.getX(), chunkCoords.getZ(), consumer);
+		}
 	}
 
 	private static class PendingTask {
