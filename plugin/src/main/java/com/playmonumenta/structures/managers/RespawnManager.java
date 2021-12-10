@@ -127,6 +127,8 @@ public class RespawnManager {
 					mRunnable.runTaskTimer(mPlugin, 0, mTickPeriod);
 					taskScheduled = true;
 					structuresLoaded = true;
+					mZoneManager.replacePluginZoneLayer(mZoneLayerInside);
+					mZoneManager.replacePluginZoneLayer(mZoneLayerNearby);
 					this.cancel();
 				}
 			}
