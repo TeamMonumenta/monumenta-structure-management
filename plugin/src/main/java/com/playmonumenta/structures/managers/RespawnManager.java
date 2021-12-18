@@ -125,6 +125,11 @@ public class RespawnManager {
 
 					// Schedule a repeating task to trigger structure countdowns
 					mRunnable.runTaskTimer(mPlugin, 0, mTickPeriod);
+
+					// Enable the plugin zone layers that have been populated (but not registered) during the reload
+					mZoneManager.replacePluginZoneLayer(mZoneLayerInside);
+					mZoneManager.replacePluginZoneLayer(mZoneLayerNearby);
+
 					taskScheduled = true;
 					structuresLoaded = true;
 					this.cancel();
