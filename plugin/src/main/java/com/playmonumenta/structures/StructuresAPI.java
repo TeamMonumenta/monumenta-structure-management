@@ -75,7 +75,10 @@ public class StructuresAPI {
 	 * See the details of those functions for more information
 	 */
 	public static CompletableFuture<Void> loadAndPasteStructure(@Nonnull String path, @Nonnull Location loc, boolean includeEntities) {
-		return loadStructure(path).thenCompose((clipboard) -> pasteStructure(clipboard, loc, includeEntities));
+		/* Clone the input variable to make sure the caller doesn't change it while we're stil loading */
+		Location pasteLoc = loc.clone();
+
+		return loadStructure(path).thenCompose((clipboard) -> pasteStructure(clipboard, pasteLoc, includeEntities));
 	}
 
 	/**
@@ -138,7 +141,11 @@ public class StructuresAPI {
 	public static CompletableFuture<Void> copyAreaAndSaveStructure(@Nonnull String path, @Nonnull Location loc1, @Nonnull Location loc2) {
 		CompletableFuture<Void> future = new CompletableFuture<>();
 
-		if (!loc1.getWorld().equals(loc2.getWorld())) {
+		/* Copy locations so caller can't change them after calling API */
+		Location copyLoc1 = loc1.clone();
+		Location copyLoc2 = loc2.clone();
+
+		if (!copyLoc1.getWorld().equals(copyLoc2.getWorld())) {
 			future.completeExceptionally(new Exception("Locations must have the same world"));
 			return future;
 		}
@@ -152,7 +159,7 @@ public class StructuresAPI {
 					file.createNewFile();
 				}
 
-				Clipboard clipboard = copyArea(loc1, loc2).get();
+				Clipboard clipboard = copyArea(copyLoc1, copyLoc2).get();
 
 				ClipboardFormat format = ClipboardFormats.findByAlias(FORMAT);
 				FileOutputStream fos = closer.register(new FileOutputStream(file));
@@ -184,25 +191,29 @@ public class StructuresAPI {
 	public static CompletableFuture<BlockArrayClipboard> copyArea(@Nonnull Location loc1, @Nonnull Location loc2) {
 		CompletableFuture<BlockArrayClipboard> future = new CompletableFuture<>();
 
+		/* Copy locations so caller can't change them after calling API */
+		Location copyLoc1 = loc1.clone();
+		Location copyLoc2 = loc2.clone();
+
 		Plugin plugin = StructuresPlugin.getInstance();
 		if (plugin == null) {
 			future.completeExceptionally(new Exception("MonumentaStructureManagement plugin isn't loaded"));
 			return future;
 		}
 
-		if (!loc1.getWorld().equals(loc2.getWorld())) {
+		if (!copyLoc1.getWorld().equals(copyLoc2.getWorld())) {
 			future.completeExceptionally(new Exception("Locations must have the same world"));
 			return future;
 		}
 
 		// Parse the coordinates of the structure to save
-		BlockVector3 pos1 = BlockVector3.at(loc1.getBlockX(), loc1.getBlockY(), loc1.getBlockZ());
-		BlockVector3 pos2 = BlockVector3.at(loc2.getBlockX(), loc2.getBlockY(), loc2.getBlockZ());
+		BlockVector3 pos1 = BlockVector3.at(copyLoc1.getBlockX(), copyLoc1.getBlockY(), copyLoc1.getBlockZ());
+		BlockVector3 pos2 = BlockVector3.at(copyLoc2.getBlockX(), copyLoc2.getBlockY(), copyLoc2.getBlockZ());
 
 		BlockVector3 minpos = pos1.getMinimum(pos2);
 		BlockVector3 maxpos = pos1.getMaximum(pos2);
 
-		org.bukkit.World world = loc1.getWorld();
+		org.bukkit.World world = copyLoc1.getWorld();
 		World faweWorld = new BukkitWorld(world);
 		CuboidRegion cReg = new CuboidRegion(faweWorld, minpos, maxpos);
 
@@ -267,6 +278,9 @@ public class StructuresAPI {
 			return future;
 		}
 
+		/* Clone the input variable to make sure the caller doesn't change it while we're stil loading */
+		Location pasteLoc = loc.clone();
+
 		/*
 		 * This future is used to signal the pasting system that this schematic has completed and the next one can start pasting
 		 * This does not have the 6s delay returned to the user
@@ -278,8 +292,8 @@ public class StructuresAPI {
 
 			final Region sourceRegion = clipboard.getRegion();
 			final BlockVector3 size = sourceRegion.getMaximumPoint().subtract(sourceRegion.getMinimumPoint());
-			final org.bukkit.World world = loc.getWorld();
-			final BlockVector3 to = BlockVector3.at(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+			final org.bukkit.World world = pasteLoc.getWorld();
+			final BlockVector3 to = BlockVector3.at(pasteLoc.getBlockX(), pasteLoc.getBlockY(), pasteLoc.getBlockZ());
 			final Vector pos1 = new Vector((double)to.getX(), (double)to.getY(), (double)to.getZ());
 			final Vector pos2 = pos1.clone().add(new Vector(size.getX() + 1, size.getY() + 1, size.getZ() + 1));
 			final BoundingBox box = new BoundingBox(pos1.getX(), pos1.getY(), pos1.getZ(), pos2.getX(), pos2.getY(), pos2.getZ());
