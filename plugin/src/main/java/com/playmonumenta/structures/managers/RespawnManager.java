@@ -98,7 +98,7 @@ public class RespawnManager {
 		// Iterate over all the respawning entries (shallow list at this level)
 		for (String key : keys) {
 			if (!respawnSection.isConfigurationSection(key)) {
-				mPlugin.asyncLog(Level.WARNING, "respawning_structures entry '" + key + "' is not a configuration section!");
+				mPlugin.getLogger().warning("respawning_structures entry '" + key + "' is not a configuration section!");
 				numRemaining.decrementAndGet();
 				continue;
 			}

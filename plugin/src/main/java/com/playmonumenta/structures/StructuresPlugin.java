@@ -24,7 +24,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
 
 public class StructuresPlugin extends JavaPlugin {
 	public RespawnManager mRespawnManager = null;
@@ -122,26 +121,6 @@ public class StructuresPlugin extends JavaPlugin {
 				getLogger().log(Level.SEVERE, "Could not save config to " + mConfigFile, ex);
 			}
 		}
-	}
-
-	public void asyncLog(Level level, String message) {
-		new BukkitRunnable() {
-			@Override
-			public void run()
-			{
-				getLogger().log(level, message);
-			}
-		}.runTask(this);
-	}
-
-	public void asyncLog(Level level, String message, Exception ex) {
-		new BukkitRunnable() {
-			@Override
-			public void run()
-			{
-				getLogger().log(level, message, ex);
-			}
-		}.runTask(this);
 	}
 
 	public static StructuresPlugin getInstance() {
