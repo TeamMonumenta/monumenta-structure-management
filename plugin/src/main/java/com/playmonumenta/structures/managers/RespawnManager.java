@@ -293,9 +293,8 @@ public class RespawnManager {
 	}
 
 	public void spawnerBreakEvent(Location loc) {
-		Vector vec = loc.toVector();
 		for (RespawningStructure struct : mRespawns.values()) {
-			struct.spawnerBreakEvent(vec);
+			struct.spawnerBreakEvent(loc);
 		}
 	}
 

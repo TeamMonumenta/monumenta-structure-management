@@ -6,6 +6,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import com.playmonumenta.scriptedquests.zones.Zone;
@@ -67,7 +68,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	private boolean mForcedRespawn;       // Was this set to have a forced respawn via compass
 	private NearbyState mPlayerNearbyLastTick; // Was there a player nearby last tick while respawn time was < 0?
 	private boolean mConquered;           // Is the POI conquered
-	private String mLastPlayerRespawn;    // Player who last forced a respawn
+	private UUID mLastPlayerRespawn;      // Player who last forced a respawn
 	private int mTimesPlayerSpawned;	  // How many times in a row it's been reset through conquered or force respawn
 	private boolean mInitialized = false; // This structure has finished loading the initial schematic/dimensions
 
@@ -293,7 +294,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void forcedRespawn(Player player) {
-		if (!mOuterBounds.within(player.getLocation().toVector())) {
+		if (!isNearby(player)) {
 			player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "You must be nearby the POI to force its respawn.");
 			return;
 		}
@@ -302,10 +303,10 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + " is already forced to respawn!");
 		} else {
 			if (isConquered()) {
-				if (player.getDisplayName() == mLastPlayerRespawn) {
+				if (player.getUniqueId().equals(mLastPlayerRespawn)) {
 					player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "You cannot force a POI to respawn twice in a row.");
 				} else {
-					mLastPlayerRespawn = player.getDisplayName();
+					mLastPlayerRespawn = player.getUniqueId();
 					mForcedRespawn = true;
 					if (mTicksLeft < 2 * 60 * 20) {
 						mTicksLeft = 2 * 60 * 20;
@@ -361,7 +362,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			message = mName + " will respawn when empty.";
 		}
 
-		if (mInnerBounds.within(player.getLocation().toVector())) {
+		if (isWithin(player)) {
 			message += " [Within]";
 		}
 
@@ -386,17 +387,11 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public boolean isNearby(Player player) {
-		if (mOuterBounds.within(player.getLocation().toVector())) {
-			return true;
-		}
-		return false;
+		return mWorld.equals(player.getWorld()) && mOuterBounds.within(player.getLocation().toVector());
 	}
 
 	public boolean isWithin(Player player) {
-		if (mInnerBounds.within(player.getLocation().toVector())) {
-			return true;
-		}
-		return false;
+		return mWorld.equals(player.getWorld()) && mInnerBounds.within(player.getLocation().toVector());
 	}
 
 	public void tellRespawnTimeIfNearby(Player player) {
@@ -501,9 +496,9 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 	// This event is called every time a spawner is broken anywhere
 	// Have to test that it was within this structure
-	public void spawnerBreakEvent(Vector vec) {
+	public void spawnerBreakEvent(Location loc) {
 		// Only care about tracking spawners if there is a trigger
-		if (mSpawnerBreakTrigger != null && mInnerBounds.within(vec)) {
+		if (mSpawnerBreakTrigger != null && mWorld.equals(loc.getWorld()) && mInnerBounds.within(loc.toVector())) {
 			mSpawnerBreakTrigger.spawnerBreakEvent(this);
 		}
 	}
@@ -553,6 +548,10 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 	public int getRespawnTime() {
 		return mRespawnTime;
+	}
+
+	public World getWorld() {
+		return mWorld;
 	}
 
 	public boolean registerZone() {
