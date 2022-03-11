@@ -12,6 +12,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.playmonumenta.structures.StructuresPlugin;
 import com.playmonumenta.scriptedquests.quests.components.QuestComponent;
+import com.playmonumenta.scriptedquests.quests.QuestContext;
 
 public class SpawnerBreakTrigger {
 	// Number of spawners remaining when the POI resets / is fresh
@@ -57,7 +58,7 @@ public class SpawnerBreakTrigger {
 		Gson gson = new Gson();
 		JsonObject object = gson.fromJson(questComponentStr, JsonObject.class);
 		if (object == null) {
-			throw new Exception("Failed to parse scriped_quests_component as JSON object");
+			throw new Exception("Failed to parse scripted_quests_component as JSON object");
 		}
 
 		mQuestComponentStr = questComponentStr;
@@ -68,9 +69,9 @@ public class SpawnerBreakTrigger {
 	public void spawnerBreakEvent(RespawningStructure structure) {
 		mSpawnerCountRemaining--;
 		if (mSpawnerCountRemaining <= 0) {
-			for (Player player : Bukkit.getOnlinePlayers()) {
+			for (Player player : structure.getWorld().getPlayers()) {
 				if (structure.isWithin(player)) {
-					mQuestComponent.doActionsIfPrereqsMet(mScriptedQuestsPlugin, player, null);
+					mQuestComponent.doActionsIfPrereqsMet(new QuestContext(mScriptedQuestsPlugin, player, null));
 				}
 			}
 		}
