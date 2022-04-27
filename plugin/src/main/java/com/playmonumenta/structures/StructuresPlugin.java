@@ -3,9 +3,11 @@ package com.playmonumenta.structures;
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.playmonumenta.structures.commands.ActivateSpecialStructure;
 import com.playmonumenta.structures.commands.AddRespawningStructure;
+import com.playmonumenta.structures.commands.ChangeLogLevel;
 import com.playmonumenta.structures.commands.CompassRespawn;
 import com.playmonumenta.structures.commands.ForceloadLazy;
 import com.playmonumenta.structures.commands.ListRespawningStructures;
@@ -24,6 +26,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.Nullable;
 
 public class StructuresPlugin extends JavaPlugin {
 	public RespawnManager mRespawnManager = null;
@@ -32,9 +35,15 @@ public class StructuresPlugin extends JavaPlugin {
 
 	private File mConfigFile;
 	private YamlConfiguration mConfig;
+	private @Nullable CustomLogger mLogger = null;
 
 	@Override
 	public void onLoad() {
+		if (mLogger == null) {
+			mLogger = new CustomLogger(super.getLogger(), Level.INFO);
+		}
+
+		ChangeLogLevel.register();
 		ActivateSpecialStructure.register(this);
 		AddRespawningStructure.register(this);
 		CompassRespawn.register();
@@ -121,6 +130,14 @@ public class StructuresPlugin extends JavaPlugin {
 				getLogger().log(Level.SEVERE, "Could not save config to " + mConfigFile, ex);
 			}
 		}
+	}
+
+	@Override
+	public Logger getLogger() {
+		if (mLogger == null) {
+			mLogger = new CustomLogger(super.getLogger(), Level.INFO);
+		}
+		return mLogger;
 	}
 
 	public static StructuresPlugin getInstance() {
