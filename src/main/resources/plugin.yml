@@ -1,7 +1,0 @@
-name: MonumentaStructureManagement
-main: com.playmonumenta.structures.StructuresPlugin
-version: 1.0
-api-version: 1.15
-depend: [ScriptedQuests]
-softdepend: [LightCleaner]
-commands:

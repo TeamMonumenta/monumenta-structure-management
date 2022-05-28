@@ -20,11 +20,11 @@ import javax.annotation.Nonnull;
 import com.bergerkiller.bukkit.common.wrappers.LongHashSet;
 import com.bergerkiller.bukkit.lightcleaner.lighting.LightingService;
 import com.bergerkiller.bukkit.lightcleaner.lighting.LightingService.ScheduleArguments;
-import com.fastasyncworldedit.core.object.clipboard.DiskOptimizedClipboard;
-import com.fastasyncworldedit.core.util.EditSessionBuilder;
+import com.fastasyncworldedit.core.extent.clipboard.DiskOptimizedClipboard;
 import com.playmonumenta.structures.utils.CommandUtils;
 import com.playmonumenta.structures.utils.MSLog;
 import com.sk89q.worldedit.EditSession;
+import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
@@ -256,9 +256,9 @@ public class StructuresAPI {
 						clipboard.setOrigin(cReg.getMinimumPoint());
 
 						/* Copy the region (including entities and biomes) into the clipboard object */
-						EditSession extent = new EditSessionBuilder(faweWorld)
-							.autoQueue(true)
-							.fastmode(true)
+						EditSession extent = WorldEdit.getInstance().newEditSessionBuilder()
+							.world(faweWorld)
+							.fastMode(true)
 							.combineStages(true)
 							.changeSetNull()
 							.checkMemory(false)
@@ -397,9 +397,10 @@ public class StructuresAPI {
 						MSLog.finer(() -> "Initial processing took " + Long.toString(System.currentTimeMillis() - initialTime) + " milliseconds (mostly async)"); // STOP -->
 
 						final long pasteTime = System.currentTimeMillis(); // <-- START
-						try (EditSession extent = new EditSessionBuilder(new BukkitWorld(world))
-							.autoQueue(true)
-							.fastmode(true)
+
+						try (EditSession extent = WorldEdit.getInstance().newEditSessionBuilder()
+							.world(new BukkitWorld(world))
+							.fastMode(true)
 							.combineStages(true)
 							.changeSetNull()
 							.checkMemory(false)
