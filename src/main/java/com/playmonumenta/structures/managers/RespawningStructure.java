@@ -228,8 +228,8 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public String getInfoString() {
-		return "name='" + mName + "' pos=(" + Integer.toString((int)mLoadPos.getX()) + " " +
-		       Integer.toString((int)mLoadPos.getY()) + " " + Integer.toString((int)mLoadPos.getZ()) +
+		return "name='" + mName + "' pos=(" + mLoadPos.getBlockX() + " " +
+		       mLoadPos.getBlockY() + " " + mLoadPos.getBlockZ() +
 		       ") paths={" + String.join(" ", mGenericVariants) + "} period=" + Integer.toString(mRespawnTime) + " ticksleft=" +
 		       Integer.toString(mTicksLeft) +
 		       (mPostRespawnCommand == null ? "" : " respawnCmd='" + mPostRespawnCommand + "'") +
@@ -283,7 +283,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		mForcedRespawn = false;
 		mConquered = false;
 
-		StructuresAPI.loadAndPasteStructure(respawnPath, new Location(mWorld, mLoadPos.getX(), mLoadPos.getY(), mLoadPos.getZ()), true).whenComplete((unused, exception) -> {
+		StructuresAPI.loadAndPasteStructure(respawnPath, new Location(mWorld, mLoadPos.getBlockX(), mLoadPos.getBlockY(), mLoadPos.getBlockZ()), true).whenComplete((unused, exception) -> {
 			if (exception != null) {
 				mPlugin.getLogger().severe("Failed to respawn structure '" + mConfigLabel + "'");
 				exception.printStackTrace();
@@ -422,9 +422,9 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 		configMap.put("name", mName);
 		configMap.put("structure_paths", mGenericVariants);
-		configMap.put("x", (int)mLoadPos.getX());
-		configMap.put("y", (int)mLoadPos.getY());
-		configMap.put("z", (int)mLoadPos.getZ());
+		configMap.put("x", mLoadPos.getBlockX());
+		configMap.put("y", mLoadPos.getBlockY());
+		configMap.put("z", mLoadPos.getBlockZ());
 		configMap.put("extra_detection_radius", mExtraRadius);
 		configMap.put("respawn_period", mRespawnTime);
 		configMap.put("ticks_until_respawn", mTicksLeft);

@@ -25,7 +25,7 @@ repositories {
     mavenCentral()
 
     maven {
-        url = uri("file://file://mvn-repo")
+        url = uri("mvn-repo")
     }
 
     maven {
