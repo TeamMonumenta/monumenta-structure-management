@@ -58,7 +58,9 @@ public class LoadStructure {
 			if (ex != null) {
 				if (sender != null) {
 					sender.sendMessage(ChatColor.RED + "Failed to load structure: " + ex.getMessage());
+					ex.printStackTrace();
 					MessagingUtils.sendStackTrace(sender, ex);
+					return;
 				}
 			} else {
 				if (postFunc != null) {

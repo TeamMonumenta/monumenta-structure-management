@@ -13,9 +13,6 @@ import org.bukkit.command.ProxiedCommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.plugin.Plugin;
 
-import dev.jorel.commandapi.CommandAPI;
-import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
-
 public class CommandUtils {
 	private static final String BASE_FOLDER_NAME = "structures";
 
@@ -23,25 +20,25 @@ public class CommandUtils {
 		return Paths.get(plugin.getDataFolder().toString(), BASE_FOLDER_NAME, baseName + ".schematic").toString();
 	}
 
-	public static File getAndValidateSchematicPath(Plugin plugin, String baseName, boolean failIfNotExist) throws WrapperCommandSyntaxException {
+	public static File getAndValidateSchematicPath(Plugin plugin, String baseName, boolean failIfNotExist) throws Exception {
 		final Pattern invalidPathPattern = Pattern.compile("[^-/_a-zA-Z0-9]");
 
 		if (baseName == null || baseName.isEmpty()) {
-			CommandAPI.fail("Path is null or empty");
+			throw new Exception("Path is null or empty");
 		}
 
 		if (invalidPathPattern.matcher(baseName).find()) {
-			CommandAPI.fail("Path contains illegal characters");
+			throw new Exception("Path contains illegal characters");
 		}
 
 		if (baseName.contains("..")) {
-			CommandAPI.fail("Path cannot contain '..'");
+			throw new Exception("Path cannot contain '..'");
 		}
 
 		final String fileName = getSchematicPath(plugin, baseName);
 		File file = new File(fileName);
 		if (failIfNotExist && !file.exists()) {
-			CommandAPI.fail("Path '" + baseName + "' does not exist (full path '" + fileName + "')");
+			throw new Exception("Path '" + baseName + "' does not exist (full path '" + fileName + "')");
 		}
 		return file;
 	}

@@ -37,7 +37,12 @@ repositories {
     }
 
     maven {
-        url = uri("https://papermc.io/repo/repository/maven-public/")
+        url = uri("https://repo.papermc.io/repository/maven-public/")
+    }
+
+    // Adventure API needed by FAWE
+    maven {
+        url = uri("https://oss.sonatype.org/content/repositories/snapshots")
     }
 
     maven {
@@ -55,8 +60,10 @@ repositories {
 
 dependencies {
     compileOnly("com.destroystokyo.paper:paper-api:1.16.5-R0.1-SNAPSHOT")
-	compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Core:2.2.0")
-    compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit:2.2.0") { isTransitive = false }
+    compileOnly("net.kyori:adventure-api:4.11.0")
+    compileOnly("net.kyori:adventure-text-minimessage:4.11.0")
+    compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Core:2.4.4")
+    compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit:2.4.4") { isTransitive = false }
     compileOnly("com.bergerkiller.bukkit:LightCleaner:1.15.2-v1")
     compileOnly("com.bergerkiller.bukkit:BKCommonLib:1.15.2-v2")
     compileOnly("dev.jorel.CommandAPI:commandapi-core:6.0.0")

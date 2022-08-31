@@ -2,6 +2,7 @@ package com.playmonumenta.structures.commands;
 
 import com.playmonumenta.structures.managers.RespawnManager;
 import com.playmonumenta.structures.utils.CommandUtils;
+import com.playmonumenta.structures.utils.MessagingUtils;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -37,12 +38,13 @@ public class ActivateSpecialStructure {
 	}
 
 	private static void activate(CommandSender sender, Plugin plugin, String label, String path) throws WrapperCommandSyntaxException {
-		CommandUtils.getAndValidateSchematicPath(plugin, path, true);
-
 		try {
+			CommandUtils.getAndValidateSchematicPath(plugin, path, true);
 			RespawnManager.getInstance().activateSpecialStructure(label, path);
 		} catch (Exception e) {
 			sender.sendMessage(ChatColor.RED + "Got error while attempting to activate special structure: " + e.getMessage());
+			MessagingUtils.sendStackTrace(sender, e);
+			return;
 		}
 
 		if (path != null) {

@@ -2,6 +2,7 @@ package com.playmonumenta.structures.commands;
 
 import com.playmonumenta.structures.managers.RespawnManager;
 import com.playmonumenta.structures.utils.CommandUtils;
+import com.playmonumenta.structures.utils.MessagingUtils;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -36,7 +37,13 @@ public class AddRespawningStructure {
 	}
 
 	public static void add(CommandSender sender, Plugin plugin, String label, String path, Location loc, int extraRadius, int respawnTime, String name) throws WrapperCommandSyntaxException {
-		CommandUtils.getAndValidateSchematicPath(plugin, path, true);
+		try {
+			CommandUtils.getAndValidateSchematicPath(plugin, path, true);
+		} catch (Exception e) {
+			sender.sendMessage(ChatColor.RED + "Got error while attempting to add structure: " + e.getMessage());
+			MessagingUtils.sendStackTrace(sender, e);
+			return;
+		}
 
 		RespawnManager.getInstance().addStructure(extraRadius, label, name, path, loc.toVector(), respawnTime).whenComplete((unused, ex) -> {
 			if (ex != null) {
