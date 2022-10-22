@@ -1,5 +1,15 @@
 package com.playmonumenta.structures.managers;
 
+import com.fastasyncworldedit.core.util.collection.BlockSet;
+import com.fastasyncworldedit.core.util.collection.MemBlockSet;
+import com.playmonumenta.scriptedquests.zones.Zone;
+import com.playmonumenta.scriptedquests.zones.ZoneLayer;
+import com.playmonumenta.structures.StructuresAPI;
+import com.playmonumenta.structures.StructuresPlugin;
+import com.playmonumenta.structures.utils.MSLog;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.regions.Region;
+import com.sk89q.worldedit.world.block.BlockType;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -8,14 +18,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-
-import com.playmonumenta.scriptedquests.zones.Zone;
-import com.playmonumenta.scriptedquests.zones.ZoneLayer;
-import com.playmonumenta.structures.StructuresAPI;
-import com.playmonumenta.structures.StructuresPlugin;
-import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldedit.regions.Region;
-
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.ClickEvent.Action;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -23,11 +29,6 @@ import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
-
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.ClickEvent.Action;
-import net.md_5.bungee.api.chat.TextComponent;
 
 public class RespawningStructure implements Comparable<RespawningStructure> {
 	public static class StructureBounds {
@@ -69,8 +70,13 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	private NearbyState mPlayerNearbyLastTick; // Was there a player nearby last tick while respawn time was < 0?
 	private boolean mConquered;           // Is the POI conquered
 	private UUID mLastPlayerRespawn;      // Player who last forced a respawn
-	private int mTimesPlayerSpawned;	  // How many times in a row it's been reset through conquered or force respawn
+	private int mTimesPlayerSpawned;      // How many times in a row it's been reset through conquered or force respawn
 	private boolean mInitialized = false; // This structure has finished loading the initial schematic/dimensions
+
+	/**
+	 * A block set of structure void blocks in this structure. Coordinates are relative to the structure, e.g. (0,0,0) is the lowest (x,y,z) block in the structure.
+	 */
+	private BlockSet mStructureVoidBlocks = null;
 
 	// Path String -> BlockArrayClipboard maps
 	private final List<String> mGenericVariants = new ArrayList<String>();
@@ -184,7 +190,24 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 				structure.mInnerBounds = new StructureBounds(structure.mLoadPos, structure.mLoadPos.clone().add(new Vector(structureSize.getX(), structureSize.getY(), structureSize.getZ())));
 				Vector extraRadiusVec = new Vector(structure.mExtraRadius, structure.mExtraRadius, structure.mExtraRadius);
 				structure.mOuterBounds = new StructureBounds(structure.mInnerBounds.mLowerCorner.clone().subtract(extraRadiusVec),
-															 structure.mInnerBounds.mUpperCorner.clone().add(extraRadiusVec));
+					structure.mInnerBounds.mUpperCorner.clone().add(extraRadiusVec));
+
+				// save locations of structure void blocks
+				int size1 = 1 + (Math.max(clipboard.getDimensions().getBlockX(), Math.max(clipboard.getDimensions().getBlockY(), clipboard.getDimensions().getBlockZ())) >> 4);
+				MemBlockSet structureVoidBlocks = new MemBlockSet(size1, 0, 0, 0, 15);
+				BlockType structureVoid = BlockType.REGISTRY.get("minecraft:structure_void");
+				if (structureVoid != null) {
+					BlockVector3 minimumPoint = clipboard.getMinimumPoint();
+					for (BlockVector3 pos : clipboard) {
+						// cannot use pos directly, as its x/y/z values are not properly set, only the blockX/Y/Z values
+						if (structureVoid.equals(clipboard.getBlock(pos.getBlockX() + minimumPoint.getBlockX(), pos.getBlockY() + minimumPoint.getBlockY(), pos.getBlockZ() + minimumPoint.getBlockZ()).getBlockType())) {
+							structureVoidBlocks.add(pos.getBlockX(), pos.getBlockY(), pos.getBlockZ());
+						}
+					}
+				} else {
+					MSLog.warning("Cannot find minecraft:structure_void in registry");
+				}
+				structure.mStructureVoidBlocks = structureVoidBlocks;
 
 				structure.registerZone();
 				structure.mInitialized = true;
@@ -391,7 +414,10 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public boolean isWithin(Player player) {
-		return mWorld.equals(player.getWorld()) && mInnerBounds.within(player.getLocation().toVector());
+		Vector playerLoc = player.getLocation().toVector();
+		return mWorld.equals(player.getWorld()) && mInnerBounds.within(playerLoc)
+			       && (mStructureVoidBlocks == null || !mStructureVoidBlocks.contains(playerLoc.getBlockX() - mInnerBounds.mLowerCorner.getBlockX(),
+			playerLoc.getBlockY() - mInnerBounds.mLowerCorner.getBlockY(), playerLoc.getBlockZ() - mInnerBounds.mLowerCorner.getBlockZ()));
 	}
 
 	public void tellRespawnTimeIfNearby(Player player) {
