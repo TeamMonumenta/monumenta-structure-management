@@ -17,10 +17,8 @@ public class ForceConquerRespawn {
 		new CommandAPICommand(command)
 			.withPermission(perms)
 			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return RespawnManager.getInstance().listStructures();}))
-			.executes((sender, args) -> {
-				if (sender instanceof Player) {
-					forceRespawn(sender, (String)args[0]);
-				}
+			.executesPlayer((sender, args) -> {
+				forceRespawn(sender, (String)args[0]);
 			})
 			.register();
 
@@ -29,19 +27,18 @@ public class ForceConquerRespawn {
 				.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return RespawnManager.getInstance().listStructures();}))
 				.withArguments(new PlayerArgument("player"))
 				.executes((sender, args) -> {
-					if (sender instanceof Player) {
-						forceRespawn(sender, (String)args[0]);
+					if (sender instanceof Player p) {
+						forceRespawn(p, (String)args[0]);
 					} else {
-						forceRespawn((CommandSender) args[1], (String)args[0]);
+						forceRespawn((Player) args[1], (String)args[0]);
 					}
 				})
 				.register();
 	}
 
-	private static void forceRespawn(CommandSender sender, String label) {
+	private static void forceRespawn(Player sender, String label) {
 		try {
-			Player player = (Player) sender;
-			RespawnManager.getInstance().forceConquerRespawn(player, label);
+			RespawnManager.getInstance().forceConquerRespawn(sender, label);
 		} catch (Exception e) {
 			sender.sendMessage(ChatColor.RED + "Got error while attempting to force respawn on structure: " + e.getMessage());
 		}
