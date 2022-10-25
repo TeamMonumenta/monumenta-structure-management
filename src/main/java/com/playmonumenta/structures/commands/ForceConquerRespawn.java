@@ -27,11 +27,7 @@ public class ForceConquerRespawn {
 				.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return RespawnManager.getInstance().listStructures();}))
 				.withArguments(new PlayerArgument("player"))
 				.executes((sender, args) -> {
-					if (sender instanceof Player p) {
-						forceRespawn(p, (String)args[0]);
-					} else {
-						forceRespawn((Player) args[1], (String)args[0]);
-					}
+					forceRespawn((Player) args[1], (String)args[0]);
 				})
 				.register();
 	}
