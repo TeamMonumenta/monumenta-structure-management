@@ -316,7 +316,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		});
 	}
 
-	public void forcedRespawn(Player player) {
+	public void forcedRespawn(Player player, boolean ignoreDefaultSpawnerCount) {
 		if (!isNearby(player)) {
 			player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "You must be nearby the POI to force its respawn.");
 			return;
@@ -325,7 +325,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		if (mForcedRespawn) {
 			player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + " is already forced to respawn!");
 		} else {
-			if (isConquered()) {
+			if (isConquered() || ignoreDefaultSpawnerCount) {
 				if (player.getUniqueId().equals(mLastPlayerRespawn)) {
 					player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "You cannot force a POI to respawn twice in a row.");
 				} else {

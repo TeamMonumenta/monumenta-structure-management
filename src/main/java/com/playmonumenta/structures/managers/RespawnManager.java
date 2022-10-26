@@ -260,7 +260,11 @@ public class RespawnManager {
 	}
 
 	public void compassRespawn(Player player, String label) throws Exception {
-		_getStructure(label).forcedRespawn(player);
+		_getStructure(label).forcedRespawn(player, false);
+	}
+
+	public void forceConquerRespawn(Player player, String label) throws Exception {
+		_getStructure(label).forcedRespawn(player, true);
 	}
 
 	public void cleanup() {

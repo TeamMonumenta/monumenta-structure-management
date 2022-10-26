@@ -9,6 +9,7 @@ import com.playmonumenta.structures.commands.ActivateSpecialStructure;
 import com.playmonumenta.structures.commands.AddRespawningStructure;
 import com.playmonumenta.structures.commands.ChangeLogLevel;
 import com.playmonumenta.structures.commands.CompassRespawn;
+import com.playmonumenta.structures.commands.ForceConquerRespawn;
 import com.playmonumenta.structures.commands.ForceloadLazy;
 import com.playmonumenta.structures.commands.ListRespawningStructures;
 import com.playmonumenta.structures.commands.LoadStructure;
@@ -47,6 +48,7 @@ public class StructuresPlugin extends JavaPlugin {
 		ActivateSpecialStructure.register(this);
 		AddRespawningStructure.register(this);
 		CompassRespawn.register();
+		ForceConquerRespawn.register();
 		ForceloadLazy.register();
 		ListRespawningStructures.register();
 		LoadStructure.register();
