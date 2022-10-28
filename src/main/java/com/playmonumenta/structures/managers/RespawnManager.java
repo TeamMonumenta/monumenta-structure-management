@@ -264,7 +264,7 @@ public class RespawnManager {
 	}
 
 	public void forceConquerRespawn(Player player, String label) throws Exception {
-		_getStructure(label).forcedRespawn(player, true);
+		_getStructure(label).conquerStructure();
 	}
 
 	public void cleanup() {
