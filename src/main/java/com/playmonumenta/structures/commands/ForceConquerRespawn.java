@@ -34,7 +34,7 @@ public class ForceConquerRespawn {
 
 	private static void forceRespawn(Player sender, String label) {
 		try {
-			RespawnManager.getInstance().forceConquerRespawn(sender, label);
+			RespawnManager.getInstance().forceConquerRespawn(label);
 		} catch (Exception e) {
 			sender.sendMessage(ChatColor.RED + "Got error while attempting to force respawn on structure: " + e.getMessage());
 		}
