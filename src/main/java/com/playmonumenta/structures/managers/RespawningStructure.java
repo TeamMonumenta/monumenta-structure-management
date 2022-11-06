@@ -7,6 +7,7 @@ import com.playmonumenta.scriptedquests.zones.ZoneLayer;
 import com.playmonumenta.structures.StructuresAPI;
 import com.playmonumenta.structures.StructuresPlugin;
 import com.playmonumenta.structures.utils.MSLog;
+import com.playmonumenta.structures.utils.MessagingUtils;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.world.block.BlockType;
@@ -18,11 +19,12 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.ClickEvent.Action;
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -356,52 +358,30 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public void tellRespawnTime(Player player) {
-		int minutes = mTicksLeft / (60 * 20);
-		int seconds = (mTicksLeft / 20) % 60;
-		String message = mName + " is respawning in ";
-		String color = ChatColor.GREEN + "" + ChatColor.BOLD;
+		Component message = Component.text(
+			mTicksLeft <= 0 ? mName + " will respawn when empty." : mName + " is respawning in " + MessagingUtils.durationToString(mTicksLeft),
+			mTicksLeft <= 600 ? NamedTextColor.RED : NamedTextColor.GREEN
+		).decorate(TextDecoration.BOLD);
 
-		if (mTicksLeft <= 600) {
-			color = ChatColor.RED + "" + ChatColor.BOLD;
+		boolean within = isWithin(player);
+		if (within) {
+			message = message.append(Component.text(" [Within]"));
 		}
-
-		if (minutes > 1) {
-			message += Integer.toString(minutes) + " minutes";
-		} else if (minutes == 1) {
-			message += "1 minute";
-		}
-
-		if (minutes > 0 && seconds > 0) {
-			message += " and ";
-		}
-
-		if (seconds > 1) {
-			message += Integer.toString(seconds) + " seconds";
-		} else if (seconds == 1) {
-			message += "1 second";
-		}
-
-		if (mTicksLeft <= 0) {
-			message = mName + " will respawn when empty.";
-		}
-
-		if (isWithin(player)) {
-			message += " [Within]";
-		}
-
-		message = color + message;
 
 		if (mForcedRespawn || mNextRespawnPath != null) {
-			message += " " + ChatColor.RED + "" + ChatColor.BOLD + "[Forced Respawn]";
+			message = message.append(Component.text(" [Forced Respawn]", NamedTextColor.RED).decorate(TextDecoration.BOLD));
 		}
 
-		TextComponent clickable = new TextComponent("[Force " + mName + " to respawn]");
-		clickable.setColor(ChatColor.LIGHT_PURPLE);
-		clickable.setClickEvent(new ClickEvent(Action.RUN_COMMAND, "/compassrespawn " + mConfigLabel));
-
-		player.spigot().sendMessage(new TextComponent(message));
+		player.sendMessage(message);
+		if (within) {
+			long otherPlayersWithin = player.getWorld().getPlayers().stream().filter(p -> p != player && isWithin(p)).count();
+			if (otherPlayersWithin > 0) {
+				player.sendMessage(Component.text((otherPlayersWithin == 1 ? "There is one other player here." : "There are " + otherPlayersWithin + " other players here."), NamedTextColor.AQUA).decoration(TextDecoration.BOLD, false));
+			}
+		}
 		if (mConquered && !mForcedRespawn) {
-			player.spigot().sendMessage(clickable);
+			player.sendMessage(Component.text("[Force " + mName + " to respawn]", NamedTextColor.LIGHT_PURPLE)
+				                   .clickEvent(ClickEvent.runCommand("/compassrespawn " + mConfigLabel)));
 		}
 	}
 
@@ -410,12 +390,20 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	public boolean isNearby(Player player) {
-		return mWorld.equals(player.getWorld()) && mOuterBounds.within(player.getLocation().toVector());
+		return isNearby(player.getLocation());
+	}
+
+	public boolean isNearby(Location location) {
+		return mWorld.equals(location.getWorld()) && mOuterBounds.within(location.toVector());
 	}
 
 	public boolean isWithin(Player player) {
-		Vector playerLoc = player.getLocation().toVector();
-		return mWorld.equals(player.getWorld()) && mInnerBounds.within(playerLoc)
+		return isWithin(player.getLocation());
+	}
+
+	public boolean isWithin(Location location) {
+		Vector playerLoc = location.toVector();
+		return mWorld.equals(location.getWorld()) && mInnerBounds.within(playerLoc)
 			       && (mStructureVoidBlocks == null || !mStructureVoidBlocks.contains(playerLoc.getBlockX() - mInnerBounds.mLowerCorner.getBlockX(),
 			playerLoc.getBlockY() - mInnerBounds.mLowerCorner.getBlockY(), playerLoc.getBlockZ() - mInnerBounds.mLowerCorner.getBlockZ()));
 	}
