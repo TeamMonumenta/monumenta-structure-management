@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import javax.annotation.Nullable;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -67,30 +68,30 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	private int mExtraRadius;             // Radius around the structure that still gets messages
 	private int mTicksLeft;               // How many ticks remaining until respawn
 	private int mRespawnTime;             // How many ticks between respawns
-	private String mPostRespawnCommand;   // Command run via the console after respawning structure
+	private @Nullable String mPostRespawnCommand;   // Command run via the console after respawning structure
 	private boolean mForcedRespawn;       // Was this set to have a forced respawn via compass
 	private NearbyState mPlayerNearbyLastTick; // Was there a player nearby last tick while respawn time was < 0?
 	private boolean mConquered;           // Is the POI conquered
-	private UUID mLastPlayerRespawn;      // Player who last forced a respawn
+	private @Nullable UUID mLastPlayerRespawn; // Player who last forced a respawn
 	private int mTimesPlayerSpawned;      // How many times in a row it's been reset through conquered or force respawn
 	private boolean mInitialized = false; // This structure has finished loading the initial schematic/dimensions
 
 	/**
 	 * A block set of structure void blocks in this structure. Coordinates are relative to the structure, e.g. (0,0,0) is the lowest (x,y,z) block in the structure.
 	 */
-	private BlockSet mStructureVoidBlocks = null;
+	private @Nullable BlockSet mStructureVoidBlocks = null;
 
 	// Path String -> BlockArrayClipboard maps
-	private final List<String> mGenericVariants = new ArrayList<String>();
-	private final List<String> mSpecialVariants = new ArrayList<String>();
+	private final List<String> mGenericVariants = new ArrayList<>();
+	private final List<String> mSpecialVariants = new ArrayList<>();
 
 	// Which structure will be spawned next
 	// If this is null, one of the genericVariants will be chosen randomly
 	// If this is a path, it must be one of mSpecialVariants (not in generic variants!)
-	private String mNextRespawnPath;
+	private @Nullable String mNextRespawnPath;
 
 	// If this is non-null, then some action happens when players break some number of spawners
-	private SpawnerBreakTrigger mSpawnerBreakTrigger;
+	private @Nullable SpawnerBreakTrigger mSpawnerBreakTrigger;
 
 	@Override
 	public int compareTo(RespawningStructure other) {
@@ -136,7 +137,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 			SpawnerBreakTrigger spawnerBreakTrigger = null;
 			if (config.isConfigurationSection("spawner_break_trigger")) {
-				spawnerBreakTrigger = SpawnerBreakTrigger.fromConfig(plugin,
+				spawnerBreakTrigger = SpawnerBreakTrigger.fromConfig(
 						config.getConfigurationSection("spawner_break_trigger"));
 			}
 
@@ -151,11 +152,19 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		}
 	}
 
-	public static CompletableFuture<RespawningStructure> withParameters(StructuresPlugin plugin, World world, int extraRadius,
-		                       String configLabel, String name, List<String> genericPaths,
-		                       Vector loadPos, int respawnTime, int ticksLeft,
-		                       String postRespawnCommand, List<String> specialPaths,
-		                       String nextRespawnPath, SpawnerBreakTrigger spawnerBreakTrigger) {
+	public static CompletableFuture<RespawningStructure> withParameters(StructuresPlugin plugin,
+	                                                                    World world,
+	                                                                    int extraRadius,
+	                                                                    String configLabel,
+	                                                                    String name,
+	                                                                    List<String> genericPaths,
+	                                                                    Vector loadPos,
+	                                                                    int respawnTime,
+	                                                                    int ticksLeft,
+	                                                                    @Nullable String postRespawnCommand,
+	                                                                    @Nullable List<String> specialPaths,
+	                                                                    @Nullable String nextRespawnPath,
+	                                                                    @Nullable SpawnerBreakTrigger spawnerBreakTrigger) {
 
 		CompletableFuture<RespawningStructure> future = new CompletableFuture<>();
 
@@ -171,15 +180,13 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			RespawningStructure structure = new RespawningStructure(plugin, world, extraRadius,
 			                                                        configLabel, name, genericPaths,
 			                                                        loadPos, respawnTime, ticksLeft,
-			                                                        postRespawnCommand, specialPaths,
-			                                                        nextRespawnPath, spawnerBreakTrigger);
+			                                                        postRespawnCommand,
+					nextRespawnPath, spawnerBreakTrigger);
 
 			// Load the first schematic to get its size
 			return StructuresAPI.loadStructure(structure.mGenericVariants.get(0)).thenApply((clipboard) -> {
 				if (specialPaths != null) {
-					for (String path : specialPaths) {
-						structure.mSpecialVariants.add(path);
-					}
+					structure.mSpecialVariants.addAll(specialPaths);
 				}
 
 				// TODO: Add a check that these are all the same size
@@ -222,11 +229,18 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		}
 	}
 
-	private RespawningStructure(StructuresPlugin plugin, World world, int extraRadius,
-		                        String configLabel, String name, List<String> genericPaths,
-		                        Vector loadPos, int respawnTime, int ticksLeft,
-		                        String postRespawnCommand, List<String> specialPaths,
-		                        String nextRespawnPath, SpawnerBreakTrigger spawnerBreakTrigger) {
+	private RespawningStructure(StructuresPlugin plugin,
+	                            World world,
+	                            int extraRadius,
+		                        String configLabel,
+		                        String name,
+		                        List<String> genericPaths,
+		                        Vector loadPos,
+		                        int respawnTime,
+		                        int ticksLeft,
+		                        @Nullable String postRespawnCommand,
+		                        @Nullable String nextRespawnPath,
+		                        @Nullable SpawnerBreakTrigger spawnerBreakTrigger) {
 		mPlugin = plugin;
 		mWorld = world;
 		mRandom = new Random();
@@ -244,9 +258,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		mLastPlayerRespawn = null;
 		mTimesPlayerSpawned = 0;
 
-		for (String path : genericPaths) {
-			mGenericVariants.add(path);
-		}
+		mGenericVariants.addAll(genericPaths);
 
 		// Set the next respawn path (or not if null)
 		activateSpecialStructure(nextRespawnPath);
@@ -255,14 +267,14 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	public String getInfoString() {
 		return "name='" + mName + "' pos=(" + mLoadPos.getBlockX() + " " +
 		       mLoadPos.getBlockY() + " " + mLoadPos.getBlockZ() +
-		       ") paths={" + String.join(" ", mGenericVariants) + "} period=" + Integer.toString(mRespawnTime) + " ticksleft=" +
-		       Integer.toString(mTicksLeft) +
+		       ") paths={" + String.join(" ", mGenericVariants) + "} period=" + mRespawnTime + " ticksLeft=" +
+				mTicksLeft +
 		       (mPostRespawnCommand == null ? "" : " respawnCmd='" + mPostRespawnCommand + "'") +
 		       (mSpecialVariants.isEmpty() ? "" : " specialPaths={" + String.join(" ", mSpecialVariants) + "}") +
 		       (mSpawnerBreakTrigger == null ? "" : " spawnerTrigger={" + mSpawnerBreakTrigger.getInfoString() + "}");
 	}
 
-	public void activateSpecialStructure(String nextRespawnPath) {
+	public void activateSpecialStructure(@Nullable String nextRespawnPath) {
 		//TODO: There needs to be a better way to register special versions!
 		if (nextRespawnPath != null && !mSpecialVariants.contains(nextRespawnPath)) {
 			mSpecialVariants.add(nextRespawnPath);
@@ -312,7 +324,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			if (exception != null) {
 				mPlugin.getLogger().severe("Failed to respawn structure '" + mConfigLabel + "'");
 				exception.printStackTrace();
-			} else {
+			} else if (mPostRespawnCommand != null) {
 				Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), mPostRespawnCommand);
 			}
 		});
@@ -342,11 +354,10 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 						}
 					} else {
 						int minutesLeft = mTicksLeft / (60 * 20);
-						String minutesPlural = (minutesLeft > 1) ? "s" : "";
 						for (Player p : mWorld.getPlayers()) {
 							if (isNearby(p)) {
 								p.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + " will forcibly respawn in "
-										+ minutesLeft + " minute" + minutesPlural + "!");
+										+ minutesLeft + " minutes!");
 							}
 						}
 					}
@@ -427,12 +438,12 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		mRespawnTime = ticksUntilRespawn;
 	}
 
-	public void setPostRespawnCommand(String postRespawnCommand) {
+	public void setPostRespawnCommand(@Nullable String postRespawnCommand) {
 		mPostRespawnCommand = postRespawnCommand;
 	}
 
 	public Map<String, Object> getConfig() {
-		Map<String, Object> configMap = new LinkedHashMap<String, Object>();
+		Map<String, Object> configMap = new LinkedHashMap<>();
 
 		configMap.put("name", mName);
 		configMap.put("structure_paths", mGenericVariants);
@@ -517,7 +528,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		}
 	}
 
-	public void setSpawnerBreakTrigger(SpawnerBreakTrigger trigger) {
+	public void setSpawnerBreakTrigger(@Nullable SpawnerBreakTrigger trigger) {
 		mSpawnerBreakTrigger = trigger;
 	}
 
@@ -529,7 +540,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 		// Count how long it took to conquer POI, only set to zero if greater than minimum respawn time
 		int playerCausedDelay = mTimesPlayerSpawned * 5 * 60 * 20;
-		mTicksLeft = playerCausedDelay <= (mRespawnTime / 2) ? playerCausedDelay : (mRespawnTime / 2);
+		mTicksLeft = Math.min(playerCausedDelay, (mRespawnTime / 2));
 
 		int minutesLeft = mTicksLeft / (60 * 20);
 		String minutesPlural = (minutesLeft > 1) ? "s" : "";
@@ -568,26 +579,25 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		return mWorld;
 	}
 
-	public boolean registerZone() {
-		ZoneLayer zoneLayerInside = mPlugin.mRespawnManager.mZoneLayerInside;
-		ZoneLayer zoneLayerNearby = mPlugin.mRespawnManager.mZoneLayerNearby;
+	public void registerZone() {
+		RespawnManager respawnManager = StructuresPlugin.getRespawnManager();
+		ZoneLayer zoneLayerInside = respawnManager.mZoneLayerInside;
+		ZoneLayer zoneLayerNearby = respawnManager.mZoneLayerNearby;
 
 		Zone insideZone = new Zone(zoneLayerInside,
 		                           mInnerBounds.mLowerCorner.clone(),
 		                           mInnerBounds.mUpperCorner.clone(),
 		                           mName,
-		                           new LinkedHashSet<String>());
+				new LinkedHashSet<>());
 		Zone nearbyZone = new Zone(zoneLayerNearby,
 		                           mOuterBounds.mLowerCorner.clone(),
 		                           mOuterBounds.mUpperCorner.clone(),
 		                           mName,
-		                           new LinkedHashSet<String>());
+				new LinkedHashSet<>());
 		zoneLayerInside.addZone(insideZone);
 		zoneLayerNearby.addZone(nearbyZone);
 
-		mPlugin.mRespawnManager.registerRespawningStructureZone(insideZone, this);
-		mPlugin.mRespawnManager.registerRespawningStructureZone(nearbyZone, this);
-
-		return true;
+		respawnManager.registerRespawningStructureZone(insideZone, this);
+		respawnManager.registerRespawningStructureZone(nearbyZone, this);
 	}
 }

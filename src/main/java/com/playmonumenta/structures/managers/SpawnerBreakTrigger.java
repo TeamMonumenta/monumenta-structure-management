@@ -1,18 +1,16 @@
 package com.playmonumenta.structures.managers;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.playmonumenta.scriptedquests.quests.QuestContext;
+import com.playmonumenta.scriptedquests.quests.components.QuestComponent;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
+import javax.annotation.Nullable;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.playmonumenta.structures.StructuresPlugin;
-import com.playmonumenta.scriptedquests.quests.components.QuestComponent;
-import com.playmonumenta.scriptedquests.quests.QuestContext;
 
 public class SpawnerBreakTrigger {
 	// Number of spawners remaining when the POI resets / is fresh
@@ -30,8 +28,10 @@ public class SpawnerBreakTrigger {
 	// sub-structures override that default. This would require a bit of restructuring...
 	//
 	// For now, all structures of the same label share this information
-	public static SpawnerBreakTrigger fromConfig(StructuresPlugin plugin,
-	                                             ConfigurationSection config) throws Exception {
+	public static SpawnerBreakTrigger fromConfig(@Nullable ConfigurationSection config) throws Exception {
+		if (config == null) {
+			throw new NullPointerException("Got null config");
+		}
 		if (!config.isInt("spawner_count")) {
 			throw new Exception("Invalid spawner_count");
 		} else if (!config.isString("scripted_quests_component")) {
@@ -40,12 +40,12 @@ public class SpawnerBreakTrigger {
 
 		int countRemaining = config.isInt("spawner_count_remaining") ?
 			config.getInt("spawner_count_remaining") : config.getInt("spawner_count");
-		return new SpawnerBreakTrigger(plugin, config.getInt("spawner_count"), countRemaining,
+		return new SpawnerBreakTrigger(config.getInt("spawner_count"), countRemaining,
 		                               config.getString("scripted_quests_component"));
 
 	}
 
-	public SpawnerBreakTrigger(StructuresPlugin plugin, int spawnerCount, int spawnerCountRemaining,
+	public SpawnerBreakTrigger(int spawnerCount, int spawnerCountRemaining,
 	                           String questComponentStr) throws Exception {
 		mScriptedQuestsPlugin = (com.playmonumenta.scriptedquests.Plugin)Bukkit.getPluginManager().getPlugin("ScriptedQuests");
 		if (mScriptedQuestsPlugin == null) {
@@ -89,12 +89,12 @@ public class SpawnerBreakTrigger {
 	}
 
 	public String getInfoString() {
-		return "count=" + Integer.toString(mSpawnerCount) + " remaining=" + Integer.toString(mSpawnerCountRemaining) +
+		return "count=" + mSpawnerCount + " remaining=" + mSpawnerCountRemaining +
 		       " component='" + mQuestComponentStr + "'";
 	}
 
 	public Map<String, Object> getConfig() {
-		Map<String, Object> configMap = new LinkedHashMap<String, Object>();
+		Map<String, Object> configMap = new LinkedHashMap<>();
 
 		configMap.put("spawner_count", mSpawnerCount);
 		configMap.put("spawner_count_remaining", mSpawnerCountRemaining);

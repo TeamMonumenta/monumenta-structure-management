@@ -3,7 +3,7 @@ package com.playmonumenta.structures.utils;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.regex.Pattern;
-
+import javax.annotation.Nullable;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -20,7 +20,7 @@ public class CommandUtils {
 		return Paths.get(plugin.getDataFolder().toString(), BASE_FOLDER_NAME, baseName + ".schematic").toString();
 	}
 
-	public static File getAndValidateSchematicPath(Plugin plugin, String baseName, boolean failIfNotExist) throws Exception {
+	public static File getAndValidateSchematicPath(Plugin plugin, @Nullable String baseName, boolean failIfNotExist) throws Exception {
 		final Pattern invalidPathPattern = Pattern.compile("[^-/_a-zA-Z0-9]");
 
 		if (baseName == null || baseName.isEmpty()) {
@@ -44,7 +44,7 @@ public class CommandUtils {
 	}
 
 	public static int parseIntFromString(CommandSender sender, String str) throws Exception {
-		int value = 0;
+		int value;
 
 		try{
 			value = Integer.parseInt(str);
@@ -70,9 +70,9 @@ public class CommandUtils {
 			return sender;
 		} else if (sender instanceof ProxiedCommandSender) {
 			if (callee) {
-				return getProxiedSender(((ProxiedCommandSender)sender).getCallee(), callee);
+				return getProxiedSender(((ProxiedCommandSender)sender).getCallee(), true);
 			} else {
-				return getProxiedSender(((ProxiedCommandSender)sender).getCaller(), callee);
+				return getProxiedSender(((ProxiedCommandSender)sender).getCaller(), false);
 			}
 		}
 

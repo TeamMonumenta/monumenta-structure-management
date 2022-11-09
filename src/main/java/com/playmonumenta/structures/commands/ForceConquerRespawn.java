@@ -6,7 +6,6 @@ import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.PlayerArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 public class ForceConquerRespawn {
@@ -16,7 +15,7 @@ public class ForceConquerRespawn {
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return RespawnManager.getInstance().listStructures();}))
+			.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
 			.executesPlayer((sender, args) -> {
 				forceRespawn(sender, (String)args[0]);
 			})
@@ -24,7 +23,7 @@ public class ForceConquerRespawn {
 
 		new CommandAPICommand(command)
 				.withPermission(perms)
-				.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return RespawnManager.getInstance().listStructures();}))
+				.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
 				.withArguments(new PlayerArgument("player"))
 				.executes((sender, args) -> {
 					forceRespawn((Player) args[1], (String)args[0]);

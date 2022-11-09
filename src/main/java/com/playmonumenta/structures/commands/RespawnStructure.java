@@ -1,14 +1,12 @@
 package com.playmonumenta.structures.commands;
 
 import com.playmonumenta.structures.managers.RespawnManager;
-
-import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
-
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.IntegerArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
+import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
 
 public class RespawnStructure {
 	public static void register() {
@@ -17,7 +15,7 @@ public class RespawnStructure {
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return RespawnManager.getInstance().listStructures();}))
+			.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
 			.executes((sender, args) -> {
 				respawn(sender, (String)args[0], 600); // Default 30s
 			})
@@ -25,7 +23,7 @@ public class RespawnStructure {
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return RespawnManager.getInstance().listStructures();}))
+			.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
 			.withArguments(new IntegerArgument("ticks_until_respawn", 0))
 			.executes((sender, args) -> {
 				respawn(sender, (String)args[0], (Integer)args[1]);

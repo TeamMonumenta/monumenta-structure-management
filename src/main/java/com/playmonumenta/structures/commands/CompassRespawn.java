@@ -1,14 +1,12 @@
 package com.playmonumenta.structures.commands;
 
 import com.playmonumenta.structures.managers.RespawnManager;
-
-import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.StringArgument;
+import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 public class CompassRespawn {
 	public static void register() {
@@ -17,7 +15,7 @@ public class CompassRespawn {
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return RespawnManager.getInstance().listStructures();}))
+			.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
 			.executes((sender, args) -> {
 				if (sender instanceof Player) {
 					forceRespawn(sender, (String)args[0]);
