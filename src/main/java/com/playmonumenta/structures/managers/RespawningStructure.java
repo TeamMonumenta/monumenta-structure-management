@@ -385,7 +385,9 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 		player.sendMessage(message);
 		if (within) {
-			long otherPlayersWithin = player.getWorld().getPlayers().stream().filter(p -> p != player && isWithin(p)).count();
+			long otherPlayersWithin = player.getWorld().getPlayers().stream()
+				                          .filter(p -> p != player && isWithin(p) && p.getGameMode() != GameMode.SPECTATOR && p.getGameMode() != GameMode.CREATIVE)
+				                          .count();
 			if (otherPlayersWithin > 0) {
 				player.sendMessage(Component.text((otherPlayersWithin == 1 ? "There is one other player here." : "There are " + otherPlayersWithin + " other players here."), NamedTextColor.AQUA).decoration(TextDecoration.BOLD, false));
 			}
