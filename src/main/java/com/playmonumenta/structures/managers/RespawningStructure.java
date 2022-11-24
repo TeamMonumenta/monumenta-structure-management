@@ -232,15 +232,15 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	private RespawningStructure(StructuresPlugin plugin,
 	                            World world,
 	                            int extraRadius,
-		                        String configLabel,
-		                        String name,
-		                        List<String> genericPaths,
-		                        Vector loadPos,
-		                        int respawnTime,
-		                        int ticksLeft,
-		                        @Nullable String postRespawnCommand,
-		                        @Nullable String nextRespawnPath,
-		                        @Nullable SpawnerBreakTrigger spawnerBreakTrigger) {
+	                            String configLabel,
+	                            String name,
+	                            List<String> genericPaths,
+	                            Vector loadPos,
+	                            int respawnTime,
+	                            int ticksLeft,
+	                            @Nullable String postRespawnCommand,
+	                            @Nullable String nextRespawnPath,
+	                            @Nullable SpawnerBreakTrigger spawnerBreakTrigger) {
 		mPlugin = plugin;
 		mWorld = world;
 		mRandom = new Random();
@@ -268,7 +268,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		return "name='" + mName + "' pos=(" + mLoadPos.getBlockX() + " " +
 		       mLoadPos.getBlockY() + " " + mLoadPos.getBlockZ() +
 		       ") paths={" + String.join(" ", mGenericVariants) + "} period=" + mRespawnTime + " ticksLeft=" +
-				mTicksLeft +
+		       mTicksLeft +
 		       (mPostRespawnCommand == null ? "" : " respawnCmd='" + mPostRespawnCommand + "'") +
 		       (mSpecialVariants.isEmpty() ? "" : " specialPaths={" + String.join(" ", mSpecialVariants) + "}") +
 		       (mSpawnerBreakTrigger == null ? "" : " spawnerTrigger={" + mSpawnerBreakTrigger.getInfoString() + "}");
@@ -588,12 +588,12 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		                           mInnerBounds.mLowerCorner.clone(),
 		                           mInnerBounds.mUpperCorner.clone(),
 		                           mName,
-				new LinkedHashSet<>());
+		                           new LinkedHashSet<>());
 		Zone nearbyZone = new Zone(zoneLayerNearby,
 		                           mOuterBounds.mLowerCorner.clone(),
 		                           mOuterBounds.mUpperCorner.clone(),
 		                           mName,
-				new LinkedHashSet<>());
+		                           new LinkedHashSet<>());
 		zoneLayerInside.addZone(insideZone);
 		zoneLayerNearby.addZone(nearbyZone);
 

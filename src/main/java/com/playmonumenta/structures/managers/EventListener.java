@@ -28,8 +28,6 @@ public class EventListener implements Listener {
 		SpawnReason.VILLAGE_INVASION
 	);
 
-	public EventListener() {}
-
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void PlayerInteractEvent(PlayerInteractEvent event) {
 		Action action = event.getAction();
