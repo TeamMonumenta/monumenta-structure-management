@@ -1,24 +1,20 @@
 package com.playmonumenta.structures.commands;
 
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
-
 import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
-
-import org.bukkit.Chunk;
-import org.bukkit.command.CommandSender;
-
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.Location2DArgument;
 import dev.jorel.commandapi.arguments.LocationType;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
-import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
 import dev.jorel.commandapi.wrappers.Location2D;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import net.md_5.bungee.api.ChatColor;
+import org.bukkit.Chunk;
+import org.bukkit.command.CommandSender;
 
 public class ForceloadLazy {
 	public static void register() {
@@ -45,22 +41,22 @@ public class ForceloadLazy {
 			.register();
 	}
 
-	private static void load(CommandSender sender, Location2D from, Location2D to) throws WrapperCommandSyntaxException {
-		CuboidRegion region = new CuboidRegion(BlockVector3.at(from.getBlockX(), 0, from.getBlockZ()), BlockVector3.at(to.getBlockX(), 255, to.getBlockZ()));
-		final Set<BlockVector2> chunks = region.getChunks();
+	private static void load(CommandSender sender, Location2D from, Location2D to) {
+		final Set<BlockVector2> chunks = new CuboidRegion(BlockVector3.at(from.getBlockX(), 0, from.getBlockZ()),
+				BlockVector3.at(to.getBlockX(), 255, to.getBlockZ())).getChunks();
 
 		final AtomicInteger numRemaining = new AtomicInteger(chunks.size());
 
-		String msg = ChatColor.WHITE + "" + chunks.size() + " chunks have finished forceloading: ";
+		StringBuilder msg = new StringBuilder(ChatColor.WHITE + "" + chunks.size() + " chunks have finished forceloading: ");
 		boolean first = true;
 		for (final BlockVector2 chunkCoords : chunks) {
 			if (!first) {
-				msg += ", ";
+				msg.append(", ");
 			}
-			msg += "[" + chunkCoords.getX() + ", " + chunkCoords.getZ() + "]";
+			msg.append("[").append(chunkCoords.getX()).append(", ").append(chunkCoords.getZ()).append("]");
 			first = false;
 		}
-		final String sendMessage = msg;
+		final String sendMessage = msg.toString();
 
 		final Consumer<Chunk> chunkConsumer = (final Chunk chunk) -> {
 			chunk.setForceLoaded(true);

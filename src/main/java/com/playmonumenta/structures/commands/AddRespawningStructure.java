@@ -3,19 +3,16 @@ package com.playmonumenta.structures.commands;
 import com.playmonumenta.structures.managers.RespawnManager;
 import com.playmonumenta.structures.utils.CommandUtils;
 import com.playmonumenta.structures.utils.MessagingUtils;
-
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.command.CommandSender;
-import org.bukkit.plugin.Plugin;
-
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.IntegerArgument;
 import dev.jorel.commandapi.arguments.LocationArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.arguments.TextArgument;
-import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.command.CommandSender;
+import org.bukkit.plugin.Plugin;
 
 public class AddRespawningStructure {
 	public static void register(Plugin plugin) {
@@ -36,7 +33,7 @@ public class AddRespawningStructure {
 			.register();
 	}
 
-	public static void add(CommandSender sender, Plugin plugin, String label, String path, Location loc, int extraRadius, int respawnTime, String name) throws WrapperCommandSyntaxException {
+	public static void add(CommandSender sender, Plugin plugin, String label, String path, Location loc, int extraRadius, int respawnTime, String name) {
 		try {
 			CommandUtils.getAndValidateSchematicPath(plugin, path, true);
 		} catch (Exception e) {

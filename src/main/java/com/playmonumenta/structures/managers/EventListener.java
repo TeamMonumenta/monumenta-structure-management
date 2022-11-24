@@ -1,8 +1,8 @@
 package com.playmonumenta.structures.managers;
 
+import com.playmonumenta.structures.StructuresPlugin;
 import java.util.EnumSet;
 import java.util.List;
-
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
@@ -21,20 +21,12 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
-import com.playmonumenta.structures.StructuresPlugin;
-
 public class EventListener implements Listener {
 	private static final EnumSet<SpawnReason> DISALLOWED_STRUCTURE_SPAWN_REASONS = EnumSet.of(
 		SpawnReason.NATURAL,
 		SpawnReason.VILLAGE_DEFENSE,
 		SpawnReason.VILLAGE_INVASION
 	);
-
-	StructuresPlugin mPlugin = null;
-
-	public EventListener(StructuresPlugin plugin) {
-		mPlugin = plugin;
-	}
 
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void PlayerInteractEvent(PlayerInteractEvent event) {
@@ -46,7 +38,7 @@ public class EventListener implements Listener {
 		if ((action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) &&
 			item != null && item.getType() == Material.COMPASS && player.isSneaking()) {
 
-			mPlugin.mRespawnManager.tellNearbyRespawnTimes(player);
+			StructuresPlugin.getRespawnManager().tellNearbyRespawnTimes(player);
 
 			event.setCancelled(true);
 		}
@@ -57,7 +49,7 @@ public class EventListener implements Listener {
 		if (!event.isCancelled()) {
 			Block block = event.getBlock();
 			if (block.getType() == Material.SPAWNER) {
-				mPlugin.mRespawnManager.spawnerBreakEvent(block.getLocation());
+				StructuresPlugin.getRespawnManager().spawnerBreakEvent(block.getLocation());
 			}
 		}
 	}
@@ -67,7 +59,7 @@ public class EventListener implements Listener {
 		if (!event.isCancelled()) {
 			for (Block block : event.blockList()) {
 				if (block.getType() == Material.SPAWNER) {
-					mPlugin.mRespawnManager.spawnerBreakEvent(block.getLocation());
+					StructuresPlugin.getRespawnManager().spawnerBreakEvent(block.getLocation());
 				}
 			}
 		}
@@ -78,7 +70,7 @@ public class EventListener implements Listener {
 		if (!event.isCancelled()) {
 			for (Block block : event.blockList()) {
 				if (block.getType() == Material.SPAWNER) {
-					mPlugin.mRespawnManager.spawnerBreakEvent(block.getLocation());
+					StructuresPlugin.getRespawnManager().spawnerBreakEvent(block.getLocation());
 				}
 			}
 		}
@@ -95,9 +87,8 @@ public class EventListener implements Listener {
 			String zoneLayerNameInside = RespawnManager.ZONE_LAYER_NAME_INSIDE;
 
 			// We don't care which poi it is, just that the poi exists at that location
-			if (mPlugin.mRespawnManager.mZoneManager.getZone(loc, zoneLayerNameInside) != null) {
+			if (StructuresPlugin.getRespawnManager().mZoneManager.getZone(loc, zoneLayerNameInside) != null) {
 				event.setCancelled(true);
-				return;
 			}
 		}
 	}
@@ -111,7 +102,7 @@ public class EventListener implements Listener {
 			return;
 		}
 
-		List<RespawningStructure> structs = mPlugin.mRespawnManager.getStructures(loc, false);
+		List<RespawningStructure> structs = StructuresPlugin.getRespawnManager().getStructures(loc, false);
 		if (structs != null) {
 			for (RespawningStructure s : structs) {
 				if (s.getTicksLeft() < Math.min(20 * 11 * 60, s.getRespawnTime())) {

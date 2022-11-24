@@ -1,7 +1,12 @@
 package com.playmonumenta.structures.managers;
 
+import com.playmonumenta.scriptedquests.zones.Zone;
+import com.playmonumenta.scriptedquests.zones.ZoneFragment;
+import com.playmonumenta.scriptedquests.zones.ZoneLayer;
+import com.playmonumenta.scriptedquests.zones.ZoneManager;
+import com.playmonumenta.structures.StructuresPlugin;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,13 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
-
-import com.playmonumenta.scriptedquests.zones.Zone;
-import com.playmonumenta.scriptedquests.zones.ZoneFragment;
-import com.playmonumenta.scriptedquests.zones.ZoneLayer;
-import com.playmonumenta.scriptedquests.zones.ZoneManager;
-import com.playmonumenta.structures.StructuresPlugin;
-
+import javax.annotation.Nullable;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -32,13 +31,13 @@ import org.bukkit.util.Vector;
 public class RespawnManager {
 	public static final String ZONE_LAYER_NAME_INSIDE = "Respawning Structures Inside";
 	public static final String ZONE_LAYER_NAME_NEARBY = "Respawning Structures Nearby";
-	private static RespawnManager INSTANCE = null;
+	private static @Nullable RespawnManager INSTANCE = null;
 
 	private final StructuresPlugin mPlugin;
 	private final World mWorld;
 	protected final ZoneManager mZoneManager;
 
-	private final SortedMap<String, RespawningStructure> mRespawns = new ConcurrentSkipListMap<String, RespawningStructure>();
+	private final SortedMap<String, RespawningStructure> mRespawns = new ConcurrentSkipListMap<>();
 	private final int mTickPeriod;
 	private final BukkitRunnable mRunnable = new BukkitRunnable() {
 		@Override
@@ -53,7 +52,7 @@ public class RespawnManager {
 	private boolean structuresLoaded = false;
 	protected ZoneLayer mZoneLayerInside = new ZoneLayer(ZONE_LAYER_NAME_INSIDE);
 	protected ZoneLayer mZoneLayerNearby = new ZoneLayer(ZONE_LAYER_NAME_NEARBY, true);
-	private Map<Zone, RespawningStructure> mStructuresByZone = new LinkedHashMap<Zone, RespawningStructure>();
+	private final Map<Zone, RespawningStructure> mStructuresByZone = new LinkedHashMap<>();
 
 	public RespawnManager(StructuresPlugin plugin, World world, YamlConfiguration config) {
 		INSTANCE = this;
@@ -139,13 +138,16 @@ public class RespawnManager {
 	}
 
 	public static RespawnManager getInstance() {
+		if (INSTANCE == null) {
+			throw new RuntimeException("Attempted to get RespawnManager before it loaded");
+		}
 		return INSTANCE;
 	}
 
 	public CompletableFuture<Void> addStructure(int extraRadius, String configLabel, String name, String path, Vector loadPos, int respawnTime) {
 
 		return RespawningStructure.withParameters(mPlugin, mWorld, extraRadius, configLabel,
-		                                          name, Arrays.asList(path), loadPos,
+		                                          name, Collections.singletonList(path), loadPos,
 												  respawnTime, respawnTime, null, null,
 												  null, null).thenApply((structure) -> {
 			mRespawns.put(configLabel, structure);
@@ -179,7 +181,7 @@ public class RespawnManager {
 	}
 
 	public List<RespawningStructure> getStructures(Vector loc, boolean includeNearby) {
-		List<RespawningStructure> structures = new ArrayList<RespawningStructure>();
+		List<RespawningStructure> structures = new ArrayList<>();
 		ZoneFragment zoneFragment = mZoneManager.getZoneFragment(loc);
 		if (zoneFragment == null) {
 			return structures;
@@ -206,14 +208,14 @@ public class RespawnManager {
 		}
 
 		sender.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + "Respawning Structure List");
-		String structuresString = ChatColor.GREEN + "";
+		StringBuilder structuresString = new StringBuilder(ChatColor.GREEN + "");
 		for (Map.Entry<String, RespawningStructure> entry : mRespawns.entrySet()) {
-			structuresString += entry.getKey() + "  ";
+			structuresString.append(entry.getKey()).append("  ");
 		}
-		sender.sendMessage(structuresString);
+		sender.sendMessage(structuresString.toString());
 	}
 
-	/* Machine readable list */
+	/* Machine-readable list */
 	public String[] listStructures() {
 		return mRespawns.keySet().toArray(new String[mRespawns.size()]);
 	}
@@ -231,17 +233,17 @@ public class RespawnManager {
 		_getStructure(label).setRespawnTimerPeriod(ticksUntilRespawn);
 	}
 
-	public void setPostRespawnCommand(String label, String command) throws Exception {
+	public void setPostRespawnCommand(String label, @Nullable String command) throws Exception {
 		_getStructure(label).setPostRespawnCommand(command);
 		mPlugin.saveConfig();
 	}
 
-	public void setSpawnerBreakTrigger(String label, SpawnerBreakTrigger trigger) throws Exception {
+	public void setSpawnerBreakTrigger(String label, @Nullable SpawnerBreakTrigger trigger) throws Exception {
 		_getStructure(label).setSpawnerBreakTrigger(trigger);
 		mPlugin.saveConfig();
 	}
 
-	public void activateSpecialStructure(String label, String nextRespawnPath) throws Exception {
+	public void activateSpecialStructure(String label, @Nullable String nextRespawnPath) throws Exception {
 		_getStructure(label).activateSpecialStructure(nextRespawnPath);
 	}
 

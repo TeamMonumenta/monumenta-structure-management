@@ -2,11 +2,6 @@ package com.playmonumenta.structures.commands;
 
 import com.playmonumenta.structures.StructuresAPI;
 import com.playmonumenta.structures.utils.MessagingUtils;
-
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.command.CommandSender;
-
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.BooleanArgument;
@@ -14,6 +9,12 @@ import dev.jorel.commandapi.arguments.FunctionArgument;
 import dev.jorel.commandapi.arguments.LocationArgument;
 import dev.jorel.commandapi.arguments.TextArgument;
 import dev.jorel.commandapi.wrappers.FunctionWrapper;
+import javax.annotation.Nullable;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.command.BlockCommandSender;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
 
 public class LoadStructure {
 	public static void register() {
@@ -51,16 +52,23 @@ public class LoadStructure {
 			.register();
 	}
 
-	private static void load(CommandSender sender, String path, Location loadLoc, boolean includeEntities, FunctionWrapper[] postFunc) {
+	private static void load(CommandSender sender, String path, Location loadLoc, boolean includeEntities, @Nullable FunctionWrapper[] postFunc) {
 		sender.sendMessage("Started loading structure '" + path + "' at (" + loadLoc.getBlockX() + " " + loadLoc.getBlockY() + " " + loadLoc.getBlockZ() + ")");
 
 		StructuresAPI.loadAndPasteStructure(path, loadLoc, includeEntities).whenComplete((unused, ex) -> {
 			if (ex != null) {
-				if (sender != null) {
+				boolean senderLoaded;
+				if (sender instanceof Entity entity) {
+					senderLoaded = entity.isValid();
+				} else if (sender instanceof BlockCommandSender blockSender) {
+					senderLoaded = blockSender.getBlock().getLocation().isChunkLoaded();
+				} else {
+					senderLoaded = true;
+				}
+				if (senderLoaded) {
 					sender.sendMessage(ChatColor.RED + "Failed to load structure: " + ex.getMessage());
 					ex.printStackTrace();
 					MessagingUtils.sendStackTrace(sender, ex);
-					return;
 				}
 			} else {
 				if (postFunc != null) {
@@ -68,7 +76,15 @@ public class LoadStructure {
 						func.run();
 					}
 				}
-				if (sender != null) {
+				boolean senderLoaded;
+				if (sender instanceof Entity entity) {
+					senderLoaded = entity.isValid();
+				} else if (sender instanceof BlockCommandSender blockSender) {
+					senderLoaded = blockSender.getBlock().getLocation().isChunkLoaded();
+				} else {
+					senderLoaded = true;
+				}
+				if (senderLoaded) {
 					sender.sendMessage("Loaded structure '" + path + "' at (" + loadLoc.getBlockX() + " " + loadLoc.getBlockY() + " " + loadLoc.getBlockZ() + ")");
 				}
 			}

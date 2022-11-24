@@ -1,14 +1,13 @@
 package com.playmonumenta.structures.commands;
 
 import com.playmonumenta.structures.managers.RespawnManager;
-
-import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
-
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.arguments.TextArgument;
+import javax.annotation.Nullable;
+import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
 
 public class SetPostRespawnCommand {
 	public static void register() {
@@ -17,23 +16,23 @@ public class SetPostRespawnCommand {
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return RespawnManager.getInstance().listStructures();}))
+			.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
 			.executes((sender, args) -> {
-				setcommand(sender, (String)args[0], null);
+				setCommand(sender, (String)args[0], null);
 			})
 			.register();
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return RespawnManager.getInstance().listStructures();}))
+			.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
 			.withArguments(new TextArgument("command"))
 			.executes((sender, args) -> {
-				setcommand(sender, (String)args[0], (String)args[1]);
+				setCommand(sender, (String)args[0], (String)args[1]);
 			})
 			.register();
 	}
 
-	private static void setcommand(CommandSender sender, String label, String command) {
+	private static void setCommand(CommandSender sender, String label, @Nullable String command) {
 		if (command != null && command.startsWith("/")) {
 			command = command.substring(1);
 		}

@@ -1,11 +1,9 @@
 package com.playmonumenta.structures.commands;
 
 import com.playmonumenta.structures.StructuresPlugin;
-
-import org.bukkit.ChatColor;
-
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
+import org.bukkit.ChatColor;
 
 public class ReloadStructures {
 	public static void register(StructuresPlugin plugin) {

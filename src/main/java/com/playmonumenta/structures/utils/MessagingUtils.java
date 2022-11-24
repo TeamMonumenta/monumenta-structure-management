@@ -2,6 +2,7 @@ package com.playmonumenta.structures.utils;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Objects;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
@@ -13,12 +14,7 @@ public class MessagingUtils {
 	public static void sendStackTrace(CommandSender sender, Throwable e) {
 		TextComponent formattedMessage;
 		String errorMessage = e.getLocalizedMessage();
-		if (errorMessage != null) {
-			formattedMessage = new TextComponent(errorMessage);
-		} else {
-			formattedMessage = new
-			TextComponent("An error occured without a set message. Hover for stack trace.");
-		}
+		formattedMessage = new TextComponent(Objects.requireNonNullElse(errorMessage, "An error occurred without a set message. Hover for stack trace."));
 		formattedMessage.setColor(ChatColor.RED);
 
 		// Get the first 300 characters of the stacktrace and send them to the player

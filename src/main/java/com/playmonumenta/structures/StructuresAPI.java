@@ -1,22 +1,5 @@
 package com.playmonumenta.structures;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.util.Deque;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
-
-import javax.annotation.Nonnull;
-
 import com.bergerkiller.bukkit.common.wrappers.LongHashSet;
 import com.bergerkiller.bukkit.lightcleaner.lighting.LightingService;
 import com.bergerkiller.bukkit.lightcleaner.lighting.LightingService.ScheduleArguments;
@@ -42,7 +25,22 @@ import com.sk89q.worldedit.util.io.Closer;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldedit.world.block.BlockType;
 import com.sk89q.worldedit.world.block.BlockTypes;
-
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.util.Deque;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -76,7 +74,7 @@ public class StructuresAPI {
 	 * See the details of those functions for more information
 	 */
 	public static CompletableFuture<Void> loadAndPasteStructure(@Nonnull String path, @Nonnull Location loc, boolean includeEntities) {
-		/* Clone the input variable to make sure the caller doesn't change it while we're stil loading */
+		/* Clone the input variable to make sure the caller doesn't change it while we're still loading */
 		Location pasteLoc = loc.clone();
 
 		return loadStructure(path).thenCompose((clipboard) -> pasteStructure(clipboard, pasteLoc, includeEntities));
@@ -96,9 +94,9 @@ public class StructuresAPI {
 	public static CompletableFuture<BlockArrayClipboard> loadStructure(@Nonnull String path) {
 		CompletableFuture<BlockArrayClipboard> future = new CompletableFuture<>();
 
-        MSLog.fine("loadStructure: Started loading structure '" + path + "'");
+		MSLog.fine("loadStructure: Started loading structure '" + path + "'");
 		Bukkit.getScheduler().runTaskAsynchronously(StructuresPlugin.getInstance(), () -> {
-            MSLog.fine("loadStructure: In async loading structure '" + path + "'");
+			MSLog.fine("loadStructure: In async loading structure '" + path + "'");
 			final BlockArrayClipboard clipboard;
 
 			try {
@@ -114,19 +112,19 @@ public class StructuresAPI {
 					future.completeExceptionally(new Exception("Loaded unknown clipboard type: " + newClip.getClass().toString()));
 					return;
 				}
-                MSLog.fine("loadStructure: Async loaded structure '" + path + "'");
+				MSLog.fine("loadStructure: Async loaded structure '" + path + "'");
 
 				Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> {
-                    MSLog.fine("loadStructure: Completing future on main thread for '" + path + "'");
+					MSLog.fine("loadStructure: Completing future on main thread for '" + path + "'");
 					future.complete(clipboard);
-                    MSLog.fine("loadStructure: Loading complete for '" + path + "'");
+					MSLog.fine("loadStructure: Loading complete for '" + path + "'");
 				});
 			} catch (Exception ex) {
-                MSLog.fine("loadStructure: Async caught exception loading '" + path + "': " + ex.getMessage());
+				MSLog.fine("loadStructure: Async caught exception loading '" + path + "': " + ex.getMessage());
 				Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> {
-                    MSLog.fine("loadStructure: Completing future with exception for '" + path + "': " + ex.getMessage());
+					MSLog.fine("loadStructure: Completing future with exception for '" + path + "': " + ex.getMessage());
 					future.completeExceptionally(ex);
-                    MSLog.fine("loadStructure: Loading complete/failed for '" + path + "'");
+					MSLog.fine("loadStructure: Loading complete/failed for '" + path + "'");
 				});
 			}
 		});
@@ -138,8 +136,8 @@ public class StructuresAPI {
 	 * Save a structure given a bounding box at the specified path.
 	 *
 	 * Must be called from main thread, will return immediately and do its work on an async thread
-     *
-     * XXX NOTE - even though most of the work is done async, if you .get() on this future on the main thread, the server will deadlock and crash
+	 *
+	 * XXX NOTE - even though most of the work is done async, if you .get() on this future on the main thread, the server will deadlock and crash
 	 *
 	 * @param path Relative path under the structures/ folder of the structure to load, not including the extension
 	 * @param loc1 One corner of the bounding box to save
@@ -150,9 +148,9 @@ public class StructuresAPI {
 	 *         unused will always be null, ex will be a non-null exception if something went wrong
 	 */
 	public static CompletableFuture<Void> copyAreaAndSaveStructure(@Nonnull String path, @Nonnull Location loc1, @Nonnull Location loc2) {
-        MSLog.fine("copyAreaAndSaveStructure: Started copying '" + path + "' at " +
-                   loc1.getWorld().getName() + "(" + loc1.getBlockX() + " " + loc1.getBlockY() + " " + loc1.getBlockZ() + ")  " +
-                   loc2.getWorld().getName() + "(" + loc2.getBlockX() + " " + loc2.getBlockY() + " " + loc2.getBlockZ() + ")");
+		MSLog.fine("copyAreaAndSaveStructure: Started copying '" + path + "' at " +
+				   loc1.getWorld().getName() + "(" + loc1.getBlockX() + " " + loc1.getBlockY() + " " + loc1.getBlockZ() + ")  " +
+				   loc2.getWorld().getName() + "(" + loc2.getBlockX() + " " + loc2.getBlockY() + " " + loc2.getBlockZ() + ")");
 
 		CompletableFuture<Void> future = new CompletableFuture<>();
 
@@ -161,13 +159,13 @@ public class StructuresAPI {
 		Location copyLoc2 = loc2.clone();
 
 		if (!copyLoc1.getWorld().equals(copyLoc2.getWorld())) {
-            MSLog.fine("copyAreaAndSaveStructure: Completing with exception for '" + path + "' due to world mismatch");
+			MSLog.fine("copyAreaAndSaveStructure: Completing with exception for '" + path + "' due to world mismatch");
 			future.completeExceptionally(new Exception("Locations must have the same world"));
 			return future;
 		}
 
 		Bukkit.getScheduler().runTaskAsynchronously(StructuresPlugin.getInstance(), () -> {
-            MSLog.fine("copyAreaAndSaveStructure: In async copy for '" + path + "'");
+			MSLog.fine("copyAreaAndSaveStructure: In async copy for '" + path + "'");
 
 			// Create file to save under
 			try (Closer closer = Closer.create()) {
@@ -176,11 +174,11 @@ public class StructuresAPI {
 					file.getParentFile().mkdirs();
 					file.createNewFile();
 				}
-                MSLog.fine("copyAreaAndSaveStructure: Created file for '" + path + "', starting copyArea");
+				MSLog.fine("copyAreaAndSaveStructure: Created file for '" + path + "', starting copyArea");
 
 				Clipboard clipboard = copyArea(copyLoc1, copyLoc2).get();
 
-                MSLog.fine("copyAreaAndSaveStructure: Area copied for '" + path + "'");
+				MSLog.fine("copyAreaAndSaveStructure: Area copied for '" + path + "'");
 
 				ClipboardFormat format = ClipboardFormats.findByAlias(FORMAT);
 				FileOutputStream fos = closer.register(new FileOutputStream(file));
@@ -188,19 +186,19 @@ public class StructuresAPI {
 				ClipboardWriter writer = closer.register(format.getWriter(bos));
 				writer.write(clipboard);
 
-                MSLog.fine("copyAreaAndSaveStructure: Wrote output to file '" + path + "'");
+				MSLog.fine("copyAreaAndSaveStructure: Wrote output to file '" + path + "'");
 
 				Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> {
-                    MSLog.fine("copyAreaAndSaveStructure: Completing future on main thread for '" + path + "'");
+					MSLog.fine("copyAreaAndSaveStructure: Completing future on main thread for '" + path + "'");
 					future.complete(null);
-                    MSLog.fine("copyAreaAndSaveStructure: Successfully completed '" + path + "'");
+					MSLog.fine("copyAreaAndSaveStructure: Successfully completed '" + path + "'");
 				});
 			} catch (Exception ex) {
-                MSLog.fine("copyAreaAndSaveStructure: Caught async aexception for '" + path + "': " + ex.getMessage());
+				MSLog.fine("copyAreaAndSaveStructure: Caught async exception for '" + path + "': " + ex.getMessage());
 				Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> {
-                    MSLog.fine("copyAreaAndSaveStructure: Completing future with exception for '" + path + "': " + ex.getMessage());
+					MSLog.fine("copyAreaAndSaveStructure: Completing future with exception for '" + path + "': " + ex.getMessage());
 					future.completeExceptionally(ex);
-                    MSLog.fine("copyAreaAndSaveStructure: Failed to complete '" + path + "': " + ex.getMessage());
+					MSLog.fine("copyAreaAndSaveStructure: Failed to complete '" + path + "': " + ex.getMessage());
 				});
 			}
 		});
@@ -238,12 +236,12 @@ public class StructuresAPI {
 		BlockVector3 pos1 = BlockVector3.at(copyLoc1.getBlockX(), copyLoc1.getBlockY(), copyLoc1.getBlockZ());
 		BlockVector3 pos2 = BlockVector3.at(copyLoc2.getBlockX(), copyLoc2.getBlockY(), copyLoc2.getBlockZ());
 
-		BlockVector3 minpos = pos1.getMinimum(pos2);
-		BlockVector3 maxpos = pos1.getMaximum(pos2);
+		BlockVector3 minPos = pos1.getMinimum(pos2);
+		BlockVector3 maxPos = pos1.getMaximum(pos2);
 
 		org.bukkit.World world = copyLoc1.getWorld();
 		World faweWorld = new BukkitWorld(world);
-		CuboidRegion cReg = new CuboidRegion(faweWorld, minpos, maxpos);
+		CuboidRegion cReg = new CuboidRegion(faweWorld, minPos, maxPos);
 
 		markAndLoadChunks(world, cReg, null).whenComplete((unused, ex) -> {
 			if (ex != null) {
@@ -270,14 +268,10 @@ public class StructuresAPI {
 						copy.setCopyingBiomes(true);
 						Operations.completeLegacy(copy);
 
-						Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> {
-							future.complete(clipboard);
-						});
+						Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> future.complete(clipboard));
 
 						/* 10s later, unmark all chunks as force loaded */
-						Bukkit.getScheduler().runTaskLater(plugin, () -> {
-							unmarkChunksAsync(world, cReg);
-						}, 200);
+						Bukkit.getScheduler().runTaskLater(plugin, () -> unmarkChunksAsync(world, cReg), 200);
 					} catch (Exception e) {
 						future.completeExceptionally(e);
 					}
@@ -306,7 +300,7 @@ public class StructuresAPI {
 			return future;
 		}
 
-		/* Clone the input variable to make sure the caller doesn't change it while we're stil loading */
+		/* Clone the input variable to make sure the caller doesn't change it while we're still loading */
 		Location pasteLoc = loc.clone();
 
 		/*
@@ -339,7 +333,7 @@ public class StructuresAPI {
 			/* Set of positions (relative to the clipboard / origin) that should not be overwritten when pasting */
 			final Set<Long> noLoadPositions = new HashSet<>();
 
-			/* This chunk consumer removes entities and sets spawners/brewstands/furnaces to air */
+			/* This chunk consumer removes entities and sets spawners/brewing stands/furnaces to air */
 			final Consumer<Chunk> chunkConsumer = (final Chunk chunk) -> {
 				for (final BlockState state : chunk.getTileEntities(true)) {
 					if (state instanceof CreatureSpawner || state instanceof BrewingStand || state instanceof Furnace || state instanceof Chest || state instanceof ShulkerBox) {
@@ -366,10 +360,10 @@ public class StructuresAPI {
 								block.setType(Material.DIRT);
 							} else if (state instanceof ShulkerBox) {
 								/* Never overwrite shulker boxes */
-								final int relx = state.getX() - to.getX();
-								final int rely = state.getY() - to.getY();
-								final int relz = state.getZ() - to.getZ();
-								noLoadPositions.add(compressToLong(relx, rely, relz));
+								final int relX = state.getX() - to.getX();
+								final int relY = state.getY() - to.getY();
+								final int relZ = state.getZ() - to.getZ();
+								noLoadPositions.add(compressToLong(relX, relY, relZ));
 							}
 						}
 					}
@@ -394,7 +388,7 @@ public class StructuresAPI {
 				} else {
 					/* Actually load the structure asynchronously now that all the chunks have been processed for entities / blocks that shouldn't be replaced */
 					Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-						MSLog.finer(() -> "Initial processing took " + Long.toString(System.currentTimeMillis() - initialTime) + " milliseconds (mostly async)"); // STOP -->
+						MSLog.finer(() -> "Initial processing took " + (System.currentTimeMillis() - initialTime) + " milliseconds (mostly async)"); // STOP -->
 
 						final long pasteTime = System.currentTimeMillis(); // <-- START
 
@@ -434,17 +428,15 @@ public class StructuresAPI {
 							copy.setCopyingEntities(includeEntities);
 							Operations.completeBlindly(copy);
 						}
-						MSLog.finer(() -> "Loading structure took " + Long.toString(System.currentTimeMillis() - pasteTime) + " milliseconds (async)"); // STOP -->
+						MSLog.finer(() -> "Loading structure took " + (System.currentTimeMillis() - pasteTime) + " milliseconds (async)"); // STOP -->
 
 						/* Allow the next structure load task to start at this point */
 						signal.complete(null);
 
 						/* 6s later, signal caller that loading is complete */
-						Bukkit.getScheduler().runTaskLater(plugin, () -> {
-							future.complete(null);
-						}, 120);
+						Bukkit.getScheduler().runTaskLater(plugin, () -> future.complete(null), 120);
 
-						/* Schedule light cleaning on the main thread so it can safely check plugin enabled status */
+						/* Schedule light cleaning on the main thread, so it can safely check plugin enabled status */
 						Bukkit.getScheduler().runTask(plugin, () -> {
 							if (!Bukkit.getPluginManager().isPluginEnabled("LightCleaner")) {
 								return;
@@ -464,12 +456,10 @@ public class StructuresAPI {
 							args.setLoadedChunksOnly(true);
 							LightingService.schedule(args);
 
-							MSLog.finer(() -> "scheduleLighting took " + Long.toString(System.currentTimeMillis() - lightTime) + " milliseconds (main thread)"); // STOP -->
+							MSLog.finer(() -> "scheduleLighting took " + (System.currentTimeMillis() - lightTime) + " milliseconds (main thread)"); // STOP -->
 
 							/* 10s later, unmark all chunks as force loaded */
-							Bukkit.getScheduler().runTaskLater(plugin, () -> {
-								unmarkChunksAsync(world, shiftedRegion);
-							}, 200);
+							Bukkit.getScheduler().runTaskLater(plugin, () -> unmarkChunksAsync(world, shiftedRegion), 200);
 						});
 					});
 				}
@@ -493,7 +483,7 @@ public class StructuresAPI {
 	 * Has a 600 tick timeout - if chunks fail to load in that time the future will complete with an exception and no attempt
 	 * to repair this will be made. Those chunks will likely continue to load afterwards, and will stay loaded...
 	 */
-	public static CompletableFuture<Void> markAndLoadChunks(org.bukkit.World world, Region region, Consumer<Chunk> consumer) {
+	public static CompletableFuture<Void> markAndLoadChunks(org.bukkit.World world, Region region, @Nullable Consumer<Chunk> consumer) {
 		CompletableFuture<Void> future = new CompletableFuture<>();
 
 		Plugin plugin = StructuresPlugin.getInstance();
@@ -618,20 +608,20 @@ public class StructuresAPI {
 
 		@Override
 		public boolean equals(Object obj) {
-			if (this == obj)
+			if (this == obj) {
 				return true;
-			if (obj == null)
+			}
+			if (!(obj instanceof WorldChunkKey other)) {
 				return false;
-			if (getClass() != obj.getClass())
-				return false;
-			WorldChunkKey other = (WorldChunkKey) obj;
-			return mUUID.equals(other.mUUID) && mChunkKey == other.mChunkKey;
+			} else {
+				return mUUID.equals(other.mUUID) && mChunkKey == other.mChunkKey;
+			}
 		}
 	}
 
 	private static final HashMap<WorldChunkKey, Integer> CHUNK_TICKET_REFERENCE_COUNT = new HashMap<>();
 	private static Deque<PendingTask> PENDING_TASKS = new ConcurrentLinkedDeque<>();
-	private static BukkitRunnable RUNNING_TASK = null;
+	private static @Nullable BukkitRunnable RUNNING_TASK = null;
 
 	private static final EnumSet<EntityType> keptEntities = EnumSet.of(
 		EntityType.PLAYER,
@@ -654,18 +644,16 @@ public class StructuresAPI {
 		}
 
 		/* Keep armor stands that have a name, are markers, or have tags */
-		if (entity instanceof ArmorStand) {
-			final ArmorStand stand = (ArmorStand)entity;
+		if (entity instanceof ArmorStand stand) {
 			if ((stand.getCustomName() != null && !stand.getCustomName().isEmpty())
-			    || stand.isMarker()
-			    || (!stand.getScoreboardTags().isEmpty())) {
+				|| stand.isMarker()
+				|| !stand.getScoreboardTags().isEmpty()) {
 				return false;
 			}
 		}
 
-		/* Keep tameable critters that have an owner */
-		if (entity instanceof Tameable) {
-			final Tameable critter = (Tameable)entity;
+		/* Keep tamable critters that have an owner */
+		if (entity instanceof Tameable critter) {
 			if (critter.getOwner() != null) {
 				return false;
 			}
@@ -681,11 +669,9 @@ public class StructuresAPI {
 	}
 
 	private static Long compressToLong(final int x, final int y, final int z) {
-		return Long.valueOf(
-		           (((long)(x & ((1 << 24) - 1))) << 40) |
-		           (((long)(y & ((1 << 16) - 1))) << 24) |
-		           ((long)(z & ((1 << 24) - 1)))
-		       );
+		return (((long) (x & ((1 << 24) - 1))) << 40) |
+				(((long) (y & ((1 << 16) - 1))) << 24) |
+				((long) (z & ((1 << 24) - 1)));
 	}
 
 	private static void ensureTask(Plugin plugin) {

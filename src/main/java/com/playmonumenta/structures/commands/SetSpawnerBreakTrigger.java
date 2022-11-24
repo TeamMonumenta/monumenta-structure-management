@@ -1,47 +1,45 @@
 package com.playmonumenta.structures.commands;
 
-import com.playmonumenta.structures.StructuresPlugin;
 import com.playmonumenta.structures.managers.RespawnManager;
 import com.playmonumenta.structures.managers.SpawnerBreakTrigger;
-
-import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
-
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.IntegerArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
+import javax.annotation.Nullable;
+import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
 
 public class SetSpawnerBreakTrigger {
-	public static void register(StructuresPlugin plugin) {
+	public static void register() {
 		final String command = "setspawnerbreaktrigger";
 		final CommandPermission perms = CommandPermission.fromString("monumenta.structures");
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return RespawnManager.getInstance().listStructures();}))
+			.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
 			.executes((sender, args) -> {
-				setTrigger(sender, plugin, (String)args[0], 0, null);
+				setTrigger(sender, (String)args[0], 0, null);
 			})
 			.register();
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return RespawnManager.getInstance().listStructures();}))
+			.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
 			.withArguments(new IntegerArgument("spawner_count", 0))
 			.withArguments(new GreedyStringArgument("quest_component"))
 			.executes((sender, args) -> {
-				setTrigger(sender, plugin, (String)args[0], (Integer)args[1], (String)args[2]);
+				setTrigger(sender, (String)args[0], (Integer)args[1], (String)args[2]);
 			})
 			.register();
 	}
 
-	private static void setTrigger(CommandSender sender, StructuresPlugin plugin, String label, int spawnerCount, String questComponentStr) {
+	private static void setTrigger(CommandSender sender, String label, int spawnerCount, @Nullable String questComponentStr) {
 		try {
 			SpawnerBreakTrigger trigger = null;
 			if (questComponentStr != null) {
-				trigger = new SpawnerBreakTrigger(plugin, spawnerCount, spawnerCount, questComponentStr);
+				trigger = new SpawnerBreakTrigger(spawnerCount, spawnerCount, questComponentStr);
 			}
 			RespawnManager.getInstance().setSpawnerBreakTrigger(label, trigger);
 		} catch (Exception e) {

@@ -3,16 +3,14 @@ package com.playmonumenta.structures.commands;
 import com.playmonumenta.structures.managers.RespawnManager;
 import com.playmonumenta.structures.utils.CommandUtils;
 import com.playmonumenta.structures.utils.MessagingUtils;
-
-import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.plugin.Plugin;
-
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.arguments.TextArgument;
-import dev.jorel.commandapi.exceptions.WrapperCommandSyntaxException;
+import javax.annotation.Nullable;
+import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.plugin.Plugin;
 
 public class ActivateSpecialStructure {
 	public static void register(Plugin plugin) {
@@ -21,7 +19,7 @@ public class ActivateSpecialStructure {
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return RespawnManager.getInstance().listStructures();}))
+			.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
 			.executes((sender, args) -> {
 				activate(sender, plugin, (String)args[0], null);
 			})
@@ -29,7 +27,7 @@ public class ActivateSpecialStructure {
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").overrideSuggestions((sender) -> {return RespawnManager.getInstance().listStructures();}))
+			.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
 			.withArguments(new TextArgument("special_structure_path"))
 			.executes((sender, args) -> {
 				activate(sender, plugin, (String)args[0], (String)args[1]);
@@ -37,7 +35,7 @@ public class ActivateSpecialStructure {
 			.register();
 	}
 
-	private static void activate(CommandSender sender, Plugin plugin, String label, String path) throws WrapperCommandSyntaxException {
+	private static void activate(CommandSender sender, Plugin plugin, String label, @Nullable String path) {
 		try {
 			CommandUtils.getAndValidateSchematicPath(plugin, path, true);
 			RespawnManager.getInstance().activateSpecialStructure(label, path);
