@@ -96,6 +96,13 @@ bukkit {
     softDepend = listOf("LightCleaner")
 }
 
+pmd {
+    isConsoleOutput = true
+    toolVersion = "6.41.0"
+    ruleSets = listOf("$rootDir/pmd-ruleset.xml")
+    setIgnoreFailures(true)
+}
+
 publishing {
     publications.create<MavenPublication>("maven") {
         project.shadow.component(this)
