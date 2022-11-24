@@ -1,11 +1,11 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import net.ltgt.gradle.errorprone.CheckSeverity
-import net.ltgt.gradle.errorprone.errorprone
 import net.minecrell.pluginyml.bukkit.BukkitPluginDescription
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.hidetake.groovy.ssh.core.Remote
 import org.hidetake.groovy.ssh.core.RunHandler
 import org.hidetake.groovy.ssh.core.Service
 import org.hidetake.groovy.ssh.session.SessionHandler
+import net.ltgt.gradle.errorprone.errorprone
+import net.ltgt.gradle.errorprone.CheckSeverity
 
 plugins {
     java
@@ -135,6 +135,7 @@ tasks.withType<JavaCompile>().configureEach {
         check("StaticAssignmentInConstructor", CheckSeverity.OFF) // We have tons of these on purpose
         check("StringSplitter", CheckSeverity.OFF) // We have a lot of string splits too which are fine for this use
         check("MutablePublicArray", CheckSeverity.OFF) // These are bad practice but annoying to refactor and low risk of actual bugs
+        check("InlineMeSuggester", CheckSeverity.OFF) // This seems way overkill
     }
 }
 
@@ -142,18 +143,18 @@ val basicssh = remotes.create("basicssh") {
     host = "admin-eu.playmonumenta.com"
     port = 8822
     user = "epic"
-    knownHosts = allowAnyHosts
     agent = System.getenv("IDENTITY_FILE") == null
     identity = if (System.getenv("IDENTITY_FILE") == null) null else file(System.getenv("IDENTITY_FILE"))
+    knownHosts = allowAnyHosts
 }
 
 val adminssh = remotes.create("adminssh") {
     host = "admin-eu.playmonumenta.com"
     port = 9922
     user = "epic"
-    knownHosts = allowAnyHosts
     agent = System.getenv("IDENTITY_FILE") == null
     identity = if (System.getenv("IDENTITY_FILE") == null) null else file(System.getenv("IDENTITY_FILE"))
+    knownHosts = allowAnyHosts
 }
 
 tasks.create("stage-deploy") {

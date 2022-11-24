@@ -28,13 +28,14 @@ import com.sk89q.worldedit.world.block.BlockTypes;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -643,7 +644,7 @@ public class StructuresAPI {
 		}
 
 		/* Keep armor stands that have a name, are markers, or have tags */
-		if (entity instanceof final ArmorStand stand) {
+		if (entity instanceof ArmorStand stand) {
 			if ((stand.getCustomName() != null && !stand.getCustomName().isEmpty())
 			    || stand.isMarker()
 			    || !stand.getScoreboardTags().isEmpty()) {
@@ -652,7 +653,7 @@ public class StructuresAPI {
 		}
 
 		/* Keep tamable critters that have an owner */
-		if (entity instanceof final Tameable critter) {
+		if (entity instanceof Tameable critter) {
 			if (critter.getOwner() != null) {
 				return false;
 			}

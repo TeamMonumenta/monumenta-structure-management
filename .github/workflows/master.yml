@@ -1,15 +1,14 @@
-name: Java CI
+name: Build and deploy master
 
 on:
   push:
     branches:
-    - '*'
-  pull_request:
-    branches:
+    - master
+    tags:
     - '*'
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
@@ -40,7 +39,8 @@ jobs:
           ${{ runner.os }}-build-
           ${{ runner.os }}-
 
-    - name: Build
-      working-directory: .
+    - name: Build and deploy to Github Package Registry
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        ./gradlew build
+        ./gradlew publish
