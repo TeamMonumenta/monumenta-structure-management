@@ -619,7 +619,7 @@ public class StructuresAPI {
 	}
 
 	private static final HashMap<WorldChunkKey, Integer> CHUNK_TICKET_REFERENCE_COUNT = new HashMap<>();
-	private static final LinkedBlockingDeque<PendingTask> PENDING_TASKS = new LinkedBlockingDeque<>();
+	private static Deque<PendingTask> PENDING_TASKS = new ConcurrentLinkedDeque<>();
 	private static @Nullable BukkitRunnable RUNNING_TASK = null;
 
 	private static final EnumSet<EntityType> keptEntities = EnumSet.of(
@@ -682,20 +682,23 @@ public class StructuresAPI {
 			@Override
 			public void run() {
 				while (true) {
-					PendingTask task;
-					try {
-						task = PENDING_TASKS.take();
-					} catch (InterruptedException ignored) {
-						plugin.getLogger().info("Structure loading task sleep was interrupted");
-						RUNNING_TASK = null;
-						break;
+					PendingTask task = PENDING_TASKS.pollFirst();
+
+					if (task != null) {
+						try {
+							Bukkit.getScheduler().runTask(plugin, task.mStartTask);
+							task.mSignal.get(45, TimeUnit.SECONDS);
+						} catch (Exception ex) {
+							plugin.getLogger().severe("Structure task took longer than 45s to complete! Continuing to the next task. Exception: " + ex.getMessage());
+						}
 					}
 
 					try {
-						Bukkit.getScheduler().runTask(plugin, task.mStartTask);
-						task.mSignal.get(45, TimeUnit.SECONDS);
+						Thread.sleep(50);
 					} catch (Exception ex) {
-						plugin.getLogger().severe("Structure task took longer than 45s to complete! Continuing to the next task. Exception: " + ex.getMessage());
+						plugin.getLogger().info("Structure loading task sleep was interrupted");
+						RUNNING_TASK = null;
+						break;
 					}
 				}
 			}
