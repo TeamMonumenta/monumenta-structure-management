@@ -1,9 +1,8 @@
 package com.playmonumenta.structures;
 
-import com.bergerkiller.bukkit.common.wrappers.LongHashSet;
-import com.bergerkiller.bukkit.lightcleaner.lighting.LightingService;
-import com.bergerkiller.bukkit.lightcleaner.lighting.LightingService.ScheduleArguments;
+import com.fastasyncworldedit.core.FaweAPI;
 import com.fastasyncworldedit.core.extent.clipboard.DiskOptimizedClipboard;
+import com.fastasyncworldedit.core.extent.processor.lighting.RelightMode;
 import com.playmonumenta.structures.utils.CommandUtils;
 import com.playmonumenta.structures.utils.MSLog;
 import com.sk89q.worldedit.EditSession;
@@ -427,40 +426,29 @@ public class StructuresAPI {
 							copy.setFilterFunction(filterFunction);
 							copy.setCopyingEntities(includeEntities);
 							Operations.completeBlindly(copy);
+
 						}
 						MSLog.finer(() -> "Loading structure took " + (System.currentTimeMillis() - pasteTime) + " milliseconds (async)"); // STOP -->
 
 						/* Allow the next structure load task to start at this point */
 						signal.complete(null);
 
-						/* 6s later, signal caller that loading is complete */
-						Bukkit.getScheduler().runTaskLater(plugin, () -> future.complete(null), 120);
-
-						/* Schedule light cleaning on the main thread, so it can safely check plugin enabled status */
+						/* Relight affected blocks. Run on main thread as the fixLighting method may or may not be thread-safe. */
 						Bukkit.getScheduler().runTask(plugin, () -> {
-							if (!Bukkit.getPluginManager().isPluginEnabled("LightCleaner")) {
-								return;
-							}
-
 							final long lightTime = System.currentTimeMillis(); // <-- START
 
 							/* Relight an area 16 blocks bigger than the respawned area */
-							final Set<BlockVector2> lightingChunks = new CuboidRegion(to.subtract(16, 16, 16), to.add(size).add(16, 16, 16)).getChunks();
-							final LongHashSet lightCleanerChunks = new LongHashSet(lightingChunks.size());
-							for (final BlockVector2 chunk : lightingChunks) {
-								lightCleanerChunks.add(chunk.getX(), chunk.getZ());
-							}
-							ScheduleArguments args = new ScheduleArguments();
-							args.setWorld(world);
-							args.setChunks(lightCleanerChunks);
-							args.setLoadedChunksOnly(true);
-							LightingService.schedule(args);
+							Region relightRegion = shiftedRegion.clone();
+							relightRegion.expand(BlockVector3.at(-16, -16, -16), BlockVector3.at(16, 16, 16));
 
-							MSLog.finer(() -> "scheduleLighting took " + (System.currentTimeMillis() - lightTime) + " milliseconds (main thread)"); // STOP -->
+							FaweAPI.fixLighting(new BukkitWorld(world), relightRegion, null, RelightMode.ALL);
 
-							/* 10s later, unmark all chunks as force loaded */
-							Bukkit.getScheduler().runTaskLater(plugin, () -> unmarkChunksAsync(world, shiftedRegion), 200);
+							MSLog.finer(() -> "fixLighting took " + (System.currentTimeMillis() - lightTime) + " milliseconds (main thread)"); // STOP -->
 						});
+
+						/* 6s later, signal caller that loading is complete */
+						Bukkit.getScheduler().runTaskLater(plugin, () -> future.complete(null), 120);
+
 					});
 				}
 			});
