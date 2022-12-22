@@ -449,6 +449,9 @@ public class StructuresAPI {
 						/* 6s later, signal caller that loading is complete */
 						Bukkit.getScheduler().runTaskLater(plugin, () -> future.complete(null), 120);
 
+						/* 10s later, unmark all chunks as force loaded */
+						Bukkit.getScheduler().runTaskLater(plugin, () -> unmarkChunksAsync(world, shiftedRegion), 200);
+
 					});
 				}
 			});
