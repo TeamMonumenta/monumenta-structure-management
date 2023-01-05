@@ -70,7 +70,7 @@ dependencies {
     compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit:2.4.4") { isTransitive = false }
     compileOnly("com.bergerkiller.bukkit:LightCleaner:1.15.2-v1")
     compileOnly("com.bergerkiller.bukkit:BKCommonLib:1.15.2-v2")
-    compileOnly("dev.jorel.CommandAPI:commandapi-core:8.7.0")
+    implementation("dev.jorel.CommandAPI:commandapi-shade:8.7.0")
     compileOnly("com.google.code.gson:gson:2.8.5")
     compileOnly("com.playmonumenta:scripted-quests:5.0")
 
@@ -92,7 +92,7 @@ bukkit {
     apiVersion = "1.16"
     name = "MonumentaStructureManagement"
     authors = listOf("The Monumenta Team")
-    depend = listOf("CommandAPI", "ScriptedQuests", "MonumentaRedisSync")
+    depend = listOf("ScriptedQuests", "MonumentaRedisSync")
     softDepend = listOf("LightCleaner")
 }
 
@@ -101,6 +101,13 @@ pmd {
     toolVersion = "6.41.0"
     ruleSets = listOf("$rootDir/pmd-ruleset.xml")
     setIgnoreFailures(true)
+}
+
+// Relocation / shading
+tasks {
+    shadowJar {
+       relocate("dev.jorel.commandapi", "com.playmonumenta.structures.internal.dev.jorel.commandapi")
+    }
 }
 
 publishing {
