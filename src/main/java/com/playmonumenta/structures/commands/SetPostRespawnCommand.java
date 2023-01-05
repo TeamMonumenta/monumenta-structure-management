@@ -16,7 +16,7 @@ public class SetPostRespawnCommand {
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
+			.withArguments(new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES))
 			.executes((sender, args) -> {
 				setCommand(sender, (String)args[0], null);
 			})
@@ -24,7 +24,7 @@ public class SetPostRespawnCommand {
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
+			.withArguments(new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES))
 			.withArguments(new TextArgument("command"))
 			.executes((sender, args) -> {
 				setCommand(sender, (String)args[0], (String)args[1]);

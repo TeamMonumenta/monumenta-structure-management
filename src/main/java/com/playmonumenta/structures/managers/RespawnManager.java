@@ -5,6 +5,7 @@ import com.playmonumenta.scriptedquests.zones.ZoneFragment;
 import com.playmonumenta.scriptedquests.zones.ZoneLayer;
 import com.playmonumenta.scriptedquests.zones.ZoneManager;
 import com.playmonumenta.structures.StructuresPlugin;
+import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -32,6 +33,12 @@ public class RespawnManager {
 	public static final String ZONE_LAYER_NAME_INSIDE = "Respawning Structures Inside";
 	public static final String ZONE_LAYER_NAME_NEARBY = "Respawning Structures Nearby";
 	private static @Nullable RespawnManager INSTANCE = null;
+	public static ArgumentSuggestions SUGGESTIONS_STRUCTURES = ArgumentSuggestions.strings((info) -> {
+		if (INSTANCE == null) {
+			return new String[]{};
+		}
+		return INSTANCE.listStructures();
+	});
 
 	private final StructuresPlugin mPlugin;
 	private final World mWorld;
@@ -217,7 +224,7 @@ public class RespawnManager {
 
 	/* Machine-readable list */
 	public String[] listStructures() {
-		return mRespawns.keySet().toArray(new String[mRespawns.size()]);
+		return mRespawns.keySet().toArray(new String[]{});
 	}
 
 	public void structureInfo(CommandSender sender, String label) throws Exception {

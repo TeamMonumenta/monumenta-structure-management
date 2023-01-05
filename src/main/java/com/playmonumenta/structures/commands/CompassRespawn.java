@@ -15,7 +15,7 @@ public class CompassRespawn {
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
+			.withArguments(new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES))
 			.executes((sender, args) -> {
 				if (sender instanceof Player) {
 					forceRespawn(sender, (String)args[0]);

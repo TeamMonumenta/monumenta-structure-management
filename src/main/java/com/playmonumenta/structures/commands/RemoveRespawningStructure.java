@@ -11,7 +11,7 @@ public class RemoveRespawningStructure {
 	public static void register() {
 		new CommandAPICommand("removerespawningstructure")
 			.withPermission(CommandPermission.fromString("monumenta.structures"))
-			.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
+			.withArguments(new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES))
 			.executes((sender, args) -> {
 				remove(sender, (String)args[0]);
 			})

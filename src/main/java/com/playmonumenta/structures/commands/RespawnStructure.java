@@ -15,7 +15,7 @@ public class RespawnStructure {
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
+			.withArguments(new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES))
 			.executes((sender, args) -> {
 				respawn(sender, (String)args[0], 600); // Default 30s
 			})
@@ -23,7 +23,7 @@ public class RespawnStructure {
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
+			.withArguments(new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES))
 			.withArguments(new IntegerArgument("ticks_until_respawn", 0))
 			.executes((sender, args) -> {
 				respawn(sender, (String)args[0], (Integer)args[1]);

@@ -15,7 +15,7 @@ public class ForceConquerRespawn {
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
+			.withArguments(new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES))
 			.executesPlayer((sender, args) -> {
 				forceRespawn(sender, (String)args[0]);
 			})
@@ -23,7 +23,7 @@ public class ForceConquerRespawn {
 
 		new CommandAPICommand(command)
 				.withPermission(perms)
-				.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
+				.withArguments(new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES))
 				.withArguments(new PlayerArgument("player"))
 				.executes((sender, args) -> {
 					forceRespawn((Player) args[1], (String)args[0]);

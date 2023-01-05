@@ -12,7 +12,7 @@ public class SetRespawnTimer {
 	public static void register() {
 		new CommandAPICommand("setrespawntimer")
 			.withPermission(CommandPermission.fromString("monumenta.structures"))
-			.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
+			.withArguments(new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES))
 			.withArguments(new IntegerArgument("ticks", 0))
 			.executes((sender, args) -> {
 				setTimer(sender, (String)args[0], (Integer)args[1]);

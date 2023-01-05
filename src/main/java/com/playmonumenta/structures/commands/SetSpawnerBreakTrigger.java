@@ -18,7 +18,7 @@ public class SetSpawnerBreakTrigger {
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
+			.withArguments(new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES))
 			.executes((sender, args) -> {
 				setTrigger(sender, (String)args[0], 0, null);
 			})
@@ -26,7 +26,7 @@ public class SetSpawnerBreakTrigger {
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
+			.withArguments(new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES))
 			.withArguments(new IntegerArgument("spawner_count", 0))
 			.withArguments(new GreedyStringArgument("quest_component"))
 			.executes((sender, args) -> {

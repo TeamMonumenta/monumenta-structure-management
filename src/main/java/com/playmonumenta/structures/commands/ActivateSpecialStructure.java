@@ -19,7 +19,7 @@ public class ActivateSpecialStructure {
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
+			.withArguments(new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES))
 			.executes((sender, args) -> {
 				activate(sender, plugin, (String)args[0], null);
 			})
@@ -27,7 +27,7 @@ public class ActivateSpecialStructure {
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").replaceSuggestions((info) -> RespawnManager.getInstance().listStructures()))
+			.withArguments(new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES))
 			.withArguments(new TextArgument("special_structure_path"))
 			.executes((sender, args) -> {
 				activate(sender, plugin, (String)args[0], (String)args[1]);
