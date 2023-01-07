@@ -46,7 +46,7 @@ public class CommandUtils {
 	public static int parseIntFromString(CommandSender sender, String str) throws Exception {
 		int value;
 
-		try{
+		try {
 			value = Integer.parseInt(str);
 		} catch (NumberFormatException e) {
 			if (sender != null) {

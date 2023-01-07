@@ -48,15 +48,14 @@ public class RespawnManager {
 	private final int mTickPeriod;
 	private final BukkitRunnable mRunnable = new BukkitRunnable() {
 		@Override
-		public void run()
-		{
+		public void run() {
 			for (RespawningStructure struct : mRespawns.values()) {
 				struct.tick(mTickPeriod);
 			}
 		}
 	};
-	private boolean taskScheduled = false;
-	private boolean structuresLoaded = false;
+	private boolean mTaskScheduled = false;
+	private boolean mStructuresLoaded = false;
 	protected ZoneLayer mZoneLayerInside = new ZoneLayer(ZONE_LAYER_NAME_INSIDE);
 	protected ZoneLayer mZoneLayerNearby = new ZoneLayer(ZONE_LAYER_NAME_NEARBY, true);
 	private final Map<Zone, RespawningStructure> mStructuresByZone = new LinkedHashMap<>();
@@ -84,7 +83,7 @@ public class RespawnManager {
 		// Load the respawning structures configuration section
 		if (!config.isConfigurationSection("respawning_structures")) {
 			plugin.getLogger().log(Level.INFO, "No respawning structures defined");
-			structuresLoaded = true;
+			mStructuresLoaded = true;
 			return;
 		}
 
@@ -136,8 +135,8 @@ public class RespawnManager {
 					mZoneManager.replacePluginZoneLayer(mZoneLayerInside);
 					mZoneManager.replacePluginZoneLayer(mZoneLayerNearby);
 
-					taskScheduled = true;
-					structuresLoaded = true;
+					mTaskScheduled = true;
+					mStructuresLoaded = true;
 					this.cancel();
 				}
 			}
@@ -229,29 +228,29 @@ public class RespawnManager {
 
 	public void structureInfo(CommandSender sender, String label) throws Exception {
 		sender.sendMessage(ChatColor.GREEN + label + " : " + ChatColor.RESET +
-		                   _getStructure(label).getInfoString());
+		                   getStructure(label).getInfoString());
 	}
 
 	public void setTimer(String label, int ticksUntilRespawn) throws Exception {
-		_getStructure(label).setRespawnTimer(ticksUntilRespawn);
+		getStructure(label).setRespawnTimer(ticksUntilRespawn);
 	}
 
 	public void setTimerPeriod(String label, int ticksUntilRespawn) throws Exception {
-		_getStructure(label).setRespawnTimerPeriod(ticksUntilRespawn);
+		getStructure(label).setRespawnTimerPeriod(ticksUntilRespawn);
 	}
 
 	public void setPostRespawnCommand(String label, @Nullable String command) throws Exception {
-		_getStructure(label).setPostRespawnCommand(command);
+		getStructure(label).setPostRespawnCommand(command);
 		mPlugin.saveConfig();
 	}
 
 	public void setSpawnerBreakTrigger(String label, @Nullable SpawnerBreakTrigger trigger) throws Exception {
-		_getStructure(label).setSpawnerBreakTrigger(trigger);
+		getStructure(label).setSpawnerBreakTrigger(trigger);
 		mPlugin.saveConfig();
 	}
 
 	public void activateSpecialStructure(String label, @Nullable String nextRespawnPath) throws Exception {
-		_getStructure(label).activateSpecialStructure(nextRespawnPath);
+		getStructure(label).activateSpecialStructure(nextRespawnPath);
 	}
 
 	public void tellNearbyRespawnTimes(Player player) {
@@ -269,23 +268,23 @@ public class RespawnManager {
 	}
 
 	public void compassRespawn(Player player, String label) throws Exception {
-		_getStructure(label).forcedRespawn(player, false);
+		getStructure(label).forcedRespawn(player, false);
 	}
 
 	public void forceConquerRespawn(String label) throws Exception {
-		_getStructure(label).conquerStructure();
+		getStructure(label).conquerStructure();
 	}
 
 	public void cleanup() {
-		if (taskScheduled) {
+		if (mTaskScheduled) {
 			mRunnable.cancel();
-			taskScheduled = false;
+			mTaskScheduled = false;
 		}
 		mRespawns.clear();
 	}
 
 	public YamlConfiguration getConfig() throws Exception {
-		if (!structuresLoaded) {
+		if (!mStructuresLoaded) {
 			throw new Exception("Structures haven't finished loading yet!");
 		}
 
@@ -315,7 +314,7 @@ public class RespawnManager {
 		mStructuresByZone.put(zone, structure);
 	}
 
-	private RespawningStructure _getStructure(String label) throws Exception {
+	private RespawningStructure getStructure(String label) throws Exception {
 		RespawningStructure struct = mRespawns.get(label);
 		if (struct == null) {
 			throw new Exception("Structure '" + label + "' not found!");

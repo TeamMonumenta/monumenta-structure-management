@@ -74,7 +74,6 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	private boolean mConquered;           // Is the POI conquered
 	private @Nullable UUID mLastPlayerRespawn; // Player who last forced a respawn
 	private int mTimesPlayerSpawned;      // How many times in a row it's been reset through conquered or force respawn
-	private boolean mInitialized = false; // This structure has finished loading the initial schematic/dimensions
 
 	/**
 	 * A block set of structure void blocks in this structure. Coordinates are relative to the structure, e.g. (0,0,0) is the lowest (x,y,z) block in the structure.
@@ -219,7 +218,6 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 				structure.mStructureVoidBlocks = structureVoidBlocks;
 
 				structure.registerZone();
-				structure.mInitialized = true;
 
 				return structure;
 			});
@@ -552,9 +550,9 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			if (player.getGameMode() != GameMode.SPECTATOR &&
 			    isNearby(player)) {
 				if (mTicksLeft <= 0) {
-					player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + mName +" has been conquered! It will respawn once all players leave the area.");
+					player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + mName + " has been conquered! It will respawn once all players leave the area.");
 				} else {
-					player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + mName +" has been conquered! It will respawn in " +
+					player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + mName + " has been conquered! It will respawn in " +
 							minutesLeft + " minute" + minutesPlural + "!");
 				}
 			}

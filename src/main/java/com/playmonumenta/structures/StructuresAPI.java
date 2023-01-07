@@ -518,11 +518,11 @@ public class StructuresAPI {
 		}
 
 		new BukkitRunnable() {
-			int numTicksWaited = 0;
+			int mNumTicksWaited = 0;
 			@Override
 			public void run() {
-				numTicksWaited++;
-				if (numTicksWaited >= 30 * 20) {
+				mNumTicksWaited++;
+				if (mNumTicksWaited >= 30 * 20) {
 					String msg = "Timed out waiting for chunks to load";
 					plugin.getLogger().severe(msg);
 					this.cancel();

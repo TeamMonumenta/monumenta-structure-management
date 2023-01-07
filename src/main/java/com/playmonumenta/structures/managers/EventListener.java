@@ -28,8 +28,8 @@ public class EventListener implements Listener {
 		SpawnReason.VILLAGE_INVASION
 	);
 
-	@EventHandler(priority = EventPriority.MONITOR)
-	public void PlayerInteractEvent(PlayerInteractEvent event) {
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
+	public void playerInteractEvent(PlayerInteractEvent event) {
 		Action action = event.getAction();
 		Player player = event.getPlayer();
 		ItemStack item = event.getItem();
@@ -44,40 +44,34 @@ public class EventListener implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.MONITOR)
-	public void BlockBreakEvent(BlockBreakEvent event) {
-		if (!event.isCancelled()) {
-			Block block = event.getBlock();
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+	public void blockBreakEvent(BlockBreakEvent event) {
+		Block block = event.getBlock();
+		if (block.getType() == Material.SPAWNER) {
+			StructuresPlugin.getRespawnManager().spawnerBreakEvent(block.getLocation());
+		}
+	}
+
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+	public void blockExplodeEvent(BlockExplodeEvent event) {
+		for (Block block : event.blockList()) {
 			if (block.getType() == Material.SPAWNER) {
 				StructuresPlugin.getRespawnManager().spawnerBreakEvent(block.getLocation());
 			}
 		}
 	}
 
-	@EventHandler(priority = EventPriority.MONITOR)
-	public void BlockExplodeEvent(BlockExplodeEvent event) {
-		if (!event.isCancelled()) {
-			for (Block block : event.blockList()) {
-				if (block.getType() == Material.SPAWNER) {
-					StructuresPlugin.getRespawnManager().spawnerBreakEvent(block.getLocation());
-				}
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+	public void entityExplodeEvent(EntityExplodeEvent event) {
+		for (Block block : event.blockList()) {
+			if (block.getType() == Material.SPAWNER) {
+				StructuresPlugin.getRespawnManager().spawnerBreakEvent(block.getLocation());
 			}
 		}
 	}
 
-	@EventHandler(priority = EventPriority.MONITOR)
-	public void EntityExplodeEvent(EntityExplodeEvent event) {
-		if (!event.isCancelled()) {
-			for (Block block : event.blockList()) {
-				if (block.getType() == Material.SPAWNER) {
-					StructuresPlugin.getRespawnManager().spawnerBreakEvent(block.getLocation());
-				}
-			}
-		}
-	}
-
-	@EventHandler(priority = EventPriority.HIGH)
-	void CreatureSpawnEvent(CreatureSpawnEvent event) {
+	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+	public void creatureSpawnEvent(CreatureSpawnEvent event) {
 		Entity entity = event.getEntity();
 		Vector loc = entity.getLocation().toVector();
 
@@ -93,7 +87,7 @@ public class EventListener implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.MONITOR)
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 	public void playerDeathEvent(PlayerDeathEvent event) {
 		Player player = event.getEntity();
 		Vector loc = player.getLocation().toVector();
