@@ -70,7 +70,7 @@ dependencies {
     compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit:2.4.4") { isTransitive = false }
     compileOnly("com.bergerkiller.bukkit:LightCleaner:1.15.2-v1")
     compileOnly("com.bergerkiller.bukkit:BKCommonLib:1.15.2-v2")
-    implementation("dev.jorel.CommandAPI:commandapi-shade:8.7.0")
+    implementation("dev.jorel.CommandAPI:commandapi-shade:8.7.1")
     compileOnly("com.google.code.gson:gson:2.8.5")
     compileOnly("com.playmonumenta:scripted-quests:5.0")
 
