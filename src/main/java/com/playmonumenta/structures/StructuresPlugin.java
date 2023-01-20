@@ -17,8 +17,6 @@ import com.playmonumenta.structures.commands.SetRespawnTimer;
 import com.playmonumenta.structures.commands.SetSpawnerBreakTrigger;
 import com.playmonumenta.structures.managers.EventListener;
 import com.playmonumenta.structures.managers.RespawnManager;
-import dev.jorel.commandapi.CommandAPI;
-import dev.jorel.commandapi.CommandAPIConfig;
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
@@ -40,14 +38,6 @@ public class StructuresPlugin extends JavaPlugin {
 
 	@Override
 	public void onLoad() {
-		// Load the CommandAPI. We enable verbose logging and allow the CommandAPI
-		// to generate a file command_registration.json for debugging purposes
-		CommandAPI.onLoad(
-			new CommandAPIConfig()
-				.verboseOutput(true)
-				.dispatcherFile(new File(getDataFolder(), "structures_command_registration.json"))
-		);
-
 		if (mLogger == null) {
 			mLogger = new CustomLogger(super.getLogger(), Level.INFO);
 		}
@@ -72,9 +62,6 @@ public class StructuresPlugin extends JavaPlugin {
 	@Override
 	public void onEnable() {
 		INSTANCE = this;
-
-		// Enable the CommandAPI
-		CommandAPI.onEnable(this);
 
 		//TODO: Command to add an alternate generic structure
 
