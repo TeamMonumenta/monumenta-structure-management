@@ -68,7 +68,9 @@ public class ForceloadLazy {
 			if (remaining == 0) {
 				if (callback != null) {
 					for (FunctionWrapper func : callback) {
-						func.run(sender);
+						if (func != null) {
+							func.run(sender);
+						}
 					}
 				}
 				sender.sendMessage(sendMessage);

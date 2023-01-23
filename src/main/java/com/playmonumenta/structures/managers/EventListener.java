@@ -92,7 +92,7 @@ public class EventListener implements Listener {
 		Player player = event.getEntity();
 		Vector loc = player.getLocation().toVector();
 
-		if (player.getHealth() > 0 || event.isCancelled()) {
+		if (player.getHealth() > 0) {
 			return;
 		}
 

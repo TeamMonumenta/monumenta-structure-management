@@ -67,6 +67,9 @@ public class RespawnManager {
 
 		com.playmonumenta.scriptedquests.Plugin scriptedQuestsPlugin;
 		scriptedQuestsPlugin = (com.playmonumenta.scriptedquests.Plugin)Bukkit.getPluginManager().getPlugin("ScriptedQuests");
+		if (scriptedQuestsPlugin == null) {
+			throw new RuntimeException("Respawn Manager attempted to access ScriptedQuests before it loaded");
+		}
 		mZoneManager = scriptedQuestsPlugin.mZoneManager;
 		// Register empty zone layers so replacing them is easier
 		mZoneManager.registerPluginZoneLayer(mZoneLayerInside);
@@ -81,15 +84,14 @@ public class RespawnManager {
 		}
 
 		// Load the respawning structures configuration section
-		if (!config.isConfigurationSection("respawning_structures")) {
+		ConfigurationSection respawnSection = config.getConfigurationSection("respawning_structures");
+		if (respawnSection == null) {
 			plugin.getLogger().log(Level.INFO, "No respawning structures defined");
 			mStructuresLoaded = true;
 			return;
 		}
 
 		// Load the structures asynchronously so this doesn't hold up the start of the server
-		ConfigurationSection respawnSection = config.getConfigurationSection("respawning_structures");
-
 		Set<String> keys = respawnSection.getKeys(false);
 
 		mZoneLayerInside.invalidate();
