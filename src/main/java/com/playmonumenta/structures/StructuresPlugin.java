@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
-import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -32,8 +31,10 @@ public class StructuresPlugin extends JavaPlugin {
 
 	private static @Nullable StructuresPlugin INSTANCE = null;
 
-	private File mConfigFile;
-	private YamlConfiguration mConfig;
+	private @Nullable File mConfigFile = null;
+	private @Nullable File mTimeLeftFile = null;
+	private @Nullable YamlConfiguration mConfig = null;
+	private @Nullable YamlConfiguration mTimeLeftConfig = null;
 	private @Nullable CustomLogger mLogger = null;
 
 	@Override
@@ -120,8 +121,31 @@ public class StructuresPlugin extends JavaPlugin {
 
 		mConfig = YamlConfiguration.loadConfiguration(mConfigFile);
 
-		/* TODO: Non-hardcoded worlds! These should be saved into the respawning structure */
-		mRespawnManager = new RespawnManager(this, Bukkit.getWorlds().get(0), mConfig);
+		if (mTimeLeftFile == null) {
+			mTimeLeftFile = new File(getDataFolder(), "ticks_until_respawn.yml");
+		}
+
+		boolean respawnFileExisted = mTimeLeftFile.exists();
+		if (respawnFileExisted) {
+			mTimeLeftConfig = YamlConfiguration.loadConfiguration(mTimeLeftFile);
+		} else {
+			mTimeLeftConfig = new YamlConfiguration();
+		}
+
+		mRespawnManager = new RespawnManager(this, mConfig, mTimeLeftConfig);
+
+		// Delete respawn times from main config if present
+		if (!respawnFileExisted) {
+			try {
+				mConfig = mRespawnManager.getConfig();
+				if (mConfigFile == null) {
+					throw new RuntimeException("No, IntelliJ, mConfigFile CANNOT be null at this point.");
+				}
+				mConfig.save(mConfigFile);
+			} catch (Exception ex) {
+				getLogger().log(Level.SEVERE, "Could not save config to " + mConfigFile, ex);
+			}
+		}
 	}
 
 	@Override
@@ -129,9 +153,22 @@ public class StructuresPlugin extends JavaPlugin {
 		if (mRespawnManager != null) {
 			try {
 				mConfig = mRespawnManager.getConfig();
+				if (mConfigFile == null) {
+					throw new RuntimeException("mConfigFile is not set");
+				}
 				mConfig.save(mConfigFile);
 			} catch (Exception ex) {
 				getLogger().log(Level.SEVERE, "Could not save config to " + mConfigFile, ex);
+			}
+
+			try {
+				mTimeLeftConfig = mRespawnManager.getTimeLeftConfig();
+				if (mTimeLeftFile == null) {
+					throw new RuntimeException("mTimeLeftFile is not set");
+				}
+				mTimeLeftConfig.save(mTimeLeftFile);
+			} catch (Exception ex) {
+				getLogger().log(Level.SEVERE, "Could not save time left to " + mTimeLeftFile, ex);
 			}
 		}
 	}

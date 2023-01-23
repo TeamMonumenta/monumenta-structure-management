@@ -8,6 +8,7 @@ import com.playmonumenta.structures.StructuresPlugin;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +22,6 @@ import javax.annotation.Nullable;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -41,7 +41,6 @@ public class RespawnManager {
 	});
 
 	private final StructuresPlugin mPlugin;
-	private final World mWorld;
 	protected final ZoneManager mZoneManager;
 
 	private final SortedMap<String, RespawningStructure> mRespawns = new ConcurrentSkipListMap<>();
@@ -60,10 +59,9 @@ public class RespawnManager {
 	protected ZoneLayer mZoneLayerNearby = new ZoneLayer(ZONE_LAYER_NAME_NEARBY, true);
 	private final Map<Zone, RespawningStructure> mStructuresByZone = new LinkedHashMap<>();
 
-	public RespawnManager(StructuresPlugin plugin, World world, YamlConfiguration config) {
+	public RespawnManager(StructuresPlugin plugin, YamlConfiguration config, YamlConfiguration timeLeftConfig) {
 		INSTANCE = this;
 		mPlugin = plugin;
-		mWorld = world;
 
 		com.playmonumenta.scriptedquests.Plugin scriptedQuestsPlugin;
 		scriptedQuestsPlugin = (com.playmonumenta.scriptedquests.Plugin)Bukkit.getPluginManager().getPlugin("ScriptedQuests");
@@ -74,6 +72,8 @@ public class RespawnManager {
 		// Register empty zone layers so replacing them is easier
 		mZoneManager.registerPluginZoneLayer(mZoneLayerInside);
 		mZoneManager.registerPluginZoneLayer(mZoneLayerNearby);
+
+		ConfigurationSection ticksLeftConfig = timeLeftConfig.getConfigurationSection("ticks_left");
 
 		// Load the frequency that the plugin should check for respawning structures
 		if (!config.isInt("check_respawn_period")) {
@@ -110,8 +110,14 @@ public class RespawnManager {
 				continue;
 			}
 
+			int ticksLeft;
+			if (ticksLeftConfig != null) {
+				ticksLeft = ticksLeftConfig.getInt(key, 0);
+			} else {
+				ticksLeft = 0;
+			}
 
-			RespawningStructure.fromConfig(mPlugin, mWorld, key, respawnSection.getConfigurationSection(key)).whenComplete((structure, ex) -> {
+			RespawningStructure.fromConfig(mPlugin, key, respawnSection.getConfigurationSection(key), ticksLeft).whenComplete((structure, ex) -> {
 				numRemaining.decrementAndGet();
 				if (ex != null) {
 					mPlugin.getLogger().warning("Failed to load respawning structure entry '" + key + "': " + ex.getMessage());
@@ -152,10 +158,15 @@ public class RespawnManager {
 		return INSTANCE;
 	}
 
+	@Deprecated
 	public CompletableFuture<Void> addStructure(int extraRadius, String configLabel, String name, String path, Vector loadPos, int respawnTime) {
+		Location loadLoc = new Location(Bukkit.getWorlds().get(0), loadPos.getX(), loadPos.getY(), loadPos.getZ());
+		return addStructure(extraRadius, configLabel, name, path, loadLoc, respawnTime);
+	}
 
-		return RespawningStructure.withParameters(mPlugin, mWorld, extraRadius, configLabel,
-		                                          name, Collections.singletonList(path), loadPos,
+	public CompletableFuture<Void> addStructure(int extraRadius, String configLabel, String name, String path, Location loadPos, int respawnTime) {
+		return RespawningStructure.withParameters(mPlugin, loadPos.getWorld(), extraRadius, configLabel,
+		                                          name, Collections.singletonList(path), loadPos.toVector(),
 												  respawnTime, respawnTime, null, null,
 												  null, null).thenApply((structure) -> {
 			mRespawns.put(configLabel, structure);
@@ -304,6 +315,20 @@ public class RespawnManager {
 		}
 
 		return config;
+	}
+
+	public YamlConfiguration getTimeLeftConfig() {
+		if (!mStructuresLoaded) {
+			throw new RuntimeException("Structures haven't finished loading yet!");
+		}
+
+		YamlConfiguration timeLeftConfig = new YamlConfiguration();
+		Map<String, Integer> ticksLeftConfig = new HashMap<>();
+		for (RespawningStructure structure : mRespawns.values()) {
+			ticksLeftConfig.put(structure.mConfigLabel, structure.getTicksLeft());
+		}
+		timeLeftConfig.createSection("ticks_left", ticksLeftConfig);
+		return timeLeftConfig;
 	}
 
 	public void spawnerBreakEvent(Location loc) {

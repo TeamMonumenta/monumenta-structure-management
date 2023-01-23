@@ -60,7 +60,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	private final World mWorld;
 	private final Random mRandom;
 
-	protected String mConfigLabel;        // The label used to modify this structure via commands
+	protected final String mConfigLabel;        // The label used to modify this structure via commands
 	private final String mName;           // What the pretty name of the structure is
 	private final Vector mLoadPos;        // Where it will be loaded
 	private StructureBounds mInnerBounds; // The bounding box for the structure itself
@@ -97,7 +97,10 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		return mConfigLabel.compareTo(other.mConfigLabel);
 	}
 
-	public static CompletableFuture<RespawningStructure> fromConfig(StructuresPlugin plugin, World world, String configLabel, ConfigurationSection config) {
+	public static CompletableFuture<RespawningStructure> fromConfig(StructuresPlugin plugin,
+	                                                                String configLabel,
+	                                                                ConfigurationSection config,
+	                                                                int ticksLeft) {
 		CompletableFuture<RespawningStructure> future = new CompletableFuture<>();
 
 		try {
@@ -113,10 +116,16 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 				throw new Exception("Invalid z value");
 			} else if (!config.isInt("respawn_period")) {
 				throw new Exception("Invalid respawn_period value");
-			} else if (!config.isInt("ticks_until_respawn")) {
-				throw new Exception("Invalid ticks_until_respawn value");
 			} else if (!config.isInt("extra_detection_radius")) {
 				throw new Exception("Invalid extra_detection_radius value");
+			}
+
+			String worldName = config.getString("world");
+			World world;
+			if (worldName != null) {
+				world = Bukkit.getWorld(worldName);
+			} else {
+				world = Bukkit.getWorlds().get(0);
 			}
 
 			String postRespawnCommand = null;
@@ -143,7 +152,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			return withParameters(plugin, world, config.getInt("extra_detection_radius"), configLabel,
 								  config.getString("name"), config.getStringList("structure_paths"),
 								  new Vector(config.getInt("x"), config.getInt("y"), config.getInt("z")),
-								  config.getInt("respawn_period"), config.getInt("ticks_until_respawn"),
+								  config.getInt("respawn_period"), ticksLeft,
 								  postRespawnCommand, specialPaths, nextRespawnPath, spawnerBreakTrigger);
 		} catch (Exception ex) {
 			future.completeExceptionally(ex);
@@ -447,12 +456,12 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 		configMap.put("name", mName);
 		configMap.put("structure_paths", mGenericVariants);
+		configMap.put("world", mWorld.getName());
 		configMap.put("x", mLoadPos.getBlockX());
 		configMap.put("y", mLoadPos.getBlockY());
 		configMap.put("z", mLoadPos.getBlockZ());
 		configMap.put("extra_detection_radius", mExtraRadius);
 		configMap.put("respawn_period", mRespawnTime);
-		configMap.put("ticks_until_respawn", mTicksLeft);
 		if (mPostRespawnCommand != null) {
 			configMap.put("post_respawn_command", mPostRespawnCommand);
 		}
