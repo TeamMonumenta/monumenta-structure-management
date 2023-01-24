@@ -7,6 +7,7 @@ import com.playmonumenta.scriptedquests.zones.ZoneManager;
 import com.playmonumenta.structures.StructuresPlugin;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -267,15 +268,12 @@ public class RespawnManager {
 	}
 
 	public void tellNearbyRespawnTimes(Player player) {
-		boolean nearbyStruct = false;
-		for (RespawningStructure struct : mRespawns.values()) {
-			if (struct.isNearby(player)) {
-				struct.tellRespawnTime(player);
-				nearbyStruct = true;
-			}
+		Collection<RespawningStructure> nearbyStructures = getStructures(player.getLocation().toVector(), true);
+		for (RespawningStructure struct : nearbyStructures) {
+			struct.tellRespawnTime(player);
 		}
 
-		if (!nearbyStruct) {
+		if (nearbyStructures.isEmpty()) {
 			player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "You are not within range of a respawning area");
 		}
 	}
@@ -332,7 +330,7 @@ public class RespawnManager {
 	}
 
 	public void spawnerBreakEvent(Location loc) {
-		for (RespawningStructure struct : mRespawns.values()) {
+		for (RespawningStructure struct : getStructures(loc.toVector(), false)) {
 			struct.spawnerBreakEvent(loc);
 		}
 	}
