@@ -2,6 +2,7 @@ package com.playmonumenta.structures.managers;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.playmonumenta.scriptedquests.quests.QuestContext;
 import com.playmonumenta.scriptedquests.quests.components.QuestComponent;
 import java.util.LinkedHashMap;
@@ -21,6 +22,7 @@ public class SpawnerBreakTrigger {
 
 	@Nullable QuestComponent mQuestComponent;
 	@Nullable String mQuestComponentStr;
+	@Nullable JsonObject mQuestComponentObj;
 	com.playmonumenta.scriptedquests.Plugin mScriptedQuestsPlugin;
 
 	// TODO:
@@ -45,7 +47,12 @@ public class SpawnerBreakTrigger {
 	}
 
 	public SpawnerBreakTrigger(String structureLabel, int spawnerCount,
-	                           String questComponentStr) throws Exception {
+	                           @Nullable String questComponentStr) throws Exception {
+		this(structureLabel, spawnerCount, true, questComponentStr);
+	}
+
+	public SpawnerBreakTrigger(String structureLabel, int spawnerCount, boolean respawnsStructure,
+	                           @Nullable String questComponentStr) throws Exception {
 		mScriptedQuestsPlugin = (com.playmonumenta.scriptedquests.Plugin)Bukkit.getPluginManager().getPlugin("ScriptedQuests");
 		if (mScriptedQuestsPlugin == null) {
 			throw new Exception("ScriptedQuests is not present!");
@@ -53,16 +60,46 @@ public class SpawnerBreakTrigger {
 
 		mStructureLabel = structureLabel;
 		mSpawnerCount = spawnerCount;
-		mRespawnsStructure = true;
+		mRespawnsStructure = respawnsStructure;
 
 		Gson gson = new Gson();
-		JsonObject object = gson.fromJson(questComponentStr, JsonObject.class);
-		if (object == null) {
-			throw new Exception("Failed to parse scripted_quests_component as JSON object");
+		if (questComponentStr == null) {
+			mQuestComponentStr = null;
+			mQuestComponentObj = null;
+			mQuestComponent = null;
+		} else {
+			mQuestComponentObj = gson.fromJson(questComponentStr, JsonObject.class);
+			if (mQuestComponentObj == null) {
+				throw new Exception("Failed to parse scripted_quests_component as JSON object");
+			}
+			mQuestComponent = new QuestComponent("REPORT THIS BUG", "REPORT THIS BUG", EntityType.UNKNOWN, mQuestComponentObj);
+		}
+	}
+
+	public SpawnerBreakTrigger(String structureLabel, JsonObject object) throws Exception {
+		mScriptedQuestsPlugin = (com.playmonumenta.scriptedquests.Plugin)Bukkit.getPluginManager().getPlugin("ScriptedQuests");
+		if (mScriptedQuestsPlugin == null) {
+			throw new Exception("ScriptedQuests is not present!");
 		}
 
-		mQuestComponentStr = questComponentStr;
-		mQuestComponent = new QuestComponent("REPORT THIS BUG", "REPORT THIS BUG", EntityType.UNKNOWN, object);
+		mStructureLabel = structureLabel;
+		mSpawnerCount = object.get("spawner_count").getAsInt();
+
+		JsonPrimitive respawnsStructurePrimitive = object.getAsJsonPrimitive("respawns_structure");
+		if (respawnsStructurePrimitive == null || !respawnsStructurePrimitive.isBoolean()) {
+			mRespawnsStructure = false;
+		} else {
+			mRespawnsStructure = respawnsStructurePrimitive.getAsBoolean();
+		}
+
+		mQuestComponentObj = object.getAsJsonObject("mQuestComponentObj");
+		if (mQuestComponentObj == null) {
+			mQuestComponentStr = null;
+			mQuestComponent = null;
+		} else {
+			mQuestComponentStr = mQuestComponentObj.toString();
+			mQuestComponent = new QuestComponent("REPORT THIS BUG", "REPORT THIS BUG", EntityType.UNKNOWN, mQuestComponentObj);
+		}
 	}
 
 	public @Nullable RespawningStructure getStructure() {
@@ -118,5 +155,15 @@ public class SpawnerBreakTrigger {
 		configMap.put("scripted_quests_component", mQuestComponentStr);
 
 		return configMap;
+	}
+
+	public JsonObject toJson() {
+		JsonObject result = new JsonObject();
+
+		result.addProperty("spawner_count", mSpawnerCount);
+		result.addProperty("respawns_structure", mRespawnsStructure);
+		result.add("scripted_quests_component", mQuestComponentObj);
+
+		return result;
 	}
 }
