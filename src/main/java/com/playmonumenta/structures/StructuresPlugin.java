@@ -120,6 +120,7 @@ public class StructuresPlugin extends JavaPlugin {
 			// TODO: Put sample config file in here also
 		}
 
+
 		mConfig = YamlConfiguration.loadConfiguration(mConfigFile);
 
 		if (mStateFile == null) {
@@ -153,11 +154,15 @@ public class StructuresPlugin extends JavaPlugin {
 	public void saveConfig() {
 		if (mRespawnManager != null) {
 			try {
-				mConfig = mRespawnManager.getConfig();
+				YamlConfiguration config = mRespawnManager.getConfig();
 				if (mConfigFile == null) {
 					throw new RuntimeException("mConfigFile is not set");
 				}
-				mConfig.save(mConfigFile);
+				// Only save the new config if there are changes
+				if (!config.equals(mConfig)) {
+					mConfig = config;
+					mConfig.save(mConfigFile);
+				}
 			} catch (Exception ex) {
 				getLogger().log(Level.SEVERE, "Could not save config to " + mConfigFile, ex);
 			}
