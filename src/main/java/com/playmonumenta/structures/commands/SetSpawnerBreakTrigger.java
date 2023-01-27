@@ -39,7 +39,7 @@ public class SetSpawnerBreakTrigger {
 		try {
 			SpawnerBreakTrigger trigger = null;
 			if (questComponentStr != null) {
-				trigger = new SpawnerBreakTrigger(spawnerCount, spawnerCount, questComponentStr);
+				trigger = new SpawnerBreakTrigger(label, spawnerCount, questComponentStr);
 			}
 			RespawnManager.getInstance().setSpawnerBreakTrigger(label, trigger);
 		} catch (Exception e) {

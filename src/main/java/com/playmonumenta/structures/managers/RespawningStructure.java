@@ -150,7 +150,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 			SpawnerBreakTrigger spawnerBreakTrigger = null;
 			if (config.isConfigurationSection("spawner_break_trigger")) {
-				spawnerBreakTrigger = SpawnerBreakTrigger.fromConfig(
+				spawnerBreakTrigger = SpawnerBreakTrigger.fromConfig(configLabel,
 						config.getConfigurationSection("spawner_break_trigger"));
 			}
 
@@ -346,11 +346,6 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		mTicksLeft = mRespawnTime;
 		mSpawnersBroken = 0;
 
-		// If we are tracking spawners for this structure, reset the count
-		if (mSpawnerBreakTrigger != null) {
-			mSpawnerBreakTrigger.resetCount();
-		}
-
 		if (!mForcedRespawn) {
 			mLastPlayerRespawn = null;
 		}
@@ -444,6 +439,10 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 	public int getTicksLeft() {
 		return mTicksLeft;
+	}
+
+	public int spawnersBroken() {
+		return mSpawnersBroken;
 	}
 
 	public boolean isNearby(Player player) {

@@ -339,7 +339,7 @@ public class RespawnManager {
 		mStructuresByZone.put(zone, structure);
 	}
 
-	private RespawningStructure getStructure(String label) throws Exception {
+	protected RespawningStructure getStructure(String label) throws Exception {
 		RespawningStructure struct = mRespawns.get(label);
 		if (struct == null) {
 			throw new Exception("Structure '" + label + "' not found!");
