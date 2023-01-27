@@ -60,7 +60,7 @@ public class RespawnManager {
 	protected ZoneLayer mZoneLayerNearby = new ZoneLayer(ZONE_LAYER_NAME_NEARBY, true);
 	private final Map<Zone, RespawningStructure> mStructuresByZone = new LinkedHashMap<>();
 
-	public RespawnManager(StructuresPlugin plugin, YamlConfiguration config, YamlConfiguration timeLeftConfig) {
+	public RespawnManager(StructuresPlugin plugin, YamlConfiguration config, YamlConfiguration state) {
 		INSTANCE = this;
 		mPlugin = plugin;
 
@@ -73,8 +73,6 @@ public class RespawnManager {
 		// Register empty zone layers so replacing them is easier
 		mZoneManager.registerPluginZoneLayer(mZoneLayerInside);
 		mZoneManager.registerPluginZoneLayer(mZoneLayerNearby);
-
-		ConfigurationSection ticksLeftConfig = timeLeftConfig.getConfigurationSection("ticks_left");
 
 		// Load the frequency that the plugin should check for respawning structures
 		if (!config.isInt("check_respawn_period")) {
@@ -111,14 +109,9 @@ public class RespawnManager {
 				continue;
 			}
 
-			int ticksLeft;
-			if (ticksLeftConfig != null) {
-				ticksLeft = ticksLeftConfig.getInt(key, 0);
-			} else {
-				ticksLeft = 0;
-			}
+			ConfigurationSection structureState = state.getConfigurationSection(key);
 
-			RespawningStructure.fromConfig(mPlugin, key, respawnSection.getConfigurationSection(key), ticksLeft).whenComplete((structure, ex) -> {
+			RespawningStructure.fromConfig(mPlugin, key, respawnSection.getConfigurationSection(key), structureState).whenComplete((structure, ex) -> {
 				numRemaining.decrementAndGet();
 				if (ex != null) {
 					mPlugin.getLogger().warning("Failed to load respawning structure entry '" + key + "': " + ex.getMessage());
@@ -168,7 +161,7 @@ public class RespawnManager {
 	public CompletableFuture<Void> addStructure(int extraRadius, String configLabel, String name, String path, Location loadPos, int respawnTime) {
 		return RespawningStructure.withParameters(mPlugin, loadPos.getWorld(), extraRadius, configLabel,
 		                                          name, Collections.singletonList(path), loadPos.toVector(),
-												  respawnTime, respawnTime, null, null,
+												  respawnTime, respawnTime, 0, null, null,
 												  null, null).thenApply((structure) -> {
 			mRespawns.put(configLabel, structure);
 			mPlugin.saveConfig();
@@ -200,7 +193,13 @@ public class RespawnManager {
 		mZoneManager.replacePluginZoneLayer(mZoneLayerNearby);
 	}
 
-	public List<RespawningStructure> getStructures(Vector loc, boolean includeNearby) {
+	@Deprecated
+	public List<RespawningStructure> getStructures(Vector vec, boolean includeNearby) {
+		Location loc = new Location(Bukkit.getWorlds().get(0), vec.getX(), vec.getY(), vec.getZ());
+		return getStructures(loc, includeNearby);
+	}
+
+	public List<RespawningStructure> getStructures(Location loc, boolean includeNearby) {
 		List<RespawningStructure> structures = new ArrayList<>();
 		ZoneFragment zoneFragment = mZoneManager.getZoneFragment(loc);
 		if (zoneFragment == null) {
@@ -212,6 +211,9 @@ public class RespawnManager {
 		for (Zone zone : zones) {
 			RespawningStructure struct = mStructuresByZone.get(zone);
 			if (struct == null) {
+				continue;
+			}
+			if (!includeNearby && !struct.isWithin(loc)) {
 				continue;
 			}
 			structures.add(struct);
@@ -268,7 +270,7 @@ public class RespawnManager {
 	}
 
 	public void tellNearbyRespawnTimes(Player player) {
-		Collection<RespawningStructure> nearbyStructures = getStructures(player.getLocation().toVector(), true);
+		Collection<RespawningStructure> nearbyStructures = getStructures(player.getLocation(), true);
 		for (RespawningStructure struct : nearbyStructures) {
 			struct.tellRespawnTime(player);
 		}
@@ -315,22 +317,20 @@ public class RespawnManager {
 		return config;
 	}
 
-	public YamlConfiguration getTimeLeftConfig() {
+	public YamlConfiguration getState() {
 		if (!mStructuresLoaded) {
 			throw new RuntimeException("Structures haven't finished loading yet!");
 		}
 
-		YamlConfiguration timeLeftConfig = new YamlConfiguration();
-		Map<String, Integer> ticksLeftConfig = new HashMap<>();
+		YamlConfiguration stateConfig = new YamlConfiguration();
 		for (RespawningStructure structure : mRespawns.values()) {
-			ticksLeftConfig.put(structure.mConfigLabel, structure.getTicksLeft());
+			stateConfig.createSection(structure.mConfigLabel, structure.getState());
 		}
-		timeLeftConfig.createSection("ticks_left", ticksLeftConfig);
-		return timeLeftConfig;
+		return stateConfig;
 	}
 
 	public void spawnerBreakEvent(Location loc) {
-		for (RespawningStructure struct : getStructures(loc.toVector(), false)) {
+		for (RespawningStructure struct : getStructures(loc, false)) {
 			struct.spawnerBreakEvent(loc);
 		}
 	}

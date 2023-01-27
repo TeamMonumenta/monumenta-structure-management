@@ -25,6 +25,7 @@ import javax.annotation.Nullable;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
 
 public class StructuresPlugin extends JavaPlugin {
 	public @Nullable RespawnManager mRespawnManager = null;
@@ -32,9 +33,9 @@ public class StructuresPlugin extends JavaPlugin {
 	private static @Nullable StructuresPlugin INSTANCE = null;
 
 	private @Nullable File mConfigFile = null;
-	private @Nullable File mTimeLeftFile = null;
+	private @Nullable File mStateFile = null;
 	private @Nullable YamlConfiguration mConfig = null;
-	private @Nullable YamlConfiguration mTimeLeftConfig = null;
+	private @Nullable YamlConfiguration mState = null;
 	private @Nullable CustomLogger mLogger = null;
 
 	@Override
@@ -121,18 +122,18 @@ public class StructuresPlugin extends JavaPlugin {
 
 		mConfig = YamlConfiguration.loadConfiguration(mConfigFile);
 
-		if (mTimeLeftFile == null) {
-			mTimeLeftFile = new File(getDataFolder(), "ticks_until_respawn.yml");
+		if (mStateFile == null) {
+			mStateFile = new File(getDataFolder(), "state.yml");
 		}
 
-		boolean respawnFileExisted = mTimeLeftFile.exists();
+		boolean respawnFileExisted = mStateFile.exists();
 		if (respawnFileExisted) {
-			mTimeLeftConfig = YamlConfiguration.loadConfiguration(mTimeLeftFile);
+			mState = YamlConfiguration.loadConfiguration(mStateFile);
 		} else {
-			mTimeLeftConfig = new YamlConfiguration();
+			mState = new YamlConfiguration();
 		}
 
-		mRespawnManager = new RespawnManager(this, mConfig, mTimeLeftConfig);
+		mRespawnManager = new RespawnManager(this, mConfig, mState);
 
 		// Delete respawn times from main config if present
 		if (!respawnFileExisted) {
@@ -162,19 +163,19 @@ public class StructuresPlugin extends JavaPlugin {
 			}
 
 			try {
-				mTimeLeftConfig = mRespawnManager.getTimeLeftConfig();
-				if (mTimeLeftFile == null) {
-					throw new RuntimeException("mTimeLeftFile is not set");
+				mState = mRespawnManager.getState();
+				if (mStateFile == null) {
+					throw new RuntimeException("mStateFile is not set");
 				}
-				mTimeLeftConfig.save(mTimeLeftFile);
+				mState.save(mStateFile);
 			} catch (Exception ex) {
-				getLogger().log(Level.SEVERE, "Could not save time left to " + mTimeLeftFile, ex);
+				getLogger().log(Level.SEVERE, "Could not save time left to " + mStateFile, ex);
 			}
 		}
 	}
 
 	@Override
-	public Logger getLogger() {
+	public @NotNull Logger getLogger() {
 		if (mLogger == null) {
 			mLogger = new CustomLogger(super.getLogger(), Level.INFO);
 		}

@@ -3,6 +3,7 @@ package com.playmonumenta.structures.managers;
 import com.playmonumenta.structures.StructuresPlugin;
 import java.util.EnumSet;
 import java.util.List;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
@@ -90,7 +91,7 @@ public class EventListener implements Listener {
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 	public void playerDeathEvent(PlayerDeathEvent event) {
 		Player player = event.getEntity();
-		Vector loc = player.getLocation().toVector();
+		Location loc = player.getLocation();
 
 		if (player.getHealth() > 0) {
 			return;
