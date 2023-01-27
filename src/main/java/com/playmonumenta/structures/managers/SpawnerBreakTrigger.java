@@ -15,11 +15,12 @@ import org.bukkit.entity.Player;
 public class SpawnerBreakTrigger {
 	// Respawning structure label
 	String mStructureLabel;
-	// Number of spawners remaining when the POI resets / is fresh
+	// Number of spawners remaining when the POI is fresh
 	int mSpawnerCount;
+	boolean mRespawnsStructure;
 
-	QuestComponent mQuestComponent;
-	String mQuestComponentStr;
+	@Nullable QuestComponent mQuestComponent;
+	@Nullable String mQuestComponentStr;
 	com.playmonumenta.scriptedquests.Plugin mScriptedQuestsPlugin;
 
 	// TODO:
@@ -52,6 +53,7 @@ public class SpawnerBreakTrigger {
 
 		mStructureLabel = structureLabel;
 		mSpawnerCount = spawnerCount;
+		mRespawnsStructure = true;
 
 		Gson gson = new Gson();
 		JsonObject object = gson.fromJson(questComponentStr, JsonObject.class);
@@ -76,12 +78,14 @@ public class SpawnerBreakTrigger {
 	// Called only when a spawner is broken in this structure
 	public void spawnerBreakEvent(RespawningStructure structure) {
 		if (structure.spawnersBroken() >= mSpawnerCount) {
-			for (Player player : structure.getWorld().getPlayers()) {
-				if (structure.isWithin(player)) {
-					mQuestComponent.doActionsIfPrereqsMet(new QuestContext(mScriptedQuestsPlugin, player, null));
+			if (mQuestComponent != null) {
+				for (Player player : structure.getWorld().getPlayers()) {
+					if (structure.isWithin(player)) {
+						mQuestComponent.doActionsIfPrereqsMet(new QuestContext(mScriptedQuestsPlugin, player, null));
+					}
 				}
 			}
-			if (!structure.isConquered()) {
+			if (mRespawnsStructure && !structure.isConquered()) {
 				structure.conquerStructure();
 			}
 		}
@@ -103,7 +107,7 @@ public class SpawnerBreakTrigger {
 	public void resetCount() {}
 
 	public String getInfoString() {
-		return "count=" + mSpawnerCount + " remaining=" + getSpawnerCountRemaining() +
+		return "count=" + mSpawnerCount + " respawnsStructure=" + mRespawnsStructure +
 		       " component='" + mQuestComponentStr + "'";
 	}
 
