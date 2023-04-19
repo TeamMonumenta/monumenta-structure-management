@@ -12,6 +12,7 @@ import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.world.block.BlockType;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -43,6 +44,9 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			mUpperCorner = Vector.getMaximum(lowerCorner, upperCorner);
 		}
 
+		public static final StructureBounds INVALID
+				= new StructureBounds(new Vector(1, 1, 1), new Vector(0, 0, 0));
+
 		public boolean within(Vector vec) {
 			return vec.getX() >= mLowerCorner.getX() && vec.getX() <= mUpperCorner.getX() &&
 			       vec.getY() >= mLowerCorner.getY() && vec.getY() <= mUpperCorner.getY() &&
@@ -56,21 +60,22 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		NO_PLAYER_WITHIN
 	}
 
-	private StructuresPlugin mPlugin;
-	private World mWorld;
-	private Random mRandom;
+	private final StructuresPlugin mPlugin;
+	private final World mWorld;
+	private final Random mRandom;
 
-	protected String mConfigLabel;        // The label used to modify this structure via commands
-	private String mName;                 // What the pretty name of the structure is
-	private Vector mLoadPos;              // Where it will be loaded
-	private StructureBounds mInnerBounds; // The bounding box for the structure itself
-	private StructureBounds mOuterBounds; // The bounding box for the nearby area around the structure
-	private int mExtraRadius;             // Radius around the structure that still gets messages
+	protected final String mConfigLabel;        // The label used to modify this structure via commands
+	private final String mName;           // What the pretty name of the structure is
+	private final Vector mLoadPos;        // Where it will be loaded
+	private StructureBounds mInnerBounds = StructureBounds.INVALID; // The bounding box for the structure itself
+	private StructureBounds mOuterBounds = StructureBounds.INVALID; // The bounding box for the nearby area around the structure
+	private final int mExtraRadius;       // Radius around the structure that still gets messages
 	private int mTicksLeft;               // How many ticks remaining until respawn
 	private int mRespawnTime;             // How many ticks between respawns
 	private @Nullable String mPostRespawnCommand;   // Command run via the console after respawning structure
 	private boolean mForcedRespawn;       // Was this set to have a forced respawn via compass
 	private NearbyState mPlayerNearbyLastTick; // Was there a player nearby last tick while respawn time was < 0?
+	private int mSpawnersBroken;          // The number of spawners broken since the structure last respawned
 	private boolean mConquered;           // Is the POI conquered
 	private @Nullable UUID mLastPlayerRespawn; // Player who last forced a respawn
 	private int mTimesPlayerSpawned;      // How many times in a row it's been reset through conquered or force respawn
@@ -97,7 +102,10 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		return mConfigLabel.compareTo(other.mConfigLabel);
 	}
 
-	public static CompletableFuture<RespawningStructure> fromConfig(StructuresPlugin plugin, World world, String configLabel, ConfigurationSection config) {
+	public static CompletableFuture<RespawningStructure> fromConfig(StructuresPlugin plugin,
+	                                                                String configLabel,
+	                                                                ConfigurationSection config,
+	                                                                @Nullable ConfigurationSection state) {
 		CompletableFuture<RespawningStructure> future = new CompletableFuture<>();
 
 		try {
@@ -113,10 +121,16 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 				throw new Exception("Invalid z value");
 			} else if (!config.isInt("respawn_period")) {
 				throw new Exception("Invalid respawn_period value");
-			} else if (!config.isInt("ticks_until_respawn")) {
-				throw new Exception("Invalid ticks_until_respawn value");
 			} else if (!config.isInt("extra_detection_radius")) {
 				throw new Exception("Invalid extra_detection_radius value");
+			}
+
+			String worldName = config.getString("world");
+			World world;
+			if (worldName != null) {
+				world = Bukkit.getWorld(worldName);
+			} else {
+				world = Bukkit.getWorlds().get(0);
 			}
 
 			String postRespawnCommand = null;
@@ -136,19 +150,47 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 			SpawnerBreakTrigger spawnerBreakTrigger = null;
 			if (config.isConfigurationSection("spawner_break_trigger")) {
-				spawnerBreakTrigger = SpawnerBreakTrigger.fromConfig(
+				spawnerBreakTrigger = SpawnerBreakTrigger.fromConfig(configLabel,
 						config.getConfigurationSection("spawner_break_trigger"));
+			}
+
+			int ticksLeft;
+			int spawnersBroken;
+			if (state == null) {
+				ticksLeft = 0;
+				spawnersBroken = 0;
+			} else {
+				ticksLeft = state.getInt("ticks_left", 0);
+				spawnersBroken = state.getInt("spawners_broken", 0);
 			}
 
 			return withParameters(plugin, world, config.getInt("extra_detection_radius"), configLabel,
 								  config.getString("name"), config.getStringList("structure_paths"),
 								  new Vector(config.getInt("x"), config.getInt("y"), config.getInt("z")),
-								  config.getInt("respawn_period"), config.getInt("ticks_until_respawn"),
+								  config.getInt("respawn_period"), ticksLeft, spawnersBroken,
 								  postRespawnCommand, specialPaths, nextRespawnPath, spawnerBreakTrigger);
 		} catch (Exception ex) {
 			future.completeExceptionally(ex);
 			return future;
 		}
+	}
+
+	@Deprecated
+	public static CompletableFuture<RespawningStructure> withParameters(StructuresPlugin plugin,
+	                                                                    World world,
+	                                                                    int extraRadius,
+	                                                                    String configLabel,
+	                                                                    String name,
+	                                                                    List<String> genericPaths,
+	                                                                    Vector loadPos,
+	                                                                    int respawnTime,
+	                                                                    int ticksLeft,
+	                                                                    @Nullable String postRespawnCommand,
+	                                                                    @Nullable List<String> specialPaths,
+	                                                                    @Nullable String nextRespawnPath,
+	                                                                    @Nullable SpawnerBreakTrigger spawnerBreakTrigger) {
+		return withParameters(plugin, world, extraRadius, configLabel, name, genericPaths, loadPos, respawnTime,
+				ticksLeft, 0, postRespawnCommand, specialPaths, nextRespawnPath, spawnerBreakTrigger);
 	}
 
 	public static CompletableFuture<RespawningStructure> withParameters(StructuresPlugin plugin,
@@ -160,6 +202,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	                                                                    Vector loadPos,
 	                                                                    int respawnTime,
 	                                                                    int ticksLeft,
+																		int spawnersBroken,
 	                                                                    @Nullable String postRespawnCommand,
 	                                                                    @Nullable List<String> specialPaths,
 	                                                                    @Nullable String nextRespawnPath,
@@ -179,8 +222,8 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			RespawningStructure structure = new RespawningStructure(plugin, world, extraRadius,
 			                                                        configLabel, name, genericPaths,
 			                                                        loadPos, respawnTime, ticksLeft,
-			                                                        postRespawnCommand,
-					nextRespawnPath, spawnerBreakTrigger);
+					                                                spawnersBroken, postRespawnCommand,
+					                                                nextRespawnPath, spawnerBreakTrigger);
 
 			// Load the first schematic to get its size
 			return StructuresAPI.loadStructure(structure.mGenericVariants.get(0)).thenApply((clipboard) -> {
@@ -236,6 +279,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	                            Vector loadPos,
 	                            int respawnTime,
 	                            int ticksLeft,
+								int spawnersBroken,
 	                            @Nullable String postRespawnCommand,
 	                            @Nullable String nextRespawnPath,
 	                            @Nullable SpawnerBreakTrigger spawnerBreakTrigger) {
@@ -248,6 +292,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		mExtraRadius = extraRadius;
 		mRespawnTime = respawnTime;
 		mTicksLeft = ticksLeft;
+		mSpawnersBroken = spawnersBroken;
 		mPostRespawnCommand = postRespawnCommand;
 		mSpawnerBreakTrigger = spawnerBreakTrigger;
 		mForcedRespawn = false;
@@ -299,11 +344,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		mPlayerNearbyLastTick = NearbyState.UNKNOWN;
 
 		mTicksLeft = mRespawnTime;
-
-		// If we are tracking spawners for this structure, reset the count
-		if (mSpawnerBreakTrigger != null) {
-			mSpawnerBreakTrigger.resetCount();
-		}
+		mSpawnersBroken = 0;
 
 		if (!mForcedRespawn) {
 			mLastPlayerRespawn = null;
@@ -400,6 +441,10 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		return mTicksLeft;
 	}
 
+	public int spawnersBroken() {
+		return mSpawnersBroken;
+	}
+
 	public boolean isNearby(Player player) {
 		return isNearby(player.getLocation());
 	}
@@ -447,12 +492,12 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 		configMap.put("name", mName);
 		configMap.put("structure_paths", mGenericVariants);
+		configMap.put("world", mWorld.getName());
 		configMap.put("x", mLoadPos.getBlockX());
 		configMap.put("y", mLoadPos.getBlockY());
 		configMap.put("z", mLoadPos.getBlockZ());
 		configMap.put("extra_detection_radius", mExtraRadius);
 		configMap.put("respawn_period", mRespawnTime);
-		configMap.put("ticks_until_respawn", mTicksLeft);
 		if (mPostRespawnCommand != null) {
 			configMap.put("post_respawn_command", mPostRespawnCommand);
 		}
@@ -469,6 +514,15 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		return configMap;
 	}
 
+	public Map<String, Object> getState() {
+		Map<String, Object> stateMap = new HashMap<>();
+
+		stateMap.put("ticks_left", mTicksLeft);
+		stateMap.put("spawners_broken", mSpawnersBroken);
+
+		return stateMap;
+	}
+
 	public void tick(int ticks) {
 		if (!mName.isEmpty() &&
 		    ((mTicksLeft >= 2400 && (mTicksLeft - ticks) < 2400) ||
@@ -483,6 +537,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		mTicksLeft -= ticks;
 
 		if (mTicksLeft < 0) {
+			mTicksLeft = -1;
 			boolean isPlayerNearby = false;
 			boolean isPlayerWithin = false;
 			boolean isAmped = mNextRespawnPath != null;
@@ -522,9 +577,12 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	// This event is called every time a spawner is broken anywhere
 	// Have to test that it was within this structure
 	public void spawnerBreakEvent(Location loc) {
-		// Only care about tracking spawners if there is a trigger
-		if (mSpawnerBreakTrigger != null && mWorld.equals(loc.getWorld()) && mInnerBounds.within(loc.toVector())) {
-			mSpawnerBreakTrigger.spawnerBreakEvent(this);
+		if (isWithin(loc)) {
+			++mSpawnersBroken;
+			// TODO Rework spawner break tracking to be pure json files
+			if (mSpawnerBreakTrigger != null) {
+				mSpawnerBreakTrigger.spawnerBreakEvent(this);
+			}
 		}
 	}
 

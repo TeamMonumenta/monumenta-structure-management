@@ -42,7 +42,7 @@ public class AddRespawningStructure {
 			return;
 		}
 
-		RespawnManager.getInstance().addStructure(extraRadius, label, name, path, loc.toVector(), respawnTime).whenComplete((unused, ex) -> {
+		RespawnManager.getInstance().addStructure(extraRadius, label, name, path, loc, respawnTime).whenComplete((unused, ex) -> {
 			if (ex != null) {
 				sender.sendMessage(ChatColor.RED + "Failed to add structure: " + ex.getMessage());
 			} else {

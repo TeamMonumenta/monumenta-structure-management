@@ -7,6 +7,7 @@ import com.playmonumenta.scriptedquests.zones.ZoneManager;
 import com.playmonumenta.structures.StructuresPlugin;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,7 +22,6 @@ import javax.annotation.Nullable;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -41,7 +41,6 @@ public class RespawnManager {
 	});
 
 	private final StructuresPlugin mPlugin;
-	private final World mWorld;
 	protected final ZoneManager mZoneManager;
 
 	private final SortedMap<String, RespawningStructure> mRespawns = new ConcurrentSkipListMap<>();
@@ -60,13 +59,15 @@ public class RespawnManager {
 	protected ZoneLayer mZoneLayerNearby = new ZoneLayer(ZONE_LAYER_NAME_NEARBY, true);
 	private final Map<Zone, RespawningStructure> mStructuresByZone = new LinkedHashMap<>();
 
-	public RespawnManager(StructuresPlugin plugin, World world, YamlConfiguration config) {
+	public RespawnManager(StructuresPlugin plugin, YamlConfiguration config, YamlConfiguration state) {
 		INSTANCE = this;
 		mPlugin = plugin;
-		mWorld = world;
 
 		com.playmonumenta.scriptedquests.Plugin scriptedQuestsPlugin;
 		scriptedQuestsPlugin = (com.playmonumenta.scriptedquests.Plugin)Bukkit.getPluginManager().getPlugin("ScriptedQuests");
+		if (scriptedQuestsPlugin == null) {
+			throw new RuntimeException("Respawn Manager attempted to access ScriptedQuests before it loaded");
+		}
 		mZoneManager = scriptedQuestsPlugin.mZoneManager;
 		// Register empty zone layers so replacing them is easier
 		mZoneManager.registerPluginZoneLayer(mZoneLayerInside);
@@ -81,15 +82,14 @@ public class RespawnManager {
 		}
 
 		// Load the respawning structures configuration section
-		if (!config.isConfigurationSection("respawning_structures")) {
+		ConfigurationSection respawnSection = config.getConfigurationSection("respawning_structures");
+		if (respawnSection == null) {
 			plugin.getLogger().log(Level.INFO, "No respawning structures defined");
 			mStructuresLoaded = true;
 			return;
 		}
 
 		// Load the structures asynchronously so this doesn't hold up the start of the server
-		ConfigurationSection respawnSection = config.getConfigurationSection("respawning_structures");
-
 		Set<String> keys = respawnSection.getKeys(false);
 
 		mZoneLayerInside.invalidate();
@@ -108,8 +108,9 @@ public class RespawnManager {
 				continue;
 			}
 
+			ConfigurationSection structureState = state.getConfigurationSection(key);
 
-			RespawningStructure.fromConfig(mPlugin, mWorld, key, respawnSection.getConfigurationSection(key)).whenComplete((structure, ex) -> {
+			RespawningStructure.fromConfig(mPlugin, key, respawnSection.getConfigurationSection(key), structureState).whenComplete((structure, ex) -> {
 				numRemaining.decrementAndGet();
 				if (ex != null) {
 					mPlugin.getLogger().warning("Failed to load respawning structure entry '" + key + "': " + ex.getMessage());
@@ -150,11 +151,16 @@ public class RespawnManager {
 		return INSTANCE;
 	}
 
+	@Deprecated
 	public CompletableFuture<Void> addStructure(int extraRadius, String configLabel, String name, String path, Vector loadPos, int respawnTime) {
+		Location loadLoc = new Location(Bukkit.getWorlds().get(0), loadPos.getX(), loadPos.getY(), loadPos.getZ());
+		return addStructure(extraRadius, configLabel, name, path, loadLoc, respawnTime);
+	}
 
-		return RespawningStructure.withParameters(mPlugin, mWorld, extraRadius, configLabel,
-		                                          name, Collections.singletonList(path), loadPos,
-												  respawnTime, respawnTime, null, null,
+	public CompletableFuture<Void> addStructure(int extraRadius, String configLabel, String name, String path, Location loadPos, int respawnTime) {
+		return RespawningStructure.withParameters(mPlugin, loadPos.getWorld(), extraRadius, configLabel,
+		                                          name, Collections.singletonList(path), loadPos.toVector(),
+												  respawnTime, respawnTime, 0, null, null,
 												  null, null).thenApply((structure) -> {
 			mRespawns.put(configLabel, structure);
 			mPlugin.saveConfig();
@@ -186,7 +192,13 @@ public class RespawnManager {
 		mZoneManager.replacePluginZoneLayer(mZoneLayerNearby);
 	}
 
-	public List<RespawningStructure> getStructures(Vector loc, boolean includeNearby) {
+	@Deprecated
+	public List<RespawningStructure> getStructures(Vector vec, boolean includeNearby) {
+		Location loc = new Location(Bukkit.getWorlds().get(0), vec.getX(), vec.getY(), vec.getZ());
+		return getStructures(loc, includeNearby);
+	}
+
+	public List<RespawningStructure> getStructures(Location loc, boolean includeNearby) {
 		List<RespawningStructure> structures = new ArrayList<>();
 		ZoneFragment zoneFragment = mZoneManager.getZoneFragment(loc);
 		if (zoneFragment == null) {
@@ -198,6 +210,9 @@ public class RespawnManager {
 		for (Zone zone : zones) {
 			RespawningStructure struct = mStructuresByZone.get(zone);
 			if (struct == null) {
+				continue;
+			}
+			if (!includeNearby && !struct.isWithin(loc)) {
 				continue;
 			}
 			structures.add(struct);
@@ -254,15 +269,12 @@ public class RespawnManager {
 	}
 
 	public void tellNearbyRespawnTimes(Player player) {
-		boolean nearbyStruct = false;
-		for (RespawningStructure struct : mRespawns.values()) {
-			if (struct.isNearby(player)) {
-				struct.tellRespawnTime(player);
-				nearbyStruct = true;
-			}
+		Collection<RespawningStructure> nearbyStructures = getStructures(player.getLocation(), true);
+		for (RespawningStructure struct : nearbyStructures) {
+			struct.tellRespawnTime(player);
 		}
 
-		if (!nearbyStruct) {
+		if (nearbyStructures.isEmpty()) {
 			player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "You are not within range of a respawning area");
 		}
 	}
@@ -304,8 +316,20 @@ public class RespawnManager {
 		return config;
 	}
 
+	public YamlConfiguration getState() {
+		if (!mStructuresLoaded) {
+			throw new RuntimeException("Structures haven't finished loading yet!");
+		}
+
+		YamlConfiguration stateConfig = new YamlConfiguration();
+		for (RespawningStructure structure : mRespawns.values()) {
+			stateConfig.createSection(structure.mConfigLabel, structure.getState());
+		}
+		return stateConfig;
+	}
+
 	public void spawnerBreakEvent(Location loc) {
-		for (RespawningStructure struct : mRespawns.values()) {
+		for (RespawningStructure struct : getStructures(loc, false)) {
 			struct.spawnerBreakEvent(loc);
 		}
 	}
@@ -314,7 +338,7 @@ public class RespawnManager {
 		mStructuresByZone.put(zone, structure);
 	}
 
-	private RespawningStructure getStructure(String label) throws Exception {
+	protected RespawningStructure getStructure(String label) throws Exception {
 		RespawningStructure struct = mRespawns.get(label);
 		if (struct == null) {
 			throw new Exception("Structure '" + label + "' not found!");
