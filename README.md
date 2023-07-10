@@ -28,7 +28,7 @@ You can download the latest version of this plugin from [GitHub Packages](https:
         <dependency>
             <groupId>com.playmonumenta</groupId>
             <artifactId>structures</artifactId>
-            <version>6.1</version>
+            <version>9.3</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
