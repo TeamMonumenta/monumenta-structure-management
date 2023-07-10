@@ -26,7 +26,7 @@ public class LoadStructure {
 			.withArguments(new TextArgument("path"))
 			.withArguments(new LocationArgument("position"))
 			.executes((sender, args) -> {
-				load(sender, (String)args[0], (Location)args[1], false, null);
+				load(sender, (String)args[0], (Location)args[1], false, false, null);
 			})
 			.register();
 
@@ -36,7 +36,18 @@ public class LoadStructure {
 			.withArguments(new LocationArgument("position"))
 			.withArguments(new BooleanArgument("includeEntities"))
 			.executes((sender, args) -> {
-				load(sender, (String)args[0], (Location)args[1], (Boolean)args[2], null);
+				load(sender, (String)args[0], (Location)args[1], (Boolean)args[2], false, null);
+			})
+			.register();
+
+		new CommandAPICommand(command)
+			.withPermission(perms)
+			.withArguments(new TextArgument("path"))
+			.withArguments(new LocationArgument("position"))
+			.withArguments(new BooleanArgument("includeEntities"))
+			.withArguments(new BooleanArgument("includeBiomes"))
+			.executes((sender, args) -> {
+				load(sender, (String)args[0], (Location)args[1], (Boolean)args[2], (Boolean)args[3], null);
 			})
 			.register();
 
@@ -47,15 +58,27 @@ public class LoadStructure {
 			.withArguments(new BooleanArgument("includeEntities"))
 			.withArguments(new FunctionArgument("postLoadFunction"))
 			.executes((sender, args) -> {
-				load(sender, (String)args[0], (Location)args[1], (Boolean)args[2], (FunctionWrapper[])args[3]);
+				load(sender, (String)args[0], (Location)args[1], (Boolean)args[2], false, (FunctionWrapper[])args[3]);
+			})
+			.register();
+
+		new CommandAPICommand(command)
+			.withPermission(perms)
+			.withArguments(new TextArgument("path"))
+			.withArguments(new LocationArgument("position"))
+			.withArguments(new BooleanArgument("includeEntities"))
+			.withArguments(new BooleanArgument("includeBiomes"))
+			.withArguments(new FunctionArgument("postLoadFunction"))
+			.executes((sender, args) -> {
+				load(sender, (String)args[0], (Location)args[1], (Boolean)args[2], (Boolean)args[3], (FunctionWrapper[])args[4]);
 			})
 			.register();
 	}
 
-	private static void load(CommandSender sender, String path, Location loadLoc, boolean includeEntities, @Nullable FunctionWrapper[] postFunc) {
+	private static void load(CommandSender sender, String path, Location loadLoc, boolean includeEntities, boolean includeBiomes, @Nullable FunctionWrapper[] postFunc) {
 		sender.sendMessage("Started loading structure '" + path + "' at (" + loadLoc.getBlockX() + " " + loadLoc.getBlockY() + " " + loadLoc.getBlockZ() + ")");
 
-		StructuresAPI.loadAndPasteStructure(path, loadLoc, includeEntities).whenComplete((unused, ex) -> {
+		StructuresAPI.loadAndPasteStructure(path, loadLoc, includeEntities, includeBiomes).whenComplete((unused, ex) -> {
 			if (ex != null) {
 				boolean senderLoaded;
 				if (sender instanceof Entity entity) {

@@ -71,12 +71,27 @@ public class StructuresAPI {
 	 * Must be called from main thread, will return immediately and do its work on an async thread
 	 *
 	 * See the details of those functions for more information
+	 *
+	 * @deprecated
+	 * This old version defaults to not loading biomes, caller should specify what they prefer using alternate API
 	 */
+	@Deprecated
 	public static CompletableFuture<Void> loadAndPasteStructure(@Nonnull String path, @Nonnull Location loc, boolean includeEntities) {
+		return loadAndPasteStructure(path, loc, includeEntities, false);
+	}
+
+	/**
+	 * Convenience function to combine both loadStructure() and pasteStructure() into one operation.
+	 *
+	 * Must be called from main thread, will return immediately and do its work on an async thread
+	 *
+	 * See the details of those functions for more information
+	 */
+	public static CompletableFuture<Void> loadAndPasteStructure(@Nonnull String path, @Nonnull Location loc, boolean includeEntities, boolean includeBiomes) {
 		/* Clone the input variable to make sure the caller doesn't change it while we're still loading */
 		Location pasteLoc = loc.clone();
 
-		return loadStructure(path).thenCompose((clipboard) -> pasteStructure(clipboard, pasteLoc, includeEntities));
+		return loadStructure(path).thenCompose((clipboard) -> pasteStructure(clipboard, pasteLoc, includeEntities, includeBiomes));
 	}
 
 	/**
@@ -285,8 +300,21 @@ public class StructuresAPI {
 	 * Pastes a structure at the given location, ignoring structure void similarly to vanilla structure blocks.
 	 *
 	 * Must be called from main thread, will return immediately and do its work on an async thread
+	 *
+	 * @deprecated
+	 * This old version defaults to not loading biomes, caller should specify what they prefer using alternate API
 	 */
+	@Deprecated
 	public static CompletableFuture<Void> pasteStructure(@Nonnull BlockArrayClipboard clipboard, @Nonnull Location loc, boolean includeEntities) {
+		return pasteStructure(clipboard, loc, includeEntities, false);
+	}
+
+	/**
+	 * Pastes a structure at the given location, ignoring structure void similarly to vanilla structure blocks.
+	 *
+	 * Must be called from main thread, will return immediately and do its work on an async thread
+	 */
+	public static CompletableFuture<Void> pasteStructure(@Nonnull BlockArrayClipboard clipboard, @Nonnull Location loc, boolean includeEntities, boolean includeBiomes) {
 		/*
 		 * This is the future given to the caller - when it's completed it should be safe to interact with the pasted area
 		 * In particular there is a 6s delay after pasting before this is marked as completed
@@ -422,7 +450,7 @@ public class StructuresAPI {
 
 
 							final ForwardExtentCopy copy = new ForwardExtentCopy(clipboard, clipboard.getRegion(), clipboard.getOrigin(), extent, to);
-							copy.setCopyingBiomes(false);
+							copy.setCopyingBiomes(includeBiomes);
 							copy.setFilterFunction(filterFunction);
 							copy.setCopyingEntities(includeEntities);
 							Operations.completeBlindly(copy);

@@ -32,8 +32,8 @@ public class StructuresPlugin extends JavaPlugin {
 
 	private static @Nullable StructuresPlugin INSTANCE = null;
 
-	private File mConfigFile;
-	private YamlConfiguration mConfig;
+	private @Nullable File mConfigFile = null;
+	private @Nullable YamlConfiguration mConfig = null;
 	private @Nullable CustomLogger mLogger = null;
 
 	@Override
