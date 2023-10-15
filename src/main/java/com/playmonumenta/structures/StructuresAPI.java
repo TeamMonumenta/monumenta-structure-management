@@ -604,7 +604,7 @@ public class StructuresAPI {
 						CHUNK_STATUS_FULL_OBJ = chunkStatusFullField.get(null);
 						GET_HANDLE_METHOD = chunk.getClass().getMethod("getHandle", chunkStatusClass);
 						Object chunkAccess = GET_HANDLE_METHOD.invoke(chunk, CHUNK_STATUS_FULL_OBJ);
-						Method SET_UNSAVED_METHOD = chunkAccess.getClass().getMethod("a", boolean.class); // "setUnsaved" in 1.19.4
+						SET_UNSAVED_METHOD = chunkAccess.getClass().getMethod("a", boolean.class); // "setUnsaved" in 1.19.4
 						SET_UNSAVED_METHOD.invoke(chunkAccess, true);
 					} catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | NoSuchFieldException | ClassNotFoundException e) {
 						CHUNK_STATUS_FULL_OBJ = null;
