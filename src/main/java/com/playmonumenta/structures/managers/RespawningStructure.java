@@ -3,7 +3,7 @@ package com.playmonumenta.structures.managers;
 import com.fastasyncworldedit.core.util.collection.BlockSet;
 import com.fastasyncworldedit.core.util.collection.MemBlockSet;
 import com.playmonumenta.scriptedquests.zones.Zone;
-import com.playmonumenta.scriptedquests.zones.ZoneLayer;
+import com.playmonumenta.scriptedquests.zones.ZoneNamespace;
 import com.playmonumenta.structures.StructuresAPI;
 import com.playmonumenta.structures.StructuresPlugin;
 import com.playmonumenta.structures.utils.MSLog;
@@ -581,21 +581,21 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 	public void registerZone() {
 		RespawnManager respawnManager = StructuresPlugin.getRespawnManager();
-		ZoneLayer zoneLayerInside = respawnManager.mZoneLayerInside;
-		ZoneLayer zoneLayerNearby = respawnManager.mZoneLayerNearby;
+		ZoneNamespace zoneNamespaceInside = respawnManager.mZoneNamespaceInside;
+		ZoneNamespace zoneNamespaceNearby = respawnManager.mZoneNamespaceNearby;
 
-		Zone insideZone = new Zone(zoneLayerInside,
+		Zone insideZone = new Zone(zoneNamespaceInside,
 		                           mInnerBounds.mLowerCorner.clone(),
 		                           mInnerBounds.mUpperCorner.clone(),
 		                           mName,
 		                           new LinkedHashSet<>());
-		Zone nearbyZone = new Zone(zoneLayerNearby,
+		Zone nearbyZone = new Zone(zoneNamespaceNearby,
 		                           mOuterBounds.mLowerCorner.clone(),
 		                           mOuterBounds.mUpperCorner.clone(),
 		                           mName,
 		                           new LinkedHashSet<>());
-		zoneLayerInside.addZone(insideZone);
-		zoneLayerNearby.addZone(nearbyZone);
+		zoneNamespaceInside.addZone(insideZone);
+		zoneNamespaceNearby.addZone(nearbyZone);
 
 		respawnManager.registerRespawningStructureZone(insideZone, this);
 		respawnManager.registerRespawningStructureZone(nearbyZone, this);

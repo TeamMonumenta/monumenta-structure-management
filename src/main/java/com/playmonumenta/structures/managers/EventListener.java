@@ -78,7 +78,7 @@ public class EventListener implements Listener {
 		// We need to allow spawning mobs intentionally, but disable natural spawns.
 		if (DISALLOWED_STRUCTURE_SPAWN_REASONS.contains(event.getSpawnReason())) {
 			// Only cancel spawns in respawning structures
-			String zoneLayerNameInside = RespawnManager.ZONE_LAYER_NAME_INSIDE;
+			String zoneLayerNameInside = RespawnManager.ZONE_NAMESPACE_INSIDE;
 
 			// We don't care which poi it is, just that the poi exists at that location
 			if (StructuresPlugin.getRespawnManager().mZoneManager.getZone(loc, zoneLayerNameInside) != null) {
