@@ -202,7 +202,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 				// save locations of structure void blocks
 				int size1 = 1 + (Math.max(clipboard.getDimensions().getBlockX(), Math.max(clipboard.getDimensions().getBlockY(), clipboard.getDimensions().getBlockZ())) >> 4);
-				MemBlockSet structureVoidBlocks = new MemBlockSet(size1, 0, 0, 0, 15);
+				MemBlockSet structureVoidBlocks = new MemBlockSet(size1, 0, 0, 0, 32);
 				BlockType structureVoid = BlockType.REGISTRY.get("minecraft:structure_void");
 				if (structureVoid != null) {
 					BlockVector3 minimumPoint = clipboard.getMinimumPoint();
