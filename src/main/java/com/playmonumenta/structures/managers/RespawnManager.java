@@ -96,8 +96,6 @@ public class RespawnManager {
 
 		Set<String> keys = respawnSection.getKeys(false);
 
-		mZoneNamespaceInside.invalidate();
-		mZoneNamespaceNearby.invalidate();
 		mZoneNamespaceInside = new ZoneNamespace(ZONE_NAMESPACE_INSIDE);
 		mZoneNamespaceNearby = new ZoneNamespace(ZONE_NAMESPACE_NEARBY, true);
 		mStructuresByZone.clear();
@@ -176,8 +174,6 @@ public class RespawnManager {
 		mRespawns.remove(configLabel);
 		mPlugin.saveConfig();
 
-		mZoneNamespaceInside.invalidate();
-		mZoneNamespaceNearby.invalidate();
 		mZoneNamespaceInside = new ZoneNamespace(ZONE_NAMESPACE_INSIDE);
 		mZoneNamespaceNearby = new ZoneNamespace(ZONE_NAMESPACE_NEARBY, true);
 		mStructuresByZone.clear();
