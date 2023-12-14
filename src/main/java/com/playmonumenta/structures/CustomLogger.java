@@ -8,7 +8,7 @@ import javax.annotation.Nullable;
 public class CustomLogger extends Logger {
 	private static @Nullable CustomLogger INSTANCE = null;
 
-	private Logger mLogger;
+	private final Logger mLogger;
 	private Level mLevel;
 
 	public CustomLogger(Logger logger, Level level) {

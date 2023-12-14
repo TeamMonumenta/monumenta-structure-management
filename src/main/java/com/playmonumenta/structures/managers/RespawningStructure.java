@@ -319,7 +319,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		mForcedRespawn = false;
 		mConquered = false;
 
-		StructuresAPI.loadAndPasteStructure(respawnPath, new Location(mWorld, mLoadPos.getBlockX(), mLoadPos.getBlockY(), mLoadPos.getBlockZ()), true).whenComplete((unused, exception) -> {
+		StructuresAPI.loadAndPasteStructure(respawnPath, new Location(mWorld, mLoadPos.getBlockX(), mLoadPos.getBlockY(), mLoadPos.getBlockZ()), true, false).whenComplete((unused, exception) -> {
 			if (exception != null) {
 				mPlugin.getLogger().severe("Failed to respawn structure '" + mConfigLabel + "'");
 				exception.printStackTrace();
