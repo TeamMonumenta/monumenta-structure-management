@@ -57,16 +57,16 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		NO_PLAYER_WITHIN
 	}
 
-	private StructuresPlugin mPlugin;
-	private World mWorld;
-	private Random mRandom;
+	private final StructuresPlugin mPlugin;
+	private final World mWorld;
+	private final Random mRandom;
 
 	protected String mConfigLabel;        // The label used to modify this structure via commands
-	private String mName;                 // What the pretty name of the structure is
-	private Vector mLoadPos;              // Where it will be loaded
+	private final String mName;                 // What the pretty name of the structure is
+	private final Vector mLoadPos;              // Where it will be loaded
 	private StructureBounds mInnerBounds; // The bounding box for the structure itself
 	private StructureBounds mOuterBounds; // The bounding box for the nearby area around the structure
-	private int mExtraRadius;             // Radius around the structure that still gets messages
+	private final int mExtraRadius;             // Radius around the structure that still gets messages
 	private int mTicksLeft;               // How many ticks remaining until respawn
 	private int mRespawnTime;             // How many ticks between respawns
 	private @Nullable String mPostRespawnCommand;   // Command run via the console after respawning structure
@@ -173,7 +173,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 				throw new Exception("Minimum respawn_period value is 200 ticks");
 			}
 
-			if (genericPaths.size() < 1) {
+			if (genericPaths.isEmpty()) {
 				throw new Exception("No structures specified for '" + configLabel + "'");
 			}
 
