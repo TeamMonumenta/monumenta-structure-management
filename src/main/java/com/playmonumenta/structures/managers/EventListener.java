@@ -3,6 +3,7 @@ package com.playmonumenta.structures.managers;
 import com.playmonumenta.structures.StructuresPlugin;
 import java.util.EnumSet;
 import java.util.List;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
@@ -73,7 +74,7 @@ public class EventListener implements Listener {
 	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
 	public void creatureSpawnEvent(CreatureSpawnEvent event) {
 		Entity entity = event.getEntity();
-		Vector loc = entity.getLocation().toVector();
+		Location loc = entity.getLocation();
 
 		// We need to allow spawning mobs intentionally, but disable natural spawns.
 		if (DISALLOWED_STRUCTURE_SPAWN_REASONS.contains(event.getSpawnReason())) {
