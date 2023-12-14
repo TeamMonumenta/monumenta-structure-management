@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -584,16 +585,20 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		ZoneNamespace zoneNamespaceInside = respawnManager.mZoneNamespaceInside;
 		ZoneNamespace zoneNamespaceNearby = respawnManager.mZoneNamespaceNearby;
 
-		Zone insideZone = new Zone(zoneNamespaceInside,
-		                           mInnerBounds.mLowerCorner.clone(),
-		                           mInnerBounds.mUpperCorner.clone(),
-		                           mName,
-		                           new LinkedHashSet<>());
-		Zone nearbyZone = new Zone(zoneNamespaceNearby,
-		                           mOuterBounds.mLowerCorner.clone(),
-		                           mOuterBounds.mUpperCorner.clone(),
-		                           mName,
-		                           new LinkedHashSet<>());
+		Zone insideZone = new Zone(
+				zoneNamespaceInside,
+				Pattern.quote(mWorld.getName()),
+				mInnerBounds.mLowerCorner.clone(),
+				mInnerBounds.mUpperCorner.clone(),
+				mName,
+				new LinkedHashSet<>());
+		Zone nearbyZone = new Zone(
+				zoneNamespaceNearby,
+				Pattern.quote(mWorld.getName()),
+				mOuterBounds.mLowerCorner.clone(),
+				mOuterBounds.mUpperCorner.clone(),
+				mName,
+				new LinkedHashSet<>());
 		zoneNamespaceInside.addZone(insideZone);
 		zoneNamespaceNearby.addZone(nearbyZone);
 
