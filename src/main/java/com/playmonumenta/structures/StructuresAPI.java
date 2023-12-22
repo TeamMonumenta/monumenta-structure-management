@@ -120,15 +120,15 @@ public class StructuresAPI {
 				if (format == null) {
 					throw new RuntimeException("Could not find structure format " + FORMAT);
 				}
-				try (Clipboard newClip = format.load(file)) {
-					if (newClip instanceof BlockArrayClipboard) {
-						clipboard = (BlockArrayClipboard) newClip;
-					} else if (newClip instanceof DiskOptimizedClipboard) {
-						clipboard = ((DiskOptimizedClipboard) newClip).toClipboard();
-					} else {
-						future.completeExceptionally(new Exception("Loaded unknown clipboard type: " + newClip.getClass()));
-						return;
-					}
+				Clipboard newClip = format.load(file);
+				if (newClip instanceof BlockArrayClipboard) {
+					clipboard = (BlockArrayClipboard) newClip;
+				} else if (newClip instanceof DiskOptimizedClipboard) {
+					clipboard = ((DiskOptimizedClipboard) newClip).toClipboard();
+				} else {
+					newClip.close();
+					future.completeExceptionally(new Exception("Loaded unknown clipboard type: " + newClip.getClass()));
+					return;
 				}
 				MSLog.fine("loadStructure: Async loaded structure '" + path + "'");
 
