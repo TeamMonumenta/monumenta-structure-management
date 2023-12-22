@@ -220,6 +220,8 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 				structure.registerZone();
 
+				clipboard.close();
+
 				return structure;
 			});
 		} catch (Exception ex) {
