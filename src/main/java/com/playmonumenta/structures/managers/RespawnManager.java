@@ -1,9 +1,10 @@
 package com.playmonumenta.structures.managers;
 
+import com.playmonumenta.scriptedquests.Plugin;
 import com.playmonumenta.scriptedquests.zones.Zone;
 import com.playmonumenta.scriptedquests.zones.ZoneFragment;
-import com.playmonumenta.scriptedquests.zones.ZoneLayer;
 import com.playmonumenta.scriptedquests.zones.ZoneManager;
+import com.playmonumenta.scriptedquests.zones.ZoneNamespace;
 import com.playmonumenta.structures.StructuresPlugin;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import java.util.ArrayList;
@@ -30,8 +31,8 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 public class RespawnManager {
-	public static final String ZONE_LAYER_NAME_INSIDE = "Respawning Structures Inside";
-	public static final String ZONE_LAYER_NAME_NEARBY = "Respawning Structures Nearby";
+	public static final String ZONE_NAMESPACE_INSIDE = "Respawning Structures Inside";
+	public static final String ZONE_NAMESPACE_NEARBY = "Respawning Structures Nearby";
 	private static @Nullable RespawnManager INSTANCE = null;
 	public static ArgumentSuggestions SUGGESTIONS_STRUCTURES = ArgumentSuggestions.strings((info) -> {
 		if (INSTANCE == null) {
@@ -56,8 +57,8 @@ public class RespawnManager {
 	};
 	private boolean mTaskScheduled = false;
 	private boolean mStructuresLoaded = false;
-	protected ZoneLayer mZoneLayerInside = new ZoneLayer(ZONE_LAYER_NAME_INSIDE);
-	protected ZoneLayer mZoneLayerNearby = new ZoneLayer(ZONE_LAYER_NAME_NEARBY, true);
+	protected ZoneNamespace mZoneNamespaceInside = new ZoneNamespace(ZONE_NAMESPACE_INSIDE);
+	protected ZoneNamespace mZoneNamespaceNearby = new ZoneNamespace(ZONE_NAMESPACE_NEARBY, true);
 	private final Map<Zone, RespawningStructure> mStructuresByZone = new LinkedHashMap<>();
 
 	public RespawnManager(StructuresPlugin plugin, World world, YamlConfiguration config) {
@@ -65,12 +66,15 @@ public class RespawnManager {
 		mPlugin = plugin;
 		mWorld = world;
 
-		com.playmonumenta.scriptedquests.Plugin scriptedQuestsPlugin;
-		scriptedQuestsPlugin = (com.playmonumenta.scriptedquests.Plugin)Bukkit.getPluginManager().getPlugin("ScriptedQuests");
+		Plugin scriptedQuestsPlugin;
+		scriptedQuestsPlugin = (Plugin)Bukkit.getPluginManager().getPlugin("ScriptedQuests");
+		if (scriptedQuestsPlugin == null) {
+			throw new RuntimeException("ScriptedQuests not loaded!");
+		}
 		mZoneManager = scriptedQuestsPlugin.mZoneManager;
-		// Register empty zone layers so replacing them is easier
-		mZoneManager.registerPluginZoneLayer(mZoneLayerInside);
-		mZoneManager.registerPluginZoneLayer(mZoneLayerNearby);
+		// Register empty zone namespaces so replacing them is easier
+		mZoneManager.registerPluginZoneNamespace(mZoneNamespaceInside);
+		mZoneManager.registerPluginZoneNamespace(mZoneNamespaceNearby);
 
 		// Load the frequency that the plugin should check for respawning structures
 		if (!config.isInt("check_respawn_period")) {
@@ -92,10 +96,8 @@ public class RespawnManager {
 
 		Set<String> keys = respawnSection.getKeys(false);
 
-		mZoneLayerInside.invalidate();
-		mZoneLayerNearby.invalidate();
-		mZoneLayerInside = new ZoneLayer(ZONE_LAYER_NAME_INSIDE);
-		mZoneLayerNearby = new ZoneLayer(ZONE_LAYER_NAME_NEARBY, true);
+		mZoneNamespaceInside = new ZoneNamespace(ZONE_NAMESPACE_INSIDE);
+		mZoneNamespaceNearby = new ZoneNamespace(ZONE_NAMESPACE_NEARBY, true);
 		mStructuresByZone.clear();
 
 		final AtomicInteger numRemaining = new AtomicInteger(keys.size());
@@ -131,9 +133,9 @@ public class RespawnManager {
 					// Schedule a repeating task to trigger structure countdowns
 					mRunnable.runTaskTimer(mPlugin, 0, mTickPeriod);
 
-					// Enable the plugin zone layers that have been populated (but not registered) during the reload
-					mZoneManager.replacePluginZoneLayer(mZoneLayerInside);
-					mZoneManager.replacePluginZoneLayer(mZoneLayerNearby);
+					// Enable the plugin zone namespaces that have been populated (but not registered) during the reload
+					mZoneManager.replacePluginZoneNamespace(mZoneNamespaceInside);
+					mZoneManager.replacePluginZoneNamespace(mZoneNamespaceNearby);
 
 					mTaskScheduled = true;
 					mStructuresLoaded = true;
@@ -158,8 +160,8 @@ public class RespawnManager {
 												  null, null).thenApply((structure) -> {
 			mRespawns.put(configLabel, structure);
 			mPlugin.saveConfig();
-			mZoneManager.replacePluginZoneLayer(mZoneLayerInside);
-			mZoneManager.replacePluginZoneLayer(mZoneLayerNearby);
+			mZoneManager.replacePluginZoneNamespace(mZoneNamespaceInside);
+			mZoneManager.replacePluginZoneNamespace(mZoneNamespaceNearby);
 			return null;
 		});
 	}
@@ -172,18 +174,16 @@ public class RespawnManager {
 		mRespawns.remove(configLabel);
 		mPlugin.saveConfig();
 
-		mZoneLayerInside.invalidate();
-		mZoneLayerNearby.invalidate();
-		mZoneLayerInside = new ZoneLayer(ZONE_LAYER_NAME_INSIDE);
-		mZoneLayerNearby = new ZoneLayer(ZONE_LAYER_NAME_NEARBY, true);
+		mZoneNamespaceInside = new ZoneNamespace(ZONE_NAMESPACE_INSIDE);
+		mZoneNamespaceNearby = new ZoneNamespace(ZONE_NAMESPACE_NEARBY, true);
 		mStructuresByZone.clear();
 
 		for (RespawningStructure struct : mRespawns.values()) {
 			struct.registerZone();
 		}
 
-		mZoneManager.replacePluginZoneLayer(mZoneLayerInside);
-		mZoneManager.replacePluginZoneLayer(mZoneLayerNearby);
+		mZoneManager.replacePluginZoneNamespace(mZoneNamespaceInside);
+		mZoneManager.replacePluginZoneNamespace(mZoneNamespaceNearby);
 	}
 
 	public List<RespawningStructure> getStructures(Vector loc, boolean includeNearby) {
@@ -193,8 +193,8 @@ public class RespawnManager {
 			return structures;
 		}
 
-		String layerName = includeNearby ? ZONE_LAYER_NAME_NEARBY : ZONE_LAYER_NAME_INSIDE;
-		List<Zone> zones = zoneFragment.getParentAndEclipsed(layerName);
+		String namespace = includeNearby ? ZONE_NAMESPACE_NEARBY : ZONE_NAMESPACE_INSIDE;
+		List<Zone> zones = zoneFragment.getParentAndEclipsed(namespace);
 		for (Zone zone : zones) {
 			RespawningStructure struct = mStructuresByZone.get(zone);
 			if (struct == null) {

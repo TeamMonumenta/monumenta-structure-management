@@ -72,7 +72,7 @@ dependencies {
     compileOnly("com.bergerkiller.bukkit:BKCommonLib:1.15.2-v2")
     compileOnly("dev.jorel.CommandAPI:commandapi-core:8.7.0")
     compileOnly("com.google.code.gson:gson:2.8.5")
-    compileOnly("com.playmonumenta:scripted-quests:5.0")
+    compileOnly("com.playmonumenta:scripted-quests:7.0")
 
     errorprone("com.google.errorprone:error_prone_core:2.10.0")
     errorprone("com.uber.nullaway:nullaway:0.9.5")

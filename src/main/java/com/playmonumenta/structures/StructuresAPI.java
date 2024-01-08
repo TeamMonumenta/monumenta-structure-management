@@ -67,9 +67,9 @@ public class StructuresAPI {
 
 	/**
 	 * Convenience function to combine both loadStructure() and pasteStructure() into one operation.
-	 *
+	 * <p>
 	 * Must be called from main thread, will return immediately and do its work on an async thread
-	 *
+	 * <p>
 	 * See the details of those functions for more information
 	 *
 	 * @deprecated
@@ -82,21 +82,25 @@ public class StructuresAPI {
 
 	/**
 	 * Convenience function to combine both loadStructure() and pasteStructure() into one operation.
-	 *
+	 * <p>
 	 * Must be called from main thread, will return immediately and do its work on an async thread
-	 *
+	 * <p>
 	 * See the details of those functions for more information
 	 */
 	public static CompletableFuture<Void> loadAndPasteStructure(@Nonnull String path, @Nonnull Location loc, boolean includeEntities, boolean includeBiomes) {
 		/* Clone the input variable to make sure the caller doesn't change it while we're still loading */
 		Location pasteLoc = loc.clone();
 
-		return loadStructure(path).thenCompose((clipboard) -> pasteStructure(clipboard, pasteLoc, includeEntities, includeBiomes));
+		return loadStructure(path).thenCompose((clipboard) -> {
+			pasteStructure(clipboard, pasteLoc, includeEntities, includeBiomes);
+			clipboard.close();
+			return null;
+		});
 	}
 
 	/**
 	 * Loads a structure from the disk and returns it.
-	 *
+	 * <p>
 	 * Must be called from main thread, will return immediately and do its work on an async thread
 	 *
 	 * @param path Relative path under the structures/ folder of the structure to load, not including the extension
@@ -111,19 +115,25 @@ public class StructuresAPI {
 		MSLog.fine("loadStructure: Started loading structure '" + path + "'");
 		Bukkit.getScheduler().runTaskAsynchronously(StructuresPlugin.getInstance(), () -> {
 			MSLog.fine("loadStructure: In async loading structure '" + path + "'");
+			Clipboard newClip = null;
 			final BlockArrayClipboard clipboard;
 
 			try {
 				File file = CommandUtils.getAndValidateSchematicPath(StructuresPlugin.getInstance(), path, true);
 
 				ClipboardFormat format = ClipboardFormats.findByAlias(FORMAT);
-				Clipboard newClip = format.load(file);
+				if (format == null) {
+					future.completeExceptionally(new Exception("Could not find structure format " + FORMAT));
+					return;
+				}
+				newClip = format.load(file);
 				if (newClip instanceof BlockArrayClipboard) {
-					clipboard = (BlockArrayClipboard)newClip;
+					clipboard = (BlockArrayClipboard) newClip;
 				} else if (newClip instanceof DiskOptimizedClipboard) {
-					clipboard = ((DiskOptimizedClipboard)newClip).toClipboard();
+					clipboard = ((DiskOptimizedClipboard) newClip).toClipboard();
 				} else {
-					future.completeExceptionally(new Exception("Loaded unknown clipboard type: " + newClip.getClass().toString()));
+					newClip.close();
+					future.completeExceptionally(new Exception("Loaded unknown clipboard type: " + newClip.getClass()));
 					return;
 				}
 				MSLog.fine("loadStructure: Async loaded structure '" + path + "'");
@@ -140,6 +150,9 @@ public class StructuresAPI {
 					future.completeExceptionally(ex);
 					MSLog.fine("loadStructure: Loading complete/failed for '" + path + "'");
 				});
+				if (newClip != null) {
+					newClip.close();
+				}
 			}
 		});
 
@@ -148,9 +161,9 @@ public class StructuresAPI {
 
 	/**
 	 * Save a structure given a bounding box at the specified path.
-	 *
+	 * <p>
 	 * Must be called from main thread, will return immediately and do its work on an async thread
-	 *
+	 * <p>
 	 * XXX NOTE - even though most of the work is done async, if you .get() on this future on the main thread, the server will deadlock and crash
 	 *
 	 * @param path Relative path under the structures/ folder of the structure to load, not including the extension
@@ -185,8 +198,11 @@ public class StructuresAPI {
 			try (Closer closer = Closer.create()) {
 				File file = CommandUtils.getAndValidateSchematicPath(StructuresPlugin.getInstance(), path, false);
 				if (!file.exists()) {
+					//noinspection ResultOfMethodCallIgnored
 					file.getParentFile().mkdirs();
-					file.createNewFile();
+					if (!file.createNewFile()) {
+						MSLog.warning("Failed to create " + path);
+					}
 				}
 				MSLog.fine("copyAreaAndSaveStructure: Created file for '" + path + "', starting copyArea");
 
@@ -195,6 +211,9 @@ public class StructuresAPI {
 				MSLog.fine("copyAreaAndSaveStructure: Area copied for '" + path + "'");
 
 				ClipboardFormat format = ClipboardFormats.findByAlias(FORMAT);
+				if (format == null) {
+					throw new Exception("copyAreaAndSaveStructure: Could not find format " + FORMAT);
+				}
 				FileOutputStream fos = closer.register(new FileOutputStream(file));
 				BufferedOutputStream bos = closer.register(new BufferedOutputStream(fos));
 				ClipboardWriter writer = closer.register(format.getWriter(bos));
@@ -222,7 +241,7 @@ public class StructuresAPI {
 
 	/**
 	 * Copies a bounding box to a clipboard that can be used with pasteStructure().
-	 *
+	 * <p>
 	 * Must be called from main thread, will return immediately and do its work on an async thread
 	 *
 	 * @param loc1 One corner of the bounding box to save
@@ -298,7 +317,7 @@ public class StructuresAPI {
 
 	/**
 	 * Pastes a structure at the given location, ignoring structure void similarly to vanilla structure blocks.
-	 *
+	 * <p>
 	 * Must be called from main thread, will return immediately and do its work on an async thread
 	 *
 	 * @deprecated
@@ -311,7 +330,7 @@ public class StructuresAPI {
 
 	/**
 	 * Pastes a structure at the given location, ignoring structure void similarly to vanilla structure blocks.
-	 *
+	 * <p>
 	 * Must be called from main thread, will return immediately and do its work on an async thread
 	 */
 	public static CompletableFuture<Void> pasteStructure(@Nonnull BlockArrayClipboard clipboard, @Nonnull Location loc, boolean includeEntities, boolean includeBiomes) {
@@ -343,7 +362,7 @@ public class StructuresAPI {
 			final BlockVector3 size = sourceRegion.getMaximumPoint().subtract(sourceRegion.getMinimumPoint());
 			final org.bukkit.World world = pasteLoc.getWorld();
 			final BlockVector3 to = BlockVector3.at(pasteLoc.getBlockX(), pasteLoc.getBlockY(), pasteLoc.getBlockZ());
-			final Vector pos1 = new Vector((double)to.getX(), (double)to.getY(), (double)to.getZ());
+			final Vector pos1 = new Vector(to.getX(), to.getY(), (double)to.getZ());
 			final Vector pos2 = pos1.clone().add(new Vector(size.getX() + 1, size.getY() + 1, size.getZ() + 1));
 			final BoundingBox box = new BoundingBox(pos1.getX(), pos1.getY(), pos1.getZ(), pos2.getX(), pos2.getY(), pos2.getZ());
 
@@ -500,7 +519,7 @@ public class StructuresAPI {
 	 * Must be called from main thread, will return immediately and do its work on an async thread
 	 *
 	 * Has a 600 tick timeout - if chunks fail to load in that time the future will complete with an exception and no attempt
-	 * to repair this will be made. Those chunks will likely continue to load afterwards, and will stay loaded...
+	 * to repair this will be made. Those chunks will likely continue to load afterward, and will stay loaded...
 	 */
 	public static CompletableFuture<Void> markAndLoadChunks(org.bukkit.World world, Region region, @Nullable Consumer<Chunk> consumer) {
 		CompletableFuture<Void> future = new CompletableFuture<>();
@@ -639,7 +658,7 @@ public class StructuresAPI {
 	}
 
 	private static final HashMap<WorldChunkKey, Integer> CHUNK_TICKET_REFERENCE_COUNT = new HashMap<>();
-	private static Deque<PendingTask> PENDING_TASKS = new ConcurrentLinkedDeque<>();
+	private static final Deque<PendingTask> PENDING_TASKS = new ConcurrentLinkedDeque<>();
 	private static @Nullable BukkitRunnable RUNNING_TASK = null;
 
 	private static final EnumSet<EntityType> keptEntities = EnumSet.of(

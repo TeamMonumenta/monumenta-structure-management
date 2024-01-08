@@ -3,7 +3,7 @@ package com.playmonumenta.structures.managers;
 import com.fastasyncworldedit.core.util.collection.BlockSet;
 import com.fastasyncworldedit.core.util.collection.MemBlockSet;
 import com.playmonumenta.scriptedquests.zones.Zone;
-import com.playmonumenta.scriptedquests.zones.ZoneLayer;
+import com.playmonumenta.scriptedquests.zones.ZoneNamespace;
 import com.playmonumenta.structures.StructuresAPI;
 import com.playmonumenta.structures.StructuresPlugin;
 import com.playmonumenta.structures.utils.MSLog;
@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -56,16 +57,16 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		NO_PLAYER_WITHIN
 	}
 
-	private StructuresPlugin mPlugin;
-	private World mWorld;
-	private Random mRandom;
+	private final StructuresPlugin mPlugin;
+	private final World mWorld;
+	private final Random mRandom;
 
 	protected String mConfigLabel;        // The label used to modify this structure via commands
-	private String mName;                 // What the pretty name of the structure is
-	private Vector mLoadPos;              // Where it will be loaded
+	private final String mName;                 // What the pretty name of the structure is
+	private final Vector mLoadPos;              // Where it will be loaded
 	private StructureBounds mInnerBounds; // The bounding box for the structure itself
 	private StructureBounds mOuterBounds; // The bounding box for the nearby area around the structure
-	private int mExtraRadius;             // Radius around the structure that still gets messages
+	private final int mExtraRadius;             // Radius around the structure that still gets messages
 	private int mTicksLeft;               // How many ticks remaining until respawn
 	private int mRespawnTime;             // How many ticks between respawns
 	private @Nullable String mPostRespawnCommand;   // Command run via the console after respawning structure
@@ -172,7 +173,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 				throw new Exception("Minimum respawn_period value is 200 ticks");
 			}
 
-			if (genericPaths.size() < 1) {
+			if (genericPaths.isEmpty()) {
 				throw new Exception("No structures specified for '" + configLabel + "'");
 			}
 
@@ -218,6 +219,8 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 				structure.mStructureVoidBlocks = structureVoidBlocks;
 
 				structure.registerZone();
+
+				clipboard.close();
 
 				return structure;
 			});
@@ -318,7 +321,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		mForcedRespawn = false;
 		mConquered = false;
 
-		StructuresAPI.loadAndPasteStructure(respawnPath, new Location(mWorld, mLoadPos.getBlockX(), mLoadPos.getBlockY(), mLoadPos.getBlockZ()), true).whenComplete((unused, exception) -> {
+		StructuresAPI.loadAndPasteStructure(respawnPath, new Location(mWorld, mLoadPos.getBlockX(), mLoadPos.getBlockY(), mLoadPos.getBlockZ()), true, false).whenComplete((unused, exception) -> {
 			if (exception != null) {
 				mPlugin.getLogger().severe("Failed to respawn structure '" + mConfigLabel + "'");
 				exception.printStackTrace();
@@ -581,21 +584,25 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 	public void registerZone() {
 		RespawnManager respawnManager = StructuresPlugin.getRespawnManager();
-		ZoneLayer zoneLayerInside = respawnManager.mZoneLayerInside;
-		ZoneLayer zoneLayerNearby = respawnManager.mZoneLayerNearby;
+		ZoneNamespace zoneNamespaceInside = respawnManager.mZoneNamespaceInside;
+		ZoneNamespace zoneNamespaceNearby = respawnManager.mZoneNamespaceNearby;
 
-		Zone insideZone = new Zone(zoneLayerInside,
-		                           mInnerBounds.mLowerCorner.clone(),
-		                           mInnerBounds.mUpperCorner.clone(),
-		                           mName,
-		                           new LinkedHashSet<>());
-		Zone nearbyZone = new Zone(zoneLayerNearby,
-		                           mOuterBounds.mLowerCorner.clone(),
-		                           mOuterBounds.mUpperCorner.clone(),
-		                           mName,
-		                           new LinkedHashSet<>());
-		zoneLayerInside.addZone(insideZone);
-		zoneLayerNearby.addZone(nearbyZone);
+		Zone insideZone = new Zone(
+				zoneNamespaceInside,
+				Pattern.quote(mWorld.getName()),
+				mInnerBounds.mLowerCorner.clone(),
+				mInnerBounds.mUpperCorner.clone(),
+				mName,
+				new LinkedHashSet<>());
+		Zone nearbyZone = new Zone(
+				zoneNamespaceNearby,
+				Pattern.quote(mWorld.getName()),
+				mOuterBounds.mLowerCorner.clone(),
+				mOuterBounds.mUpperCorner.clone(),
+				mName,
+				new LinkedHashSet<>());
+		zoneNamespaceInside.addZone(insideZone);
+		zoneNamespaceNearby.addZone(nearbyZone);
 
 		respawnManager.registerRespawningStructureZone(insideZone, this);
 		respawnManager.registerRespawningStructureZone(nearbyZone, this);
