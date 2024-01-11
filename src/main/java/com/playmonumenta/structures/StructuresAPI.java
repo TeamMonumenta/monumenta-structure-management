@@ -91,11 +91,7 @@ public class StructuresAPI {
 		/* Clone the input variable to make sure the caller doesn't change it while we're still loading */
 		Location pasteLoc = loc.clone();
 
-		return loadStructure(path).thenCompose((clipboard) -> {
-			pasteStructure(clipboard, pasteLoc, includeEntities, includeBiomes);
-			clipboard.close();
-			return null;
-		});
+		return loadStructure(path).thenCompose((clipboard) -> pasteStructure(clipboard, pasteLoc, includeEntities, includeBiomes));
 	}
 
 	/**
@@ -115,7 +111,6 @@ public class StructuresAPI {
 		MSLog.fine("loadStructure: Started loading structure '" + path + "'");
 		Bukkit.getScheduler().runTaskAsynchronously(StructuresPlugin.getInstance(), () -> {
 			MSLog.fine("loadStructure: In async loading structure '" + path + "'");
-			Clipboard newClip = null;
 			final BlockArrayClipboard clipboard;
 
 			try {
@@ -126,13 +121,12 @@ public class StructuresAPI {
 					future.completeExceptionally(new Exception("Could not find structure format " + FORMAT));
 					return;
 				}
-				newClip = format.load(file);
+				Clipboard newClip = format.load(file);
 				if (newClip instanceof BlockArrayClipboard) {
 					clipboard = (BlockArrayClipboard) newClip;
 				} else if (newClip instanceof DiskOptimizedClipboard) {
 					clipboard = ((DiskOptimizedClipboard) newClip).toClipboard();
 				} else {
-					newClip.close();
 					future.completeExceptionally(new Exception("Loaded unknown clipboard type: " + newClip.getClass()));
 					return;
 				}
@@ -150,9 +144,6 @@ public class StructuresAPI {
 					future.completeExceptionally(ex);
 					MSLog.fine("loadStructure: Loading complete/failed for '" + path + "'");
 				});
-				if (newClip != null) {
-					newClip.close();
-				}
 			}
 		});
 
