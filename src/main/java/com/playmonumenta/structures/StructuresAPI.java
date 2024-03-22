@@ -437,6 +437,7 @@ public class StructuresAPI {
 							.checkMemory(false)
 							.allowedRegionsEverywhere()
 							.limitUnlimited()
+							.relightMode(RelightMode.ALL)
 							.build()) {
 
 							/*
@@ -464,25 +465,11 @@ public class StructuresAPI {
 							copy.setFilterFunction(filterFunction);
 							copy.setCopyingEntities(includeEntities);
 							Operations.completeBlindly(copy);
-
 						}
 						MSLog.finer(() -> "Loading structure took " + (System.currentTimeMillis() - pasteTime) + " milliseconds (async)"); // STOP -->
 
-						/* Allow the next structure load task to start at this point */
-						signal.complete(null);
-
-						/* Relight affected blocks. Run on main thread as the fixLighting method may or may not be thread-safe. */
-						Bukkit.getScheduler().runTask(plugin, () -> {
-							final long lightTime = System.currentTimeMillis(); // <-- START
-
-							/* Relight an area 16 blocks bigger than the respawned area */
-							Region relightRegion = shiftedRegion.clone();
-							relightRegion.expand(BlockVector3.at(-16, -16, -16), BlockVector3.at(16, 16, 16));
-
-							FaweAPI.fixLighting(new BukkitWorld(world), relightRegion, null, RelightMode.ALL);
-
-							MSLog.finer(() -> "fixLighting took " + (System.currentTimeMillis() - lightTime) + " milliseconds (main thread)"); // STOP -->
-						});
+						/* Add a 5 tick delay until the next task for shifting */
+						Bukkit.getScheduler().runTaskLater(plugin, () -> signal.complete(null), 5);
 
 						/* 6s later, signal caller that loading is complete */
 						Bukkit.getScheduler().runTaskLater(plugin, () -> future.complete(null), 120);
