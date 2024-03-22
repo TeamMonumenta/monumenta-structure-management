@@ -656,7 +656,6 @@ public class StructuresAPI {
 		EntityType.PLAYER,
 		EntityType.DROPPED_ITEM,
 		EntityType.EXPERIENCE_ORB,
-		EntityType.IRON_GOLEM,
 		EntityType.VILLAGER,
 		EntityType.TRIDENT,
 		EntityType.HORSE,
