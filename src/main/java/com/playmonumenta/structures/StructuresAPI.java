@@ -27,6 +27,9 @@ import com.sk89q.worldedit.world.block.BlockTypes;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -565,6 +568,11 @@ public class StructuresAPI {
 		return future;
 	}
 
+	private static boolean ATTEMPTED_REFLECTION = false;
+	private static @Nullable Object CHUNK_STATUS_FULL_OBJ = null;
+	private static @Nullable Method GET_HANDLE_METHOD = null;
+	private static @Nullable Method SET_UNSAVED_METHOD = null;
+
 	/*
 	 * Unmarks chunks so that they can be unloaded. (the opposite of markAndLoadChunks)
 	 *
@@ -582,6 +590,42 @@ public class StructuresAPI {
 
 		for (final BlockVector2 chunkCoords : region.getChunks()) {
 			final Consumer<Chunk> consumer = (final Chunk chunk) -> {
+				// Prior to marking the chunk for unloading, reach into paper internals to make sure the chunk is flagged for saving
+				// For some reason on 1.19 FAWE is not always marking chunks as needing to save, so sometimes on unload with no player interaction they don't save
+				if (!ATTEMPTED_REFLECTION) {
+					// First, cache the reflection results for faster use later. This is only attempted once.
+					ATTEMPTED_REFLECTION = true;
+					try {
+						Class<?> chunkStatusClass = Class.forName("net.minecraft.world.level.chunk.ChunkStatus");
+						Field chunkStatusFullField = chunkStatusClass.getDeclaredField("o"); // "FULL" in 1.19.4
+						CHUNK_STATUS_FULL_OBJ = chunkStatusFullField.get(null);
+						GET_HANDLE_METHOD = chunk.getClass().getMethod("getHandle", chunkStatusClass);
+						Object chunkAccess = GET_HANDLE_METHOD.invoke(chunk, CHUNK_STATUS_FULL_OBJ);
+						SET_UNSAVED_METHOD = chunkAccess.getClass().getMethod("a", boolean.class); // "setUnsaved" in 1.19.4
+						SET_UNSAVED_METHOD.invoke(chunkAccess, true);
+					} catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | NoSuchFieldException | ClassNotFoundException e) {
+						CHUNK_STATUS_FULL_OBJ = null;
+						GET_HANDLE_METHOD = null;
+						SET_UNSAVED_METHOD = null;
+						plugin.getLogger().warning("Failed to use reflection to access setUnsaved() chunk method. Possibly this is because this is not running on a 1.19+ paper server, in which case you can disregard this warning");
+						e.printStackTrace();
+					}
+				}
+
+				// Use the reflection results if they exist to set the chunk as needing to save
+				if (CHUNK_STATUS_FULL_OBJ != null && GET_HANDLE_METHOD != null && SET_UNSAVED_METHOD != null) {
+					try {
+						Object chunkAccess = GET_HANDLE_METHOD.invoke(chunk, CHUNK_STATUS_FULL_OBJ);
+						SET_UNSAVED_METHOD.invoke(chunkAccess, true);
+						plugin.getLogger().finer(() -> "Successfully marked chunk at " + chunk.getX() + "," + chunk.getZ() + " as needing saving prior to unloading");
+					} catch (InvocationTargetException | IllegalAccessException e) {
+						GET_HANDLE_METHOD = null;
+						SET_UNSAVED_METHOD = null;
+						plugin.getLogger().severe("Failed to use reflection to access setUnsaved() chunk method but it previously worked. This is a bug in this plugin.");
+						e.printStackTrace();
+					}
+				}
+
 				WorldChunkKey key = new WorldChunkKey(world.getUID(), chunk.getChunkKey());
 				Integer references = CHUNK_TICKET_REFERENCE_COUNT.remove(key);
 				if (references == null || references <= 0) {
