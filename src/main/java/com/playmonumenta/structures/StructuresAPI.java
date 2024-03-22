@@ -468,19 +468,6 @@ public class StructuresAPI {
 						}
 						MSLog.finer(() -> "Loading structure took " + (System.currentTimeMillis() - pasteTime) + " milliseconds (async)"); // STOP -->
 
-						// /* Relight affected blocks. Run on main thread as the fixLighting method may or may not be thread-safe. */
-						// Bukkit.getScheduler().runTask(plugin, () -> {
-						// 	final long lightTime = System.currentTimeMillis(); // <-- START
-
-						// 	/* Relight an area 16 blocks bigger than the respawned area */
-						// 	Region relightRegion = shiftedRegion.clone();
-						// 	relightRegion.expand(BlockVector3.at(-16, -16, -16), BlockVector3.at(16, 16, 16));
-
-						// 	FaweAPI.fixLighting(new BukkitWorld(world), relightRegion, null, RelightMode.ALL);
-
-						// 	MSLog.finer(() -> "fixLighting took " + (System.currentTimeMillis() - lightTime) + " milliseconds (main thread)"); // STOP -->
-						// });
-
 						/* Add a 5 tick delay until the next task for shifting */
 						Bukkit.getScheduler().runTaskLater(plugin, () -> signal.complete(null), 5);
 
