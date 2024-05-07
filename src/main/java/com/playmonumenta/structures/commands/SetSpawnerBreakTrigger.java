@@ -4,11 +4,13 @@ import com.playmonumenta.structures.managers.RespawnManager;
 import com.playmonumenta.structures.managers.SpawnerBreakTrigger;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
+import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import dev.jorel.commandapi.arguments.IntegerArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import javax.annotation.Nullable;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 
 public class SetSpawnerBreakTrigger {
@@ -16,21 +18,17 @@ public class SetSpawnerBreakTrigger {
 		final String command = "setspawnerbreaktrigger";
 		final CommandPermission perms = CommandPermission.fromString("monumenta.structures");
 
-		new CommandAPICommand(command)
-			.withPermission(perms)
-			.withArguments(new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES))
-			.executes((sender, args) -> {
-				setTrigger(sender, (String)args[0], 0, null);
-			})
-			.register();
+		Argument<String> labelArg = new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES);
+		IntegerArgument spawnerCountArg = new IntegerArgument("spawner_count", 0);
+		GreedyStringArgument questComponentArg = new GreedyStringArgument("quest_component");
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES))
-			.withArguments(new IntegerArgument("spawner_count", 0))
-			.withArguments(new GreedyStringArgument("quest_component"))
+			.withArguments(labelArg)
+			.withOptionalArguments(spawnerCountArg)
+			.withOptionalArguments(questComponentArg)
 			.executes((sender, args) -> {
-				setTrigger(sender, (String)args[0], (Integer)args[1], (String)args[2]);
+				setTrigger(sender, args.getByArgument(labelArg), args.getByArgumentOrDefault(spawnerCountArg, 0), args.getByArgument(questComponentArg));
 			})
 			.register();
 	}
@@ -43,7 +41,7 @@ public class SetSpawnerBreakTrigger {
 			}
 			RespawnManager.getInstance().setSpawnerBreakTrigger(label, trigger);
 		} catch (Exception e) {
-			sender.sendMessage(ChatColor.RED + "Got error while attempting to set spawner break trigger: " + e.getMessage());
+			sender.sendMessage(Component.text("Got error while attempting to set spawner break trigger: " + e.getMessage(), NamedTextColor.RED));
 			return;
 		}
 

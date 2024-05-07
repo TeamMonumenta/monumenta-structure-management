@@ -3,6 +3,8 @@ package com.playmonumenta.structures.commands;
 import com.playmonumenta.structures.StructuresPlugin;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.ChatColor;
 
 public class ReloadStructures {
@@ -11,7 +13,7 @@ public class ReloadStructures {
 			.withPermission(CommandPermission.fromString("monumenta.structures"))
 			.executes((sender, args) -> {
 				plugin.reloadConfig();
-				sender.sendMessage(ChatColor.GREEN + "Structures reloaded");
+				sender.sendMessage(Component.text("Structures reloaded", NamedTextColor.GREEN));
 			})
 			.register();
 	}

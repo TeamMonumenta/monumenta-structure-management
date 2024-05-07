@@ -3,7 +3,8 @@ package com.playmonumenta.structures.commands;
 import com.playmonumenta.structures.managers.RespawnManager;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
-import dev.jorel.commandapi.arguments.PlayerArgument;
+import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.EntitySelectorArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -13,20 +14,23 @@ public class ForceConquerRespawn {
 		final String command = "forceconquerrespawn";
 		final CommandPermission perms = CommandPermission.fromString("monumenta.structures.forceconquerrespawn");
 
+		Argument<String> labelArg = new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES);
+		EntitySelectorArgument.OnePlayer playerArg = new EntitySelectorArgument.OnePlayer("player");
+
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES))
+			.withArguments(labelArg)
 			.executesPlayer((sender, args) -> {
-				forceRespawn(sender, (String)args[0]);
+				forceRespawn(sender, args.getByArgument(labelArg));
 			})
 			.register();
 
 		new CommandAPICommand(command)
 				.withPermission(perms)
-				.withArguments(new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES))
-				.withArguments(new PlayerArgument("player"))
+				.withArguments(labelArg)
+				.withArguments(playerArg)
 				.executes((sender, args) -> {
-					forceRespawn((Player) args[1], (String)args[0]);
+					forceRespawn(args.getByArgument(playerArg), args.getByArgument(labelArg));
 				})
 				.register();
 	}
