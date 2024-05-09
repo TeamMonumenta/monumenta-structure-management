@@ -26,27 +26,21 @@ public class ActivateSpecialStructure {
 		new CommandAPICommand(command)
 			.withPermission(perms)
 			.withArguments(labelArg)
-			.withOptionalArguments(pathArg)
+			.withArguments(pathArg)
 			.executes((sender, args) -> {
 				activate(sender, plugin, args.getByArgument(labelArg), args.getByArgument(pathArg));
 			})
 			.register();
 	}
 
-	private static void activate(CommandSender sender, Plugin plugin, String label, @Nullable String path) {
+	private static void activate(CommandSender sender, Plugin plugin, String label, String path) {
 		try {
 			CommandUtils.getAndValidateSchematicPath(plugin, path, true);
 			RespawnManager.getInstance().activateSpecialStructure(label, path);
+			sender.sendMessage("Successfully activated special structure");
 		} catch (Exception e) {
 			sender.sendMessage(Component.text("Got error while attempting to activate special structure: " + e.getMessage(), NamedTextColor.RED));
 			MessagingUtils.sendStackTrace(sender, e);
-			return;
-		}
-
-		if (path != null) {
-			sender.sendMessage("Successfully activated special structure");
-		} else {
-			sender.sendMessage("Successfully deactivated special structure");
 		}
 	}
 }
