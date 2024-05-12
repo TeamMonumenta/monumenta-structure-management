@@ -34,7 +34,7 @@ public class RespawnManager {
 	public static final String ZONE_NAMESPACE_INSIDE = "Respawning Structures Inside";
 	public static final String ZONE_NAMESPACE_NEARBY = "Respawning Structures Nearby";
 	private static @Nullable RespawnManager INSTANCE = null;
-	public static ArgumentSuggestions SUGGESTIONS_STRUCTURES = ArgumentSuggestions.strings((info) -> {
+	public static ArgumentSuggestions<CommandSender> SUGGESTIONS_STRUCTURES = ArgumentSuggestions.strings((info) -> {
 		if (INSTANCE == null) {
 			return new String[]{};
 		}

@@ -3,9 +3,11 @@ package com.playmonumenta.structures.commands;
 import com.playmonumenta.structures.managers.RespawnManager;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
+import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.IntegerArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 
 public class RespawnStructure {
@@ -13,20 +15,15 @@ public class RespawnStructure {
 		final String command = "respawnstructure";
 		final CommandPermission perms = CommandPermission.fromString("monumenta.structures");
 
-		new CommandAPICommand(command)
-			.withPermission(perms)
-			.withArguments(new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES))
-			.executes((sender, args) -> {
-				respawn(sender, (String)args[0], 600); // Default 30s
-			})
-			.register();
+		Argument<String> labelArg = new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES);
+		IntegerArgument ticksUntilRespawnArg = new IntegerArgument("ticks_until_respawn", 0);
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES))
-			.withArguments(new IntegerArgument("ticks_until_respawn", 0))
+			.withArguments(labelArg)
+			.withOptionalArguments(ticksUntilRespawnArg)
 			.executes((sender, args) -> {
-				respawn(sender, (String)args[0], (Integer)args[1]);
+				respawn(sender, args.getByArgument(labelArg), args.getByArgumentOrDefault(ticksUntilRespawnArg, 600));
 			})
 			.register();
 	}
@@ -35,7 +32,7 @@ public class RespawnStructure {
 		try {
 			RespawnManager.getInstance().setTimer(label, ticksUntilRespawn);
 		} catch (Exception e) {
-			sender.sendMessage(ChatColor.RED + "Got error while attempting to respawn structure: " + e.getMessage());
+			sender.sendMessage(Component.text("Got error while attempting to respawn structure: " + e.getMessage(), NamedTextColor.RED));
 		}
 	}
 }

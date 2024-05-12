@@ -3,10 +3,12 @@ package com.playmonumenta.structures.commands;
 import com.playmonumenta.structures.managers.RespawnManager;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
+import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.arguments.TextArgument;
 import javax.annotation.Nullable;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 
 public class SetPostRespawnCommand {
@@ -14,20 +16,15 @@ public class SetPostRespawnCommand {
 		final String command = "setpostrespawncommand";
 		final CommandPermission perms = CommandPermission.fromString("monumenta.structures");
 
-		new CommandAPICommand(command)
-			.withPermission(perms)
-			.withArguments(new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES))
-			.executes((sender, args) -> {
-				setCommand(sender, (String)args[0], null);
-			})
-			.register();
+		Argument<String> labelArg = new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES);
+		TextArgument commandArg = new TextArgument("command");
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES))
-			.withArguments(new TextArgument("command"))
+			.withArguments(labelArg)
+			.withOptionalArguments(commandArg)
 			.executes((sender, args) -> {
-				setCommand(sender, (String)args[0], (String)args[1]);
+				setCommand(sender, args.getByArgument(labelArg), args.getByArgument(commandArg));
 			})
 			.register();
 	}
@@ -40,7 +37,7 @@ public class SetPostRespawnCommand {
 		try {
 			RespawnManager.getInstance().setPostRespawnCommand(label, command);
 		} catch (Exception e) {
-			sender.sendMessage(ChatColor.RED + "Got error while attempting to set post respawn command: " + e.getMessage());
+			sender.sendMessage(Component.text("Got error while attempting to set post respawn command: " + e.getMessage(), NamedTextColor.RED));
 			return;
 		}
 

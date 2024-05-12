@@ -9,6 +9,8 @@ import dev.jorel.commandapi.arguments.IntegerArgument;
 import dev.jorel.commandapi.arguments.LocationArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.arguments.TextArgument;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
@@ -19,16 +21,23 @@ public class AddRespawningStructure {
 		final String command = "addrespawningstructure";
 		final CommandPermission perms = CommandPermission.fromString("monumenta.structures");
 
+		StringArgument labelArg = new StringArgument("label");
+		TextArgument pathArg = new TextArgument("path"); // TODO: Path arguments autocomplete?
+		LocationArgument locationArg = new LocationArgument("location");
+		IntegerArgument radiusArg = new IntegerArgument("extraRadius", 0);
+		IntegerArgument respawnTimeArg = new IntegerArgument("respawnTime", 20);
+		TextArgument nameArg = new TextArgument("name");
+
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label"))
-			.withArguments(new TextArgument("path")) // TODO: Path arguments autocomplete?
-			.withArguments(new LocationArgument("location"))
-			.withArguments(new IntegerArgument("extraRadius", 0))
-			.withArguments(new IntegerArgument("respawnTime", 20))
-			.withArguments(new TextArgument("name"))
+			.withArguments(labelArg)
+			.withArguments(pathArg)
+			.withArguments(locationArg)
+			.withArguments(radiusArg)
+			.withArguments(respawnTimeArg)
+			.withArguments(nameArg)
 			.executes((sender, args) -> {
-				add(sender, plugin, (String)args[0], (String)args[1], (Location)args[2], (Integer)args[3], (Integer)args[4], (String)args[5]);
+				add(sender, plugin, args.getByArgument(labelArg), args.getByArgument(pathArg), args.getByArgument(locationArg), args.getByArgument(radiusArg), args.getByArgument(respawnTimeArg), args.getByArgument(nameArg));
 			})
 			.register();
 	}
@@ -44,7 +53,7 @@ public class AddRespawningStructure {
 
 		RespawnManager.getInstance().addStructure(extraRadius, label, name, path, loc.toVector(), respawnTime).whenComplete((unused, ex) -> {
 			if (ex != null) {
-				sender.sendMessage(ChatColor.RED + "Failed to add structure: " + ex.getMessage());
+				sender.sendMessage(Component.text("Failed to add structure: " + ex.getMessage(), NamedTextColor.RED));
 			} else {
 				sender.sendMessage("Structure added successfully");
 			}

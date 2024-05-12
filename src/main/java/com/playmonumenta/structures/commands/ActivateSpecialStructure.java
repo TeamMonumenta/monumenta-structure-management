@@ -5,9 +5,12 @@ import com.playmonumenta.structures.utils.CommandUtils;
 import com.playmonumenta.structures.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
+import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.arguments.TextArgument;
 import javax.annotation.Nullable;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
@@ -17,38 +20,27 @@ public class ActivateSpecialStructure {
 		final String command = "activatespecialstructure";
 		final CommandPermission perms = CommandPermission.fromString("monumenta.structures");
 
-		new CommandAPICommand(command)
-			.withPermission(perms)
-			.withArguments(new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES))
-			.executes((sender, args) -> {
-				activate(sender, plugin, (String)args[0], null);
-			})
-			.register();
+		Argument<String> labelArg = new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES);
+		TextArgument pathArg = new TextArgument("special_structure_path");
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES))
-			.withArguments(new TextArgument("special_structure_path"))
+			.withArguments(labelArg)
+			.withArguments(pathArg)
 			.executes((sender, args) -> {
-				activate(sender, plugin, (String)args[0], (String)args[1]);
+				activate(sender, plugin, args.getByArgument(labelArg), args.getByArgument(pathArg));
 			})
 			.register();
 	}
 
-	private static void activate(CommandSender sender, Plugin plugin, String label, @Nullable String path) {
+	private static void activate(CommandSender sender, Plugin plugin, String label, String path) {
 		try {
 			CommandUtils.getAndValidateSchematicPath(plugin, path, true);
 			RespawnManager.getInstance().activateSpecialStructure(label, path);
-		} catch (Exception e) {
-			sender.sendMessage(ChatColor.RED + "Got error while attempting to activate special structure: " + e.getMessage());
-			MessagingUtils.sendStackTrace(sender, e);
-			return;
-		}
-
-		if (path != null) {
 			sender.sendMessage("Successfully activated special structure");
-		} else {
-			sender.sendMessage("Successfully deactivated special structure");
+		} catch (Exception e) {
+			sender.sendMessage(Component.text("Got error while attempting to activate special structure: " + e.getMessage(), NamedTextColor.RED));
+			MessagingUtils.sendStackTrace(sender, e);
 		}
 	}
 }

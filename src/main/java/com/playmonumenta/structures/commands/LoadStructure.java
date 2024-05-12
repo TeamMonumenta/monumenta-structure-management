@@ -10,7 +10,8 @@ import dev.jorel.commandapi.arguments.LocationArgument;
 import dev.jorel.commandapi.arguments.TextArgument;
 import dev.jorel.commandapi.wrappers.FunctionWrapper;
 import javax.annotation.Nullable;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Location;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.command.CommandSender;
@@ -21,56 +22,33 @@ public class LoadStructure {
 		final String command = "loadstructure";
 		final CommandPermission perms = CommandPermission.fromString("monumenta.structures");
 
+		TextArgument pathArg = new TextArgument("path");
+		LocationArgument positionArg = new LocationArgument("position");
+		BooleanArgument includeEntitiesArg = new BooleanArgument("includeEntities");
+		BooleanArgument includeBiomesArg = new BooleanArgument("includeBiomes");
+		FunctionArgument functionArg = new FunctionArgument("postLoadFunction");
+
+		// Skips biomeArg
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new TextArgument("path"))
-			.withArguments(new LocationArgument("position"))
+			.withArguments(pathArg)
+			.withArguments(positionArg)
+			.withArguments(includeEntitiesArg)
+			.withArguments(functionArg)
 			.executes((sender, args) -> {
-				load(sender, (String)args[0], (Location)args[1], false, false, null);
+				load(sender, args.getByArgument(pathArg), args.getByArgument(positionArg), args.getByArgumentOrDefault(includeEntitiesArg, false), false, args.getByArgument(functionArg));
 			})
 			.register();
 
 		new CommandAPICommand(command)
 			.withPermission(perms)
-			.withArguments(new TextArgument("path"))
-			.withArguments(new LocationArgument("position"))
-			.withArguments(new BooleanArgument("includeEntities"))
+			.withArguments(pathArg)
+			.withArguments(positionArg)
+			.withOptionalArguments(includeEntitiesArg)
+			.withOptionalArguments(includeBiomesArg)
+			.withOptionalArguments(functionArg)
 			.executes((sender, args) -> {
-				load(sender, (String)args[0], (Location)args[1], (Boolean)args[2], false, null);
-			})
-			.register();
-
-		new CommandAPICommand(command)
-			.withPermission(perms)
-			.withArguments(new TextArgument("path"))
-			.withArguments(new LocationArgument("position"))
-			.withArguments(new BooleanArgument("includeEntities"))
-			.withArguments(new BooleanArgument("includeBiomes"))
-			.executes((sender, args) -> {
-				load(sender, (String)args[0], (Location)args[1], (Boolean)args[2], (Boolean)args[3], null);
-			})
-			.register();
-
-		new CommandAPICommand(command)
-			.withPermission(perms)
-			.withArguments(new TextArgument("path"))
-			.withArguments(new LocationArgument("position"))
-			.withArguments(new BooleanArgument("includeEntities"))
-			.withArguments(new FunctionArgument("postLoadFunction"))
-			.executes((sender, args) -> {
-				load(sender, (String)args[0], (Location)args[1], (Boolean)args[2], false, (FunctionWrapper[])args[3]);
-			})
-			.register();
-
-		new CommandAPICommand(command)
-			.withPermission(perms)
-			.withArguments(new TextArgument("path"))
-			.withArguments(new LocationArgument("position"))
-			.withArguments(new BooleanArgument("includeEntities"))
-			.withArguments(new BooleanArgument("includeBiomes"))
-			.withArguments(new FunctionArgument("postLoadFunction"))
-			.executes((sender, args) -> {
-				load(sender, (String)args[0], (Location)args[1], (Boolean)args[2], (Boolean)args[3], (FunctionWrapper[])args[4]);
+				load(sender, args.getByArgument(pathArg), args.getByArgument(positionArg), args.getByArgumentOrDefault(includeEntitiesArg, false), args.getByArgumentOrDefault(includeBiomesArg, false), args.getByArgument(functionArg));
 			})
 			.register();
 	}
@@ -89,7 +67,7 @@ public class LoadStructure {
 					senderLoaded = true;
 				}
 				if (senderLoaded) {
-					sender.sendMessage(ChatColor.RED + "Failed to load structure: " + ex.getMessage());
+					sender.sendMessage(Component.text("Failed to load structure: " + ex.getMessage(), NamedTextColor.RED));
 					ex.printStackTrace();
 					MessagingUtils.sendStackTrace(sender, ex);
 				}

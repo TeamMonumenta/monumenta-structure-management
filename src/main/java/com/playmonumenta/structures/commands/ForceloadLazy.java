@@ -21,26 +21,31 @@ import org.jetbrains.annotations.Nullable;
 
 public class ForceloadLazy {
 	public static void register() {
+		Location2DArgument fromArg = new Location2DArgument("from", LocationType.BLOCK_POSITION);
+		Location2DArgument toArg = new Location2DArgument("to", LocationType.BLOCK_POSITION);
+		FunctionArgument callbackArg = new FunctionArgument("callback");
+
 		new CommandTree("forceload")
 			.then(new LiteralArgument("addlazy")
 				.withPermission(CommandPermission.fromString("monumenta.structures.forceloadlazy"))
 
 				// forceload addlazy from
-				.then(new Location2DArgument("from", LocationType.BLOCK_POSITION)
+				.then(fromArg
 					.executes((sender, args) -> {
-						load(sender, (Location2D) args[0], (Location2D) args[0], null); // Intentionally both the same argument
+						Location2D from = args.getByArgument(fromArg);
+						load(sender, from, from, null); // Intentionally both the same argument
 					})
 
 					// forceload addlazy from to
-					.then(new Location2DArgument("to", LocationType.BLOCK_POSITION)
+					.then(toArg
 						.executes((sender, args) -> {
-							load(sender, (Location2D) args[0], (Location2D) args[1], null);
+							load(sender, args.getByArgument(fromArg), args.getByArgument(toArg), null);
 						})
 
 						// forceload addlazy from to callback
-						.then(new FunctionArgument("callback")
+						.then(callbackArg
 							.executes((sender, args) -> {
-								load(sender, (Location2D) args[0], (Location2D) args[1], (FunctionWrapper[]) args[2]);
+								load(sender, args.getByArgument(fromArg), args.getByArgument(toArg), args.getByArgument(callbackArg));
 							})))))
 			.register();
 	}

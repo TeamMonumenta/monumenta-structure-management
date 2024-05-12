@@ -13,13 +13,17 @@ import org.bukkit.command.CommandSender;
 
 public class SaveStructure {
 	public static void register() {
+		TextArgument pathArg = new TextArgument("path");
+		LocationArgument pos1Arg = new LocationArgument("pos1");
+		LocationArgument pos2Arg = new LocationArgument("pos2");
+
 		new CommandAPICommand("savestructure")
 			.withPermission(CommandPermission.fromString("monumenta.structures"))
-			.withArguments(new TextArgument("path"))
-			.withArguments(new LocationArgument("pos1"))
-			.withArguments(new LocationArgument("pos2"))
+			.withArguments(pathArg)
+			.withArguments(pos1Arg)
+			.withArguments(pos2Arg)
 			.executes((sender, args) -> {
-				save(sender, (Location)args[1], (Location)args[2], (String)args[0]);
+				save(sender, args.getByArgument(pos1Arg), args.getByArgument(pos2Arg), args.getByArgument(pathArg));
 			})
 			.register();
 	}
