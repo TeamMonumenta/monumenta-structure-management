@@ -1,7 +1,6 @@
-import net.minecrell.pluginyml.bukkit.BukkitPluginDescription
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import net.ltgt.gradle.errorprone.errorprone
 import net.ltgt.gradle.errorprone.CheckSeverity
+import net.ltgt.gradle.errorprone.errorprone
+import net.minecrell.pluginyml.bukkit.BukkitPluginDescription
 
 plugins {
     java
@@ -19,43 +18,16 @@ plugins {
 repositories {
     mavenLocal()
     mavenCentral()
-
-    maven {
-        url = uri("mvn-repo")
-    }
-
-    maven {
-        url = uri("https://maven.pkg.github.com/TeamMonumenta/scripted-quests/")
-    }
-
-    maven {
-        url = uri("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
-    }
-
-    maven {
-        url = uri("https://repo.papermc.io/repository/maven-public/")
-    }
-
+    maven("mvn-repo")
+    maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
+    maven("https://repo.papermc.io/repository/maven-public/")
     // Adventure API needed by FAWE
-    maven {
-        url = uri("https://oss.sonatype.org/content/repositories/snapshots")
-    }
-
-    maven {
-        url = uri("https://jitpack.io")
-    }
-
-    maven {
-        url = uri("https://raw.githubusercontent.com/TeamMonumenta/scripted-quests/master/mvn-repo/")
-    }
-
-    maven {
-        url = uri("https://repo.maven.apache.org/maven2/")
-    }
-
-    maven {
-        url = uri("https://repo.codemc.org/repository/maven-public/")
-    }
+    maven("https://oss.sonatype.org/content/repositories/snapshots")
+    maven("https://jitpack.io")
+    maven("https://maven.playmonumenta.com/releases/")
+    maven("https://repo.maven.apache.org/maven2/")
+    maven("https://repo.codemc.org/repository/maven-public/")
+    maven("https://ci.mg-dev.eu/plugin/repository/everything")
 }
 
 dependencies {
@@ -69,7 +41,6 @@ dependencies {
     compileOnly("dev.jorel:commandapi-bukkit-core:9.4.1")
     compileOnly("com.google.code.gson:gson:2.8.5")
     compileOnly("com.playmonumenta:scripted-quests:7.0")
-
     errorprone("com.google.errorprone:error_prone_core:2.10.0")
     errorprone("com.uber.nullaway:nullaway:0.9.5")
 }
@@ -99,17 +70,28 @@ pmd {
     setIgnoreFailures(true)
 }
 
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
 publishing {
-    publications.create<MavenPublication>("maven") {
-        project.shadow.component(this)
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+        }
     }
     repositories {
         maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/TeamMonumenta/monumenta-structure-management")
+            name = "MonumentaMaven"
+            url = when (version.toString().endsWith("SNAPSHOT")) {
+                true -> uri("https://maven.playmonumenta.com/snapshots")
+                false -> uri("https://maven.playmonumenta.com/releases")
+            }
+
             credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
+                username = System.getenv("USERNAME")
+                password = System.getenv("TOKEN")
             }
         }
     }
@@ -132,14 +114,26 @@ tasks.withType<JavaCompile>().configureEach {
         /*** Disabled checks ***/
         // These we almost certainly don't want
         check("CatchAndPrintStackTrace", CheckSeverity.OFF) // This is the primary way a lot of exceptions are handled
-        check("FutureReturnValueIgnored", CheckSeverity.OFF) // This one is dumb and doesn't let you check return values with .whenComplete()
-        check("ImmutableEnumChecker", CheckSeverity.OFF) // Would like to turn this on but we'd have to annotate a bunch of base classes
-        check("LockNotBeforeTry", CheckSeverity.OFF) // Very few locks in our code, those that we have are simple and refactoring like this would be ugly
+        check(
+            "FutureReturnValueIgnored",
+            CheckSeverity.OFF
+        ) // This one is dumb and doesn't let you check return values with .whenComplete()
+        check(
+            "ImmutableEnumChecker",
+            CheckSeverity.OFF
+        ) // Would like to turn this on but we'd have to annotate a bunch of base classes
+        check(
+            "LockNotBeforeTry",
+            CheckSeverity.OFF
+        ) // Very few locks in our code, those that we have are simple and refactoring like this would be ugly
         check("StaticAssignmentInConstructor", CheckSeverity.OFF) // We have tons of these on purpose
         check("StringSplitter", CheckSeverity.OFF) // We have a lot of string splits too which are fine for this use
-        check("MutablePublicArray", CheckSeverity.OFF) // These are bad practice but annoying to refactor and low risk of actual bugs
+        check(
+            "MutablePublicArray",
+            CheckSeverity.OFF
+        ) // These are bad practice but annoying to refactor and low risk of actual bugs
         check("InlineMeSuggester", CheckSeverity.OFF) // This seems way overkill
     }
 }
 
-ssh.easySetup(tasks.named<ShadowJar>("shadowJar").get(), "MonumentaStructureManagement")
+ssh.easySetup(tasks.shadowJar.get(), "MonumentaStructureManagement")

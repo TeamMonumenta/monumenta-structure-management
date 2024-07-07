@@ -16,20 +16,41 @@ There are several core features provided here:
 You can download the latest version of this plugin from [GitHub Packages](https://github.com/TeamMonumenta/monumenta-structure-management/packages).
 
 ## Maven dependency
+Maven:
 ```xml
-    <repositories>
-        <repository>
-            <id>monumenta-structure-management</id>
-            <url>https://raw.githubusercontent.com/TeamMonumenta/monumenta-structure-management/master/mvn-repo/</url>
-        </repository>
-    </repositories>
+<repository>
+    <id>monumenta</id>
+    <name>Monumenta Maven Repo</name>
+    <url>https://maven.playmonumenta.com/releases</url>
+</repository>
+<dependencies>
+<dependency>
+    <groupId>com.playmonumenta</groupId>
+    <artifactId>structures</artifactId>
+    <version>10.2</version>
+    <scope>provided</scope>
+</dependency>
+</dependencies>
+```
+Gradle (kotlin):
+```kts
+maven {
+    name = "monumenta"
+    url = uri("https://maven.playmonumenta.com/releases")
+}
 
-    <dependencies>
-        <dependency>
-            <groupId>com.playmonumenta</groupId>
-            <artifactId>structures</artifactId>
-            <version>9.3</version>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
+dependencies {
+	compileOnly("com.playmonumenta:structures:10.2")
+}
+```
+Gradle (groovy):
+```groovy
+maven {
+    name "monumenta"
+    url "https://maven.playmonumenta.com/releases"
+}
+
+dependencies {
+    compileOnly "com.playmonumenta:structures:10.2"
+}
 ```
