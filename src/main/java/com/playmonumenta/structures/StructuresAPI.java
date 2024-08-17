@@ -54,6 +54,7 @@ import org.bukkit.block.ShulkerBox;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
 import org.bukkit.entity.Tameable;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -676,6 +677,11 @@ public class StructuresAPI {
 
 		/* Keep entities with the appropriate tag */
 		if (entity.getScoreboardTags().contains("RespawnPersistent")) {
+			return false;
+		}
+
+		/* Keep entities that a player is riding (mostly boats - horses are already not removed in any case) */
+		if (entity.getPassengers().stream().anyMatch(passenger -> passenger instanceof Player)) {
 			return false;
 		}
 

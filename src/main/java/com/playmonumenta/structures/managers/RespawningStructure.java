@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import net.kyori.adventure.text.Component;
@@ -56,6 +57,9 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		PLAYER_WITHIN,
 		NO_PLAYER_WITHIN
 	}
+
+	// Minimum respawn timer value while players are inside a POI to prevent immediate respawns when leaving
+	private static final int MIN_TICKS_LEFT_WITH_PLAYERS_INSIDE = 20 * 10;
 
 	private final StructuresPlugin mPlugin;
 	private final World mWorld;
@@ -323,8 +327,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 		StructuresAPI.loadAndPasteStructure(respawnPath, new Location(mWorld, mLoadPos.getBlockX(), mLoadPos.getBlockY(), mLoadPos.getBlockZ()), true, false).whenComplete((unused, exception) -> {
 			if (exception != null) {
-				mPlugin.getLogger().severe("Failed to respawn structure '" + mConfigLabel + "'");
-				exception.printStackTrace();
+				mPlugin.getLogger().log(Level.SEVERE, "Failed to respawn structure '" + mConfigLabel + "'", exception);
 			} else if (mPostRespawnCommand != null) {
 				Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), mPostRespawnCommand);
 			}
@@ -371,7 +374,9 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 	public void tellRespawnTime(Player player) {
 		Component message = Component.text(
-			mTicksLeft <= 0 ? mName + " will respawn when empty." : mName + " is respawning in " + MessagingUtils.durationToString(mTicksLeft),
+			mTicksLeft <= MIN_TICKS_LEFT_WITH_PLAYERS_INSIDE && !mForcedRespawn && mNextRespawnPath == null
+				? mName + " will respawn once all players have left the area."
+				: mName + " is respawning in " + MessagingUtils.durationToString(mTicksLeft) + (mForcedRespawn || mNextRespawnPath != null ? "" : " once all players have left the area."),
 			mTicksLeft <= 600 ? NamedTextColor.RED : NamedTextColor.GREEN
 		).decorate(TextDecoration.BOLD);
 
@@ -483,37 +488,40 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			}
 		}
 
-		mTicksLeft -= ticks;
-
-		if (mTicksLeft < 0) {
-			boolean isPlayerNearby = false;
-			boolean isPlayerWithin = false;
-			boolean isAmped = mNextRespawnPath != null;
-
-			for (Player player : mWorld.getPlayers()) {
-				if (player.getGameMode() != GameMode.SPECTATOR) {
-					if (isWithin(player)) {
-						isPlayerNearby = true;
-						isPlayerWithin = true;
-						break;
-					} else if (isNearby(player)) {
-						isPlayerNearby = true;
-						/* Don't break - another player might still be within */
-					}
+		boolean isPlayerNearby = false;
+		boolean isPlayerWithin = false;
+		for (Player player : mWorld.getPlayers()) {
+			if (player.getGameMode() != GameMode.SPECTATOR) {
+				if (isWithin(player)) {
+					isPlayerNearby = true;
+					isPlayerWithin = true;
+					break;
+				} else if (isNearby(player)) {
+					isPlayerNearby = true;
+					/* Don't break - another player might still be within */
 				}
 			}
+		}
 
+		boolean isAmped = mNextRespawnPath != null;
+		/*
+		 * To respawn, a player must be nearby (within the outer detection zone)
+		 * AND one of the following conditions
+		 */
+		boolean shouldRespawn = isPlayerNearby &&
+			                        (mForcedRespawn || // The POI was force to respawn by a player
+				                         isAmped || // The POI is amplified for the next spawn
+				                         mPlayerNearbyLastTick == NearbyState.NO_PLAYER_WITHIN || // There was no player nearby last check (they teleported in)
+				                         !isPlayerWithin); // There is no player within the POI itself, just nearby OR respawn is forced
 
-			/*
-			 * To respawn, a player must be nearby (within the outer detection zone)
-			 * AND one of the following conditions
-			 */
-			boolean shouldRespawn = isPlayerNearby &&
-					(mForcedRespawn || // The POI was force to respawn by a player
-					 isAmped || // The POI is amplified for the next spawn
-					 mPlayerNearbyLastTick == NearbyState.NO_PLAYER_WITHIN || // There was no player nearby last check (they teleported in)
-					 !isPlayerWithin); // There is no player within the POI itself, just nearby OR respawn is forced
+		if (isPlayerWithin && !shouldRespawn) {
+			// With players inside and no (forced) respawn happening, stop the timer before it gets to zero
+			mTicksLeft = Math.max(MIN_TICKS_LEFT_WITH_PLAYERS_INSIDE, mTicksLeft - ticks);
+		} else {
+			mTicksLeft -= ticks;
+		}
 
+		if (mTicksLeft < 0) {
 			mPlayerNearbyLastTick = isPlayerNearby ? NearbyState.PLAYER_WITHIN : NearbyState.NO_PLAYER_WITHIN;
 
 			if (shouldRespawn) {
@@ -580,6 +588,14 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 	public World getWorld() {
 		return mWorld;
+	}
+
+	public String getName() {
+		return mName;
+	}
+
+	public String getConfigLabel() {
+		return mConfigLabel;
 	}
 
 	public void registerZone() {
