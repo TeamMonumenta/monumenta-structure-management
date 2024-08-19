@@ -94,6 +94,13 @@ public class StructuresAPI {
 		return loadStructure(path).thenCompose((clipboard) -> pasteStructure(clipboard, pasteLoc, includeEntities, includeBiomes));
 	}
 
+	public static CompletableFuture<Void> loadAndPasteStructureFastUnsafe(@Nonnull String path, @Nonnull Location loc, boolean includeEntities, boolean includeBiomes) {
+		/* Clone the input variable to make sure the caller doesn't change it while we're still loading */
+		Location pasteLoc = loc.clone();
+
+		return loadStructure(path).thenCompose((clipboard) -> pasteStructure(clipboard, pasteLoc, includeEntities, includeBiomes, true));
+	}
+
 	/**
 	 * Loads a structure from the disk and returns it.
 	 * <p>
@@ -319,15 +326,19 @@ public class StructuresAPI {
 		return pasteStructure(clipboard, loc, includeEntities, false);
 	}
 
+	public static CompletableFuture<Void> pasteStructure(@Nonnull BlockArrayClipboard clipboard, @Nonnull Location loc, boolean includeEntities, boolean includeBiomes) {
+		return pasteStructure(clipboard, loc, includeEntities, includeBiomes, false);
+	}
+
 	/**
 	 * Pastes a structure at the given location, ignoring structure void similarly to vanilla structure blocks.
 	 * <p>
 	 * Must be called from main thread, will return immediately and do its work on an async thread
 	 */
-	public static CompletableFuture<Void> pasteStructure(@Nonnull BlockArrayClipboard clipboard, @Nonnull Location loc, boolean includeEntities, boolean includeBiomes) {
+	public static CompletableFuture<Void> pasteStructure(@Nonnull BlockArrayClipboard clipboard, @Nonnull Location loc, boolean includeEntities, boolean includeBiomes, boolean fastUnsafeMode) {
 		/*
 		 * This is the future given to the caller - when it's completed it should be safe to interact with the pasted area
-		 * In particular there is a 6s delay after pasting before this is marked as completed
+		 * In particular there is a 6s(safemode) delay after pasting before this is marked as completed
 		 */
 		CompletableFuture<Void> future = new CompletableFuture<>();
 
@@ -469,13 +480,13 @@ public class StructuresAPI {
 						MSLog.finer(() -> "Loading structure took " + (System.currentTimeMillis() - pasteTime) + " milliseconds (async)"); // STOP -->
 
 						/* Add a 5 tick delay until the next task for shifting */
-						Bukkit.getScheduler().runTaskLater(plugin, () -> signal.complete(null), 5);
+						Bukkit.getScheduler().runTaskLater(plugin, () -> signal.complete(null), fastUnsafeMode ? 0 : 5);
 
 						/* 6s later, signal caller that loading is complete */
-						Bukkit.getScheduler().runTaskLater(plugin, () -> future.complete(null), 120);
+						Bukkit.getScheduler().runTaskLater(plugin, () -> future.complete(null), fastUnsafeMode ? 10 : 120);
 
 						/* 10s later, unmark all chunks as force loaded */
-						Bukkit.getScheduler().runTaskLater(plugin, () -> unmarkChunksAsync(world, shiftedRegion), 200);
+						Bukkit.getScheduler().runTaskLater(plugin, () -> unmarkChunksAsync(world, shiftedRegion), fastUnsafeMode ? 30 : 200);
 
 					});
 				}
@@ -710,7 +721,7 @@ public class StructuresAPI {
 					}
 
 					try {
-						Thread.sleep(50);
+						Thread.sleep(25);
 					} catch (Exception ex) {
 						plugin.getLogger().info("Structure loading task sleep was interrupted");
 						RUNNING_TASK = null;
