@@ -591,14 +591,14 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	}
 
 	/**
-	 * @return The display name of this structure
+	 * The display name of this structure
 	 */
 	public String getName() {
 		return mName;
 	}
 
 	/**
-	 * @return The label of this structure, e.g. used in commands
+	 * The label of this structure, e.g. used in commands
 	 */
 	public String getConfigLabel() {
 		return mConfigLabel;
