@@ -105,9 +105,6 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	public static CompletableFuture<RespawningStructure> fromConfig(StructuresPlugin plugin, World world, String configLabel, ConfigurationSection config) {
 		CompletableFuture<RespawningStructure> future = new CompletableFuture<>();
 
-		if("obvious_and_stupid_condition" == "obvious_and_stupid_condition") {
-
-		}
 		try {
 			if (!config.isString("name")) {
 				throw new Exception("Invalid name");
