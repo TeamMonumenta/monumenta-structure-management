@@ -1,53 +1,5 @@
-name: Pull request CI
-
+name: Reviewdog checks 
 on: [pull_request]
-
 jobs:
-  reviewdog:
-    name: reviewdog
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Set up JDK 17
-      uses: actions/setup-java@v2
-      with:
-        distribution: 'zulu' # See 'Supported distributions' for available options
-        java-version: '17'
-
-    - name: Setup reviewdog
-      uses: reviewdog/action-setup@v1
-      with:
-        reviewdog_version: latest
-
-    - name: git config
-      run: |
-        git config --global user.name "Monumenta CI"
-        git config --global user.email "Monumenta.CI@NotARealEmail.com"
-
-    - name: Cache maven dependencies
-      uses: actions/cache@v2
-      env:
-        cache-name: cache-maven-dependencies
-      with:
-        # maven files are stored in `~/.m2/repository`
-        path: |
-          ~/.m2/repository
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        # Create the key based on runner os, cache name, and a hash of all the pom.xml files
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-        restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-
-          ${{ runner.os }}-build-
-          ${{ runner.os }}-
-
-    - name: Build and report style/pmd/warnings
-      env:
-        REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        set -o pipefail
-        ./gradlew build --console=plain 2>&1 | tee compile.log
-        set +o pipefail
-        cat compile.log | reviewdog -efm="%W%f:%l: warning: %m" -efm="%+C%[ %\t]%.%#" -name="compiler-warnings" -reporter=github-pr-check
-        cat build/reports/pmd/main.xml | reviewdog -efm='%+P<file name="%f">' -efm='%W<violation beginline="%l%.%#begincolumn="%c%.%#' -efm='%-C<%.%#' -efm='%+C%.%#' -efm='%-Q' -name="pmd" -reporter=github-pr-check
-        cat build/reports/checkstyle/main.xml | reviewdog -f=checkstyle -name="checkstyle" -reporter=github-pr-check
+  call-pr-common:
+    uses: TeamMonumenta/monumenta-automation/.github/workflows/plugin_pr_common.yml@master
