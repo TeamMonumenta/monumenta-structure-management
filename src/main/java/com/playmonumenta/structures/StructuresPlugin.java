@@ -26,6 +26,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitWorker;
 
 public class StructuresPlugin extends JavaPlugin {
 	public @Nullable RespawnManager mRespawnManager = null;
@@ -82,6 +83,19 @@ public class StructuresPlugin extends JavaPlugin {
 			mRespawnManager = null;
 		}
 
+		// Log any async threads that haven't finished yet
+		for (BukkitWorker worker : Bukkit.getScheduler().getActiveWorkers()) {
+			if (!worker.getOwner().equals(this)) {
+				continue;
+			}
+
+			Thread thread = worker.getThread();
+			StringBuilder builder = new StringBuilder("Unterminated thread stacktrace:");
+			for (StackTraceElement traceElement : thread.getStackTrace()) {
+				builder.append("\n\tat ").append(traceElement);
+			}
+			getLogger().severe(builder.toString());
+		}
 		// Cancel any remaining tasks
 		getServer().getScheduler().cancelTasks(this);
 
