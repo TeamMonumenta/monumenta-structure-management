@@ -3,19 +3,13 @@ package com.playmonumenta.structures.utils;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Objects;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 
 public class MessagingUtils {
 	public static void sendStackTrace(CommandSender sender, Throwable e) {
-		TextComponent formattedMessage;
 		String errorMessage = e.getLocalizedMessage();
-		formattedMessage = new TextComponent(Objects.requireNonNullElse(errorMessage, "An error occurred without a set message. Hover for stack trace."));
-		formattedMessage.setColor(ChatColor.RED);
 
 		// Get the first 300 characters of the stacktrace and send them to the player
 		StringWriter sw = new StringWriter();
@@ -24,10 +18,12 @@ public class MessagingUtils {
 		String sStackTrace = sw.toString();
 		sStackTrace = sStackTrace.substring(0, Math.min(sStackTrace.length(), 300));
 
-		BaseComponent[] textStackTrace = new ComponentBuilder(sStackTrace.replace("\t",
-			"  ")).color(ChatColor.RED).create();
-		formattedMessage.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, textStackTrace));
-		sender.spigot().sendMessage(formattedMessage);
+        final var formattedMessage = Component.text(
+            Objects.requireNonNullElse(errorMessage, "An error occurred without a set message. Hover for stack trace."),
+            NamedTextColor.RED
+        ).hoverEvent(Component.text(sStackTrace, NamedTextColor.RED).asHoverEvent());
+
+		sender.sendMessage(formattedMessage);
 	}
 
 	public static String durationToString(int ticks) {

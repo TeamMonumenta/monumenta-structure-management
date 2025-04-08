@@ -1,6 +1,5 @@
 package com.playmonumenta.structures;
 
-import com.fastasyncworldedit.core.FaweAPI;
 import com.fastasyncworldedit.core.extent.clipboard.DiskOptimizedClipboard;
 import com.fastasyncworldedit.core.extent.processor.lighting.RelightMode;
 import com.playmonumenta.structures.utils.CommandUtils;
