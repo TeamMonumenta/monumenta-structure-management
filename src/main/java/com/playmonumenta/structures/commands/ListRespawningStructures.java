@@ -18,12 +18,12 @@ public class ListRespawningStructures {
 		Argument<String> labelArg = new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES);
 
 		new CommandAPICommand(command)
-			.withPermission(perms)
-			.withOptionalArguments(labelArg)
-			.executes((sender, args) -> {
-				list(sender, args.getByArgument(labelArg));
-			})
-			.register();
+				.withPermission(perms)
+				.withOptionalArguments(labelArg)
+				.executes((sender, args) -> {
+					list(sender, args.getByArgument(labelArg));
+				})
+				.register();
 	}
 
 	private static void list(CommandSender sender, @Nullable String label) {

@@ -23,14 +23,14 @@ public class SetSpawnerBreakTrigger {
 		GreedyStringArgument questComponentArg = new GreedyStringArgument("quest_component");
 
 		new CommandAPICommand(command)
-			.withPermission(perms)
-			.withArguments(labelArg)
-			.withOptionalArguments(spawnerCountArg)
-			.withOptionalArguments(questComponentArg)
-			.executes((sender, args) -> {
-				setTrigger(sender, args.getByArgument(labelArg), args.getByArgumentOrDefault(spawnerCountArg, 0), args.getByArgument(questComponentArg));
-			})
-			.register();
+				.withPermission(perms)
+				.withArguments(labelArg)
+				.withOptionalArguments(spawnerCountArg)
+				.withOptionalArguments(questComponentArg)
+				.executes((sender, args) -> {
+					setTrigger(sender, args.getByArgument(labelArg), args.getByArgumentOrDefault(spawnerCountArg, 0), args.getByArgument(questComponentArg));
+				})
+				.register();
 	}
 
 	private static void setTrigger(CommandSender sender, String label, int spawnerCount, @Nullable String questComponentStr) {
@@ -46,9 +46,9 @@ public class SetSpawnerBreakTrigger {
 		}
 
 		if (questComponentStr != null) {
-			sender.sendMessage("Successfully set spawner break trigger");
+			sender.sendMessage(Component.text("Successfully set spawner break trigger"));
 		} else {
-			sender.sendMessage("Successfully unset spawner break trigger");
+			sender.sendMessage(Component.text("Successfully unset spawner break trigger"));
 		}
 	}
 }

@@ -22,20 +22,20 @@ public class ActivateSpecialStructure {
 		TextArgument pathArg = new TextArgument("special_structure_path");
 
 		new CommandAPICommand(command)
-			.withPermission(perms)
-			.withArguments(labelArg)
-			.withArguments(pathArg)
-			.executes((sender, args) -> {
-				activate(sender, plugin, args.getByArgument(labelArg), args.getByArgument(pathArg));
-			})
-			.register();
+				.withPermission(perms)
+				.withArguments(labelArg)
+				.withArguments(pathArg)
+				.executes((sender, args) -> {
+					activate(sender, plugin, args.getByArgument(labelArg), args.getByArgument(pathArg));
+				})
+				.register();
 	}
 
 	private static void activate(CommandSender sender, Plugin plugin, String label, String path) {
 		try {
 			CommandUtils.getAndValidateSchematicPath(plugin, path, true);
 			RespawnManager.getInstance().activateSpecialStructure(label, path);
-			sender.sendMessage("Successfully activated special structure");
+			sender.sendMessage(Component.text("Successfully activated special structure"));
 		} catch (Exception e) {
 			sender.sendMessage(Component.text("Got error while attempting to activate special structure: " + e.getMessage(), NamedTextColor.RED));
 			MessagingUtils.sendStackTrace(sender, e);

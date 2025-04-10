@@ -19,13 +19,13 @@ public class RespawnStructure {
 		IntegerArgument ticksUntilRespawnArg = new IntegerArgument("ticks_until_respawn", 0);
 
 		new CommandAPICommand(command)
-			.withPermission(perms)
-			.withArguments(labelArg)
-			.withOptionalArguments(ticksUntilRespawnArg)
-			.executes((sender, args) -> {
-				respawn(sender, args.getByArgument(labelArg), args.getByArgumentOrDefault(ticksUntilRespawnArg, 600));
-			})
-			.register();
+				.withPermission(perms)
+				.withArguments(labelArg)
+				.withOptionalArguments(ticksUntilRespawnArg)
+				.executes((sender, args) -> {
+					respawn(sender, args.getByArgument(labelArg), args.getByArgumentOrDefault(ticksUntilRespawnArg, 600));
+				})
+				.register();
 	}
 
 	private static void respawn(CommandSender sender, String label, Integer ticksUntilRespawn) {

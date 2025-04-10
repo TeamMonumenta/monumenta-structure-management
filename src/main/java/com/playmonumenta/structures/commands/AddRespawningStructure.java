@@ -11,12 +11,12 @@ import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.arguments.TextArgument;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 
 public class AddRespawningStructure {
+	@SuppressWarnings("DataFlowIssue")
 	public static void register(Plugin plugin) {
 		final String command = "addrespawningstructure";
 		final CommandPermission perms = CommandPermission.fromString("monumenta.structures");
@@ -29,24 +29,24 @@ public class AddRespawningStructure {
 		TextArgument nameArg = new TextArgument("name");
 
 		new CommandAPICommand(command)
-			.withPermission(perms)
-			.withArguments(labelArg)
-			.withArguments(pathArg)
-			.withArguments(locationArg)
-			.withArguments(radiusArg)
-			.withArguments(respawnTimeArg)
-			.withArguments(nameArg)
-			.executes((sender, args) -> {
-				add(sender, plugin, args.getByArgument(labelArg), args.getByArgument(pathArg), args.getByArgument(locationArg), args.getByArgument(radiusArg), args.getByArgument(respawnTimeArg), args.getByArgument(nameArg));
-			})
-			.register();
+				.withPermission(perms)
+				.withArguments(labelArg)
+				.withArguments(pathArg)
+				.withArguments(locationArg)
+				.withArguments(radiusArg)
+				.withArguments(respawnTimeArg)
+				.withArguments(nameArg)
+				.executes((sender, args) -> {
+					add(sender, plugin, args.getByArgument(labelArg), args.getByArgument(pathArg), args.getByArgument(locationArg), args.getByArgument(radiusArg), args.getByArgument(respawnTimeArg), args.getByArgument(nameArg));
+				})
+				.register();
 	}
 
 	public static void add(CommandSender sender, Plugin plugin, String label, String path, Location loc, int extraRadius, int respawnTime, String name) {
 		try {
 			CommandUtils.getAndValidateSchematicPath(plugin, path, true);
 		} catch (Exception e) {
-			sender.sendMessage(ChatColor.RED + "Got error while attempting to add structure: " + e.getMessage());
+			sender.sendMessage(Component.text("Got error while attempting to add structure: " + e.getMessage(), NamedTextColor.RED));
 			MessagingUtils.sendStackTrace(sender, e);
 			return;
 		}
@@ -55,7 +55,7 @@ public class AddRespawningStructure {
 			if (ex != null) {
 				sender.sendMessage(Component.text("Failed to add structure: " + ex.getMessage(), NamedTextColor.RED));
 			} else {
-				sender.sendMessage("Structure added successfully");
+				sender.sendMessage(Component.text("Structure added successfully"));
 			}
 		});
 	}

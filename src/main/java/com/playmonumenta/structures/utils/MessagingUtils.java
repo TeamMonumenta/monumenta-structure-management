@@ -1,13 +1,29 @@
 package com.playmonumenta.structures.utils;
 
+import com.playmonumenta.structures.StructuresPlugin;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Objects;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.command.CommandSender;
 
 public class MessagingUtils {
+	public static final LegacyComponentSerializer LEGACY_SERIALIZER = LegacyComponentSerializer.legacySection();
+	public static final PlainTextComponentSerializer PLAIN_SERIALIZER = PlainTextComponentSerializer.plainText();
+
+	public static String plainText(Component formattedText) {
+		// This is only legacy text because we have a bunch of section symbols lying around that need to be updated.
+		String legacyText = PLAIN_SERIALIZER.serialize(formattedText);
+		return plainFromLegacy(legacyText);
+	}
+
+	public static String plainFromLegacy(String legacyText) {
+		return PLAIN_SERIALIZER.serialize(LEGACY_SERIALIZER.deserialize(legacyText));
+	}
+
 	public static void sendStackTrace(CommandSender sender, Throwable e) {
 		String errorMessage = e.getLocalizedMessage();
 
@@ -15,8 +31,8 @@ public class MessagingUtils {
 		StringWriter sw = new StringWriter();
 		PrintWriter pw = new PrintWriter(sw);
 		e.printStackTrace(pw);
-		String sStackTrace = sw.toString();
-		sStackTrace = sStackTrace.substring(0, Math.min(sStackTrace.length(), 300));
+		String rawStackTrace = sw.toString();
+		String sStackTrace = rawStackTrace.substring(0, Math.min(rawStackTrace.length(), 300));
 
 		final var formattedMessage = Component.text(
 				Objects.requireNonNullElse(errorMessage, "An error occurred without a set message. Hover for stack trace."),
@@ -24,6 +40,7 @@ public class MessagingUtils {
 		).hoverEvent(Component.text(sStackTrace, NamedTextColor.RED).asHoverEvent());
 
 		sender.sendMessage(formattedMessage);
+		StructuresPlugin.getInstance().getLogger().warning(errorMessage + "\n" + rawStackTrace);
 	}
 
 	public static String durationToString(int ticks) {

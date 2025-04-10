@@ -17,14 +17,14 @@ public class CompassRespawn {
 		Argument<String> labelArg = new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES);
 
 		new CommandAPICommand(command)
-			.withPermission(perms)
-			.withArguments(labelArg)
-			.executes((sender, args) -> {
-				if (sender instanceof Player player) {
-					forceRespawn(player, args.getByArgument(labelArg));
-				}
-			})
-			.register();
+				.withPermission(perms)
+				.withArguments(labelArg)
+				.executes((sender, args) -> {
+					if (sender instanceof Player player) {
+						forceRespawn(player, args.getByArgument(labelArg));
+					}
+				})
+				.register();
 	}
 
 	private static void forceRespawn(Player player, String label) {

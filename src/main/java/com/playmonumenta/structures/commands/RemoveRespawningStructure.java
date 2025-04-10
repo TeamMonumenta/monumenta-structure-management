@@ -14,12 +14,12 @@ public class RemoveRespawningStructure {
 		Argument<String> labelArg = new StringArgument("label").replaceSuggestions(RespawnManager.SUGGESTIONS_STRUCTURES);
 
 		new CommandAPICommand("removerespawningstructure")
-			.withPermission(CommandPermission.fromString("monumenta.structures"))
-			.withArguments(labelArg)
-			.executes((sender, args) -> {
-				remove(sender, args.getByArgument(labelArg));
-			})
-			.register();
+				.withPermission(CommandPermission.fromString("monumenta.structures"))
+				.withArguments(labelArg)
+				.executes((sender, args) -> {
+					remove(sender, args.getByArgument(labelArg));
+				})
+				.register();
 	}
 
 	private static void remove(CommandSender sender, String label) {
@@ -30,6 +30,6 @@ public class RemoveRespawningStructure {
 			return;
 		}
 
-		sender.sendMessage("Structure '" + label + "' no longer respawns automatically");
+		sender.sendMessage(Component.text("Structure '" + label + "' no longer respawns automatically"));
 	}
 }

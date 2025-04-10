@@ -7,6 +7,7 @@ import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.LocationArgument;
 import dev.jorel.commandapi.arguments.TextArgument;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
@@ -18,27 +19,26 @@ public class SaveStructure {
 		LocationArgument pos2Arg = new LocationArgument("pos2");
 
 		new CommandAPICommand("savestructure")
-			.withPermission(CommandPermission.fromString("monumenta.structures"))
-			.withArguments(pathArg)
-			.withArguments(pos1Arg)
-			.withArguments(pos2Arg)
-			.executes((sender, args) -> {
-				save(sender, args.getByArgument(pos1Arg), args.getByArgument(pos2Arg), args.getByArgument(pathArg));
-			})
-			.register();
+				.withPermission(CommandPermission.fromString("monumenta.structures"))
+				.withArguments(pathArg)
+				.withArguments(pos1Arg)
+				.withArguments(pos2Arg)
+				.executes((sender, args) -> {
+					save(sender, args.getByArgument(pos1Arg), args.getByArgument(pos2Arg), args.getByArgument(pathArg));
+				})
+				.register();
 	}
 
 	private static void save(CommandSender sender, Location loc1, Location loc2, String path) {
-		sender.sendMessage("Started saving structure '" + path + "'");
+		sender.sendMessage(Component.text("Started saving structure '" + path + "'"));
 		Bukkit.getScheduler().runTaskAsynchronously(StructuresPlugin.getInstance(), () -> {
 			try {
 				StructuresAPI.copyAreaAndSaveStructure(path, loc1, loc2).get();
-				Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> sender.sendMessage("Saved structure '" + path + "'"));
+				Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> sender.sendMessage(Component.text("Saved structure '" + path + "'")));
 			} catch (Exception e) {
 				Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> {
-					sender.sendMessage("Failed to save structure" + e.getMessage());
+					sender.sendMessage(Component.text("Failed to save structure" + e.getMessage()));
 					StructuresPlugin.getInstance().getLogger().severe("Caught exception saving structure: " + e.getMessage());
-					e.printStackTrace();
 					MessagingUtils.sendStackTrace(sender, e);
 				});
 			}

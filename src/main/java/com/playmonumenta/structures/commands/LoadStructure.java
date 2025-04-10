@@ -18,6 +18,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 
 public class LoadStructure {
+	@SuppressWarnings("DataFlowIssue")
 	public static void register() {
 		final String command = "loadstructure";
 		final CommandPermission perms = CommandPermission.fromString("monumenta.structures");
@@ -30,31 +31,31 @@ public class LoadStructure {
 
 		// Skips biomeArg
 		new CommandAPICommand(command)
-			.withPermission(perms)
-			.withArguments(pathArg)
-			.withArguments(positionArg)
-			.withArguments(includeEntitiesArg)
-			.withArguments(functionArg)
-			.executes((sender, args) -> {
-				load(sender, args.getByArgument(pathArg), args.getByArgument(positionArg), args.getByArgumentOrDefault(includeEntitiesArg, false), false, args.getByArgument(functionArg));
-			})
-			.register();
+				.withPermission(perms)
+				.withArguments(pathArg)
+				.withArguments(positionArg)
+				.withArguments(includeEntitiesArg)
+				.withArguments(functionArg)
+				.executes((sender, args) -> {
+					load(sender, args.getByArgument(pathArg), args.getByArgument(positionArg), args.getByArgumentOrDefault(includeEntitiesArg, false), false, args.getByArgument(functionArg));
+				})
+				.register();
 
 		new CommandAPICommand(command)
-			.withPermission(perms)
-			.withArguments(pathArg)
-			.withArguments(positionArg)
-			.withOptionalArguments(includeEntitiesArg)
-			.withOptionalArguments(includeBiomesArg)
-			.withOptionalArguments(functionArg)
-			.executes((sender, args) -> {
-				load(sender, args.getByArgument(pathArg), args.getByArgument(positionArg), args.getByArgumentOrDefault(includeEntitiesArg, false), args.getByArgumentOrDefault(includeBiomesArg, false), args.getByArgument(functionArg));
-			})
-			.register();
+				.withPermission(perms)
+				.withArguments(pathArg)
+				.withArguments(positionArg)
+				.withOptionalArguments(includeEntitiesArg)
+				.withOptionalArguments(includeBiomesArg)
+				.withOptionalArguments(functionArg)
+				.executes((sender, args) -> {
+					load(sender, args.getByArgument(pathArg), args.getByArgument(positionArg), args.getByArgumentOrDefault(includeEntitiesArg, false), args.getByArgumentOrDefault(includeBiomesArg, false), args.getByArgument(functionArg));
+				})
+				.register();
 	}
 
 	private static void load(CommandSender sender, String path, Location loadLoc, boolean includeEntities, boolean includeBiomes, @Nullable FunctionWrapper[] postFunc) {
-		sender.sendMessage("Started loading structure '" + path + "' at (" + loadLoc.getBlockX() + " " + loadLoc.getBlockY() + " " + loadLoc.getBlockZ() + ")");
+		sender.sendMessage(Component.text("Started loading structure '" + path + "' at (" + loadLoc.getBlockX() + " " + loadLoc.getBlockY() + " " + loadLoc.getBlockZ() + ")"));
 
 		StructuresAPI.loadAndPasteStructure(path, loadLoc, includeEntities, includeBiomes).whenComplete((unused, ex) -> {
 			if (ex != null) {
@@ -68,7 +69,6 @@ public class LoadStructure {
 				}
 				if (senderLoaded) {
 					sender.sendMessage(Component.text("Failed to load structure: " + ex.getMessage(), NamedTextColor.RED));
-					ex.printStackTrace();
 					MessagingUtils.sendStackTrace(sender, ex);
 				}
 			} else {
@@ -86,7 +86,7 @@ public class LoadStructure {
 					senderLoaded = true;
 				}
 				if (senderLoaded) {
-					sender.sendMessage("Loaded structure '" + path + "' at (" + loadLoc.getBlockX() + " " + loadLoc.getBlockY() + " " + loadLoc.getBlockZ() + ")");
+					sender.sendMessage(Component.text("Loaded structure '" + path + "' at (" + loadLoc.getBlockX() + " " + loadLoc.getBlockY() + " " + loadLoc.getBlockZ() + ")"));
 				}
 			}
 		});
