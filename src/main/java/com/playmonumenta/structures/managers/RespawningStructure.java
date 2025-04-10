@@ -265,6 +265,12 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 		mGenericVariants.addAll(genericPaths);
 
+		// Temporary values to be overwritten on first load
+		Vector origin = new Vector(0, 0, 0);
+		StructureBounds invalidBounds = new StructureBounds(origin, origin);
+		mInnerBounds = invalidBounds;
+		mOuterBounds = invalidBounds;
+
 		// Set the next respawn path (or not if null)
 		activateSpecialStructure(nextRespawnPath);
 	}
