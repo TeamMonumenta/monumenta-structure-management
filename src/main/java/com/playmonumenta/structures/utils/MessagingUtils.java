@@ -18,10 +18,10 @@ public class MessagingUtils {
 		String sStackTrace = sw.toString();
 		sStackTrace = sStackTrace.substring(0, Math.min(sStackTrace.length(), 300));
 
-        final var formattedMessage = Component.text(
-            Objects.requireNonNullElse(errorMessage, "An error occurred without a set message. Hover for stack trace."),
-            NamedTextColor.RED
-        ).hoverEvent(Component.text(sStackTrace, NamedTextColor.RED).asHoverEvent());
+		final var formattedMessage = Component.text(
+				Objects.requireNonNullElse(errorMessage, "An error occurred without a set message. Hover for stack trace."),
+				NamedTextColor.RED
+		).hoverEvent(Component.text(sStackTrace, NamedTextColor.RED).asHoverEvent());
 
 		sender.sendMessage(formattedMessage);
 	}
