@@ -17,6 +17,12 @@ dependencies {
     }
 }
 
+tasks {
+    javadoc {
+        (options as StandardJavadocDocletOptions).addBooleanOption("Xdoclint:none", true)
+    }
+}
+
 monumenta {
     name("MonumentaStructureManagement")
     paper(
