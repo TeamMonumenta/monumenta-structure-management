@@ -292,7 +292,7 @@ public class StructuresAPI {
 						ForwardExtentCopy copy = new ForwardExtentCopy(extent, cReg, clipboard, cReg.getMinimumPoint());
 						copy.setCopyingEntities(true);
 						copy.setCopyingBiomes(true);
-						Operations.completeLegacy(copy);
+						Operations.complete(copy);
 
 						Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> future.complete(clipboard));
 
