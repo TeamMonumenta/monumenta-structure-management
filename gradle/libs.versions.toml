@@ -1,6 +1,5 @@
 [versions]
 fawe = "2.9.1"
-light-cleaner = "1.19.3-v1"
 bkcommonlib = "1.21.4-v1"
 commandapi = "9.4.1"
 sq = "7.5"
@@ -8,7 +7,6 @@ sq = "7.5"
 [libraries]
 fawe-core = { module = "com.fastasyncworldedit:FastAsyncWorldEdit-Core", version.ref = "fawe" }
 fawe-bukkit = { module = "com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit", version.ref = "fawe" }
-light-cleaner = { module = "com.bergerkiller.bukkit:LightCleaner", version.ref = "light-cleaner" }
 bkcommonlib = { module = "com.bergerkiller.bukkit:BKCommonLib", version.ref = "bkcommonlib" }
 commandapi = { module = "dev.jorel:commandapi-bukkit-core", version.ref = "commandapi" }
 sq = { module = "com.playmonumenta:scripted-quests", version.ref = "sq" }
