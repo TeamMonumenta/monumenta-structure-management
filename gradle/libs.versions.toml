@@ -1,5 +1,5 @@
 [versions]
-fawe = "2.9.2"
+fawe = "2.9.1"
 bkcommonlib = "1.21.1-v1"
 commandapi = "9.4.1"
 sq = "7.5"
