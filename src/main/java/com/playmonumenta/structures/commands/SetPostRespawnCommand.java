@@ -20,13 +20,13 @@ public class SetPostRespawnCommand {
 		TextArgument commandArg = new TextArgument("command");
 
 		new CommandAPICommand(command)
-			.withPermission(perms)
-			.withArguments(labelArg)
-			.withOptionalArguments(commandArg)
-			.executes((sender, args) -> {
-				setCommand(sender, args.getByArgument(labelArg), args.getByArgument(commandArg));
-			})
-			.register();
+				.withPermission(perms)
+				.withArguments(labelArg)
+				.withOptionalArguments(commandArg)
+				.executes((sender, args) -> {
+					setCommand(sender, args.getByArgument(labelArg), args.getByArgument(commandArg));
+				})
+				.register();
 	}
 
 	private static void setCommand(CommandSender sender, String label, @Nullable String command) {
@@ -42,9 +42,9 @@ public class SetPostRespawnCommand {
 		}
 
 		if (command != null) {
-			sender.sendMessage("Successfully set post_respawn_command to '" + command + "'");
+			sender.sendMessage(Component.text("Successfully set post_respawn_command to '" + command + "'"));
 		} else {
-			sender.sendMessage("Successfully unset post_respawn_command");
+			sender.sendMessage(Component.text("Successfully unset post_respawn_command"));
 		}
 	}
 }

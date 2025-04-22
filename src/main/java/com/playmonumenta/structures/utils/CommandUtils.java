@@ -4,7 +4,8 @@ import java.io.File;
 import java.nio.file.Paths;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.BlockCommandSender;
@@ -50,8 +51,8 @@ public class CommandUtils {
 			value = Integer.parseInt(str);
 		} catch (NumberFormatException e) {
 			if (sender != null) {
-				sender.sendMessage(ChatColor.RED + "Invalid parameter " + str +
-				". Must be whole number value between " + Integer.MIN_VALUE + " and " + Integer.MAX_VALUE);
+				sender.sendMessage(Component.text("Invalid parameter " + str +
+						". Must be whole number value between " + Integer.MIN_VALUE + " and " + Integer.MAX_VALUE, NamedTextColor.RED));
 			}
 			throw new Exception(e);
 		}

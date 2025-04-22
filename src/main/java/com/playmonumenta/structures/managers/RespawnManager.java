@@ -6,9 +6,11 @@ import com.playmonumenta.scriptedquests.zones.ZoneFragment;
 import com.playmonumenta.scriptedquests.zones.ZoneManager;
 import com.playmonumenta.scriptedquests.zones.ZoneNamespace;
 import com.playmonumenta.structures.StructuresPlugin;
+import com.playmonumenta.structures.utils.MessagingUtils;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,8 +21,10 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import javax.annotation.Nullable;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
@@ -94,7 +98,12 @@ public class RespawnManager {
 		// Load the structures asynchronously so this doesn't hold up the start of the server
 		ConfigurationSection respawnSection = config.getConfigurationSection("respawning_structures");
 
-		Set<String> keys = respawnSection.getKeys(false);
+		Set<String> keys;
+		if (respawnSection == null) {
+			keys = new HashSet<>();
+		} else {
+			keys = respawnSection.getKeys(false);
+		}
 
 		mZoneNamespaceInside = new ZoneNamespace(ZONE_NAMESPACE_INSIDE);
 		mZoneNamespaceNearby = new ZoneNamespace(ZONE_NAMESPACE_NEARBY, true);
@@ -115,7 +124,7 @@ public class RespawnManager {
 				numRemaining.decrementAndGet();
 				if (ex != null) {
 					mPlugin.getLogger().warning("Failed to load respawning structure entry '" + key + "': " + ex.getMessage());
-					ex.printStackTrace();
+					MessagingUtils.sendStackTrace(Bukkit.getConsoleSender(), ex);
 				} else {
 					mRespawns.put(key, structure);
 					mPlugin.getLogger().info("Successfully loaded respawning structure '" + key + "': ");
@@ -206,19 +215,19 @@ public class RespawnManager {
 		return structures;
 	}
 
-	/* Human readable */
+	/* Human-readable */
 	public void listStructures(CommandSender sender) {
 		if (mRespawns.isEmpty()) {
-			sender.sendMessage("No respawning structures registered");
+			sender.sendMessage(Component.text("No respawning structures registered"));
 			return;
 		}
 
-		sender.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + "Respawning Structure List");
-		StringBuilder structuresString = new StringBuilder(ChatColor.GREEN + "");
-		for (Map.Entry<String, RespawningStructure> entry : mRespawns.entrySet()) {
-			structuresString.append(entry.getKey()).append("  ");
+		sender.sendMessage(Component.text("Respawning Structure List", NamedTextColor.GOLD, TextDecoration.BOLD));
+		StringBuilder structuresString = new StringBuilder();
+		for (String key : mRespawns.keySet()) {
+			structuresString.append(key).append("  ");
 		}
-		sender.sendMessage(structuresString.toString());
+		sender.sendMessage(Component.text(structuresString.toString(), NamedTextColor.GREEN));
 	}
 
 	/* Machine-readable list */
@@ -227,8 +236,10 @@ public class RespawnManager {
 	}
 
 	public void structureInfo(CommandSender sender, String label) throws Exception {
-		sender.sendMessage(ChatColor.GREEN + label + " : " + ChatColor.RESET +
-		                   getStructure(label).getInfoString());
+		sender.sendMessage(Component.empty()
+				.append(Component.text(label + " : ", NamedTextColor.GREEN))
+				.append(Component.text(getStructure(label).getInfoString()))
+		);
 	}
 
 	public void setTimer(String label, int ticksUntilRespawn) throws Exception {
@@ -263,7 +274,7 @@ public class RespawnManager {
 		}
 
 		if (!nearbyStruct) {
-			player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "You are not within range of a respawning area");
+			player.sendMessage(Component.text("You are not within range of a respawning area", NamedTextColor.RED, TextDecoration.BOLD));
 		}
 	}
 

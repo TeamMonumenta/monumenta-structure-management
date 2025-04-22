@@ -27,7 +27,6 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -47,8 +46,8 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 		public boolean within(Vector vec) {
 			return vec.getX() >= mLowerCorner.getX() && vec.getX() <= mUpperCorner.getX() &&
-			       vec.getY() >= mLowerCorner.getY() && vec.getY() <= mUpperCorner.getY() &&
-			       vec.getZ() >= mLowerCorner.getZ() && vec.getZ() <= mUpperCorner.getZ();
+					vec.getY() >= mLowerCorner.getY() && vec.getY() <= mUpperCorner.getY() &&
+					vec.getZ() >= mLowerCorner.getZ() && vec.getZ() <= mUpperCorner.getZ();
 		}
 	}
 
@@ -146,10 +145,10 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			}
 
 			return withParameters(plugin, world, config.getInt("extra_detection_radius"), configLabel,
-								  config.getString("name"), config.getStringList("structure_paths"),
-								  new Vector(config.getInt("x"), config.getInt("y"), config.getInt("z")),
-								  config.getInt("respawn_period"), config.getInt("ticks_until_respawn"),
-								  postRespawnCommand, specialPaths, nextRespawnPath, spawnerBreakTrigger);
+					config.getString("name"), config.getStringList("structure_paths"),
+					new Vector(config.getInt("x"), config.getInt("y"), config.getInt("z")),
+					config.getInt("respawn_period"), config.getInt("ticks_until_respawn"),
+					postRespawnCommand, specialPaths, nextRespawnPath, spawnerBreakTrigger);
 		} catch (Exception ex) {
 			future.completeExceptionally(ex);
 			return future;
@@ -182,9 +181,9 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			}
 
 			RespawningStructure structure = new RespawningStructure(plugin, world, extraRadius,
-			                                                        configLabel, name, genericPaths,
-			                                                        loadPos, respawnTime, ticksLeft,
-			                                                        postRespawnCommand,
+					configLabel, name, genericPaths,
+					loadPos, respawnTime, ticksLeft,
+					postRespawnCommand,
 					nextRespawnPath, spawnerBreakTrigger);
 
 			// Load the first schematic to get its size
@@ -203,7 +202,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 				structure.mInnerBounds = new StructureBounds(structure.mLoadPos, structure.mLoadPos.clone().add(new Vector(structureSize.getX(), structureSize.getY(), structureSize.getZ())));
 				Vector extraRadiusVec = new Vector(structure.mExtraRadius, structure.mExtraRadius, structure.mExtraRadius);
 				structure.mOuterBounds = new StructureBounds(structure.mInnerBounds.mLowerCorner.clone().subtract(extraRadiusVec),
-					structure.mInnerBounds.mUpperCorner.clone().add(extraRadiusVec));
+						structure.mInnerBounds.mUpperCorner.clone().add(extraRadiusVec));
 
 				// save locations of structure void blocks
 				int size1 = 1 + (Math.max(clipboard.getDimensions().getBlockX(), Math.max(clipboard.getDimensions().getBlockY(), clipboard.getDimensions().getBlockZ())) >> 4);
@@ -265,18 +264,24 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 		mGenericVariants.addAll(genericPaths);
 
+		// Temporary values to be overwritten on first load
+		Vector origin = new Vector(0, 0, 0);
+		StructureBounds invalidBounds = new StructureBounds(origin, origin);
+		mInnerBounds = invalidBounds;
+		mOuterBounds = invalidBounds;
+
 		// Set the next respawn path (or not if null)
 		activateSpecialStructure(nextRespawnPath);
 	}
 
 	public String getInfoString() {
 		return "name='" + mName + "' pos=(" + mLoadPos.getBlockX() + " " +
-		       mLoadPos.getBlockY() + " " + mLoadPos.getBlockZ() +
-		       ") paths={" + String.join(" ", mGenericVariants) + "} period=" + mRespawnTime + " ticksLeft=" +
-		       mTicksLeft +
-		       (mPostRespawnCommand == null ? "" : " respawnCmd='" + mPostRespawnCommand + "'") +
-		       (mSpecialVariants.isEmpty() ? "" : " specialPaths={" + String.join(" ", mSpecialVariants) + "}") +
-		       (mSpawnerBreakTrigger == null ? "" : " spawnerTrigger={" + mSpawnerBreakTrigger.getInfoString() + "}");
+				mLoadPos.getBlockY() + " " + mLoadPos.getBlockZ() +
+				") paths={" + String.join(" ", mGenericVariants) + "} period=" + mRespawnTime + " ticksLeft=" +
+				mTicksLeft +
+				(mPostRespawnCommand == null ? "" : " respawnCmd='" + mPostRespawnCommand + "'") +
+				(mSpecialVariants.isEmpty() ? "" : " specialPaths={" + String.join(" ", mSpecialVariants) + "}") +
+				(mSpawnerBreakTrigger == null ? "" : " spawnerTrigger={" + mSpawnerBreakTrigger.getInfoString() + "}");
 	}
 
 	public void activateSpecialStructure(@Nullable String nextRespawnPath) {
@@ -336,16 +341,16 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 	public void forcedRespawn(Player player, boolean ignoreDefaultSpawnerCount) {
 		if (!isNearby(player)) {
-			player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "You must be nearby the POI to force its respawn.");
+			player.sendMessage(Component.text("You must be nearby the POI to force its respawn.", NamedTextColor.RED, TextDecoration.BOLD));
 			return;
 		}
 
 		if (mForcedRespawn) {
-			player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + " is already forced to respawn!");
+			player.sendMessage(Component.text(mName + " is already forced to respawn!", NamedTextColor.RED, TextDecoration.BOLD));
 		} else {
 			if (isConquered() || ignoreDefaultSpawnerCount) {
 				if (player.getUniqueId().equals(mLastPlayerRespawn)) {
-					player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "You cannot force a POI to respawn twice in a row.");
+					player.sendMessage(Component.text("You cannot force a POI to respawn twice in a row.", NamedTextColor.RED, TextDecoration.BOLD));
 				} else {
 					mLastPlayerRespawn = player.getUniqueId();
 					mForcedRespawn = true;
@@ -353,31 +358,31 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 						mTicksLeft = 2 * 60 * 20;
 						for (Player p : mWorld.getPlayers()) {
 							if (isNearby(p)) {
-								p.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + " will forcibly respawn in 2 minutes (timer set)");
+								p.sendMessage(Component.text(mName + " will forcibly respawn in 2 minutes (timer set)", NamedTextColor.RED, TextDecoration.BOLD));
 							}
 						}
 					} else {
 						int minutesLeft = mTicksLeft / (60 * 20);
 						for (Player p : mWorld.getPlayers()) {
 							if (isNearby(p)) {
-								p.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + mName + " will forcibly respawn in "
-										+ minutesLeft + " minutes!");
+								p.sendMessage(Component.text(mName + " will forcibly respawn in "
+										+ minutesLeft + " minutes!", NamedTextColor.RED, TextDecoration.BOLD));
 							}
 						}
 					}
 				}
 			} else {
-				player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "You cannot force a respawn on a Point of Interest that has not been conquered!");
+				player.sendMessage(Component.text("You cannot force a respawn on a Point of Interest that has not been conquered!", NamedTextColor.RED, TextDecoration.BOLD));
 			}
 		}
 	}
 
 	public void tellRespawnTime(Player player) {
 		Component message = Component.text(
-			mTicksLeft <= MIN_TICKS_LEFT_WITH_PLAYERS_INSIDE && !mForcedRespawn && mNextRespawnPath == null
-				? mName + " will respawn once all players have left the area."
-				: mName + " is respawning in " + MessagingUtils.durationToString(mTicksLeft) + (mForcedRespawn || mNextRespawnPath != null ? "" : " once all players have left the area."),
-			mTicksLeft <= 600 ? NamedTextColor.RED : NamedTextColor.GREEN
+				mTicksLeft <= MIN_TICKS_LEFT_WITH_PLAYERS_INSIDE && !mForcedRespawn && mNextRespawnPath == null
+						? mName + " will respawn once all players have left the area."
+						: mName + " is respawning in " + MessagingUtils.durationToString(mTicksLeft) + (mForcedRespawn || mNextRespawnPath != null ? "" : " once all players have left the area."),
+				mTicksLeft <= 600 ? NamedTextColor.RED : NamedTextColor.GREEN
 		).decorate(TextDecoration.BOLD);
 
 		boolean within = isWithin(player);
@@ -392,15 +397,15 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		player.sendMessage(message);
 		if (within) {
 			long otherPlayersWithin = player.getWorld().getPlayers().stream()
-				                          .filter(p -> p != player && isWithin(p) && p.getGameMode() != GameMode.SPECTATOR && p.getGameMode() != GameMode.CREATIVE)
-				                          .count();
+					.filter(p -> p != player && isWithin(p) && p.getGameMode() != GameMode.SPECTATOR && p.getGameMode() != GameMode.CREATIVE)
+					.count();
 			if (otherPlayersWithin > 0) {
 				player.sendMessage(Component.text((otherPlayersWithin == 1 ? "There is one other player here." : "There are " + otherPlayersWithin + " other players here."), NamedTextColor.AQUA).decoration(TextDecoration.BOLD, false));
 			}
 		}
 		if (mConquered && !mForcedRespawn) {
 			player.sendMessage(Component.text("[Force " + mName + " to respawn]", NamedTextColor.LIGHT_PURPLE)
-				                   .clickEvent(ClickEvent.runCommand("/compassrespawn " + mConfigLabel)));
+					.clickEvent(ClickEvent.runCommand("/compassrespawn " + mConfigLabel)));
 		}
 	}
 
@@ -423,8 +428,8 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 	public boolean isWithin(Location location) {
 		Vector playerLoc = location.toVector();
 		return mWorld.equals(location.getWorld()) && mInnerBounds.within(playerLoc)
-			       && (mStructureVoidBlocks == null || !mStructureVoidBlocks.contains(playerLoc.getBlockX() - mInnerBounds.mLowerCorner.getBlockX(),
-			playerLoc.getBlockY() - mInnerBounds.mLowerCorner.getBlockY(), playerLoc.getBlockZ() - mInnerBounds.mLowerCorner.getBlockZ()));
+				&& (mStructureVoidBlocks == null || !mStructureVoidBlocks.contains(playerLoc.getBlockX() - mInnerBounds.mLowerCorner.getBlockX(),
+				playerLoc.getBlockY() - mInnerBounds.mLowerCorner.getBlockY(), playerLoc.getBlockZ() - mInnerBounds.mLowerCorner.getBlockZ()));
 	}
 
 	public void tellRespawnTimeIfNearby(Player player) {
@@ -479,8 +484,8 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 
 	public void tick(int ticks) {
 		if (!mName.isEmpty() &&
-		    ((mTicksLeft >= 2400 && (mTicksLeft - ticks) < 2400) ||
-		     (mTicksLeft >= 600 && (mTicksLeft - ticks) < 600))) {
+				((mTicksLeft >= 2400 && (mTicksLeft - ticks) < 2400) ||
+						(mTicksLeft >= 600 && (mTicksLeft - ticks) < 600))) {
 			for (Player player : mWorld.getPlayers()) {
 				if (isNearby(player)) {
 					tellRespawnTime(player);
@@ -503,16 +508,7 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 			}
 		}
 
-		boolean isAmped = mNextRespawnPath != null;
-		/*
-		 * To respawn, a player must be nearby (within the outer detection zone)
-		 * AND one of the following conditions
-		 */
-		boolean shouldRespawn = isPlayerNearby &&
-			                        (mForcedRespawn || // The POI was force to respawn by a player
-				                         isAmped || // The POI is amplified for the next spawn
-				                         mPlayerNearbyLastTick == NearbyState.NO_PLAYER_WITHIN || // There was no player nearby last check (they teleported in)
-				                         !isPlayerWithin); // There is no player within the POI itself, just nearby OR respawn is forced
+		boolean shouldRespawn = shouldRespawn(isPlayerNearby, isPlayerWithin);
 
 		if (isPlayerWithin && !shouldRespawn) {
 			// With players inside and no (forced) respawn happening, stop the timer before it gets to zero
@@ -528,6 +524,23 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 				respawn();
 			}
 		}
+	}
+
+	private boolean shouldRespawn(boolean isPlayerNearby, boolean isPlayerWithin) {
+		boolean isAmped = mNextRespawnPath != null;
+		/*
+		 * To respawn, a player must be nearby (within the outer detection zone)
+		 * AND one of the following conditions
+		 */
+		// The POI was force to respawn by a player
+		// The POI is amplified for the next spawn
+		// There was no player nearby last check (they teleported in)
+		// There is no player within the POI itself, just nearby OR respawn is forced
+		return isPlayerNearby &&
+				(mForcedRespawn || // The POI was force to respawn by a player
+						isAmped || // The POI is amplified for the next spawn
+						mPlayerNearbyLastTick == NearbyState.NO_PLAYER_WITHIN || // There was no player nearby last check (they teleported in)
+						!isPlayerWithin);
 	}
 
 	// This event is called every time a spawner is broken anywhere
@@ -559,12 +572,12 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		mConquered = true;
 		for (Player player : mWorld.getPlayers()) {
 			if (player.getGameMode() != GameMode.SPECTATOR &&
-			    isNearby(player)) {
+					isNearby(player)) {
 				if (mTicksLeft <= 0) {
-					player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + mName + " has been conquered! It will respawn once all players leave the area.");
+					player.sendMessage(Component.text(mName + " has been conquered! It will respawn once all players leave the area.", NamedTextColor.GOLD, TextDecoration.BOLD));
 				} else {
-					player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + mName + " has been conquered! It will respawn in " +
-							minutesLeft + " minute" + minutesPlural + "!");
+					player.sendMessage(Component.text(mName + " has been conquered! It will respawn in " +
+							minutesLeft + " minute" + minutesPlural + "!", NamedTextColor.GOLD, TextDecoration.BOLD));
 				}
 			}
 		}

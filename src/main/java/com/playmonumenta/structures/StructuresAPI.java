@@ -1,10 +1,10 @@
 package com.playmonumenta.structures;
 
-import com.fastasyncworldedit.core.FaweAPI;
 import com.fastasyncworldedit.core.extent.clipboard.DiskOptimizedClipboard;
 import com.fastasyncworldedit.core.extent.processor.lighting.RelightMode;
 import com.playmonumenta.structures.utils.CommandUtils;
 import com.playmonumenta.structures.utils.MSLog;
+import com.playmonumenta.structures.utils.MessagingUtils;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -291,7 +292,7 @@ public class StructuresAPI {
 						ForwardExtentCopy copy = new ForwardExtentCopy(extent, cReg, clipboard, cReg.getMinimumPoint());
 						copy.setCopyingEntities(true);
 						copy.setCopyingBiomes(true);
-						Operations.completeLegacy(copy);
+						Operations.complete(copy);
 
 						Bukkit.getScheduler().runTask(StructuresPlugin.getInstance(), () -> future.complete(clipboard));
 
@@ -661,7 +662,8 @@ public class StructuresAPI {
 
 		/* Keep armor stands that have a name, are markers, or have tags */
 		if (entity instanceof ArmorStand stand) {
-			if ((stand.getCustomName() != null && !stand.getCustomName().isEmpty())
+			Component customName = stand.customName();
+			if ((customName != null && !MessagingUtils.plainText(customName).isEmpty())
 				|| stand.isMarker()
 				|| !stand.getScoreboardTags().isEmpty()) {
 				return false;

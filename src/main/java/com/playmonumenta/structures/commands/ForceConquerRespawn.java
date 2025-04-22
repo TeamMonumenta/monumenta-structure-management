@@ -1,12 +1,14 @@
 package com.playmonumenta.structures.commands;
 
 import com.playmonumenta.structures.managers.RespawnManager;
+import com.playmonumenta.structures.utils.MessagingUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.EntitySelectorArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 
 public class ForceConquerRespawn {
@@ -18,12 +20,12 @@ public class ForceConquerRespawn {
 		EntitySelectorArgument.OnePlayer playerArg = new EntitySelectorArgument.OnePlayer("player");
 
 		new CommandAPICommand(command)
-			.withPermission(perms)
-			.withArguments(labelArg)
-			.executesPlayer((sender, args) -> {
-				forceRespawn(sender, args.getByArgument(labelArg));
-			})
-			.register();
+				.withPermission(perms)
+				.withArguments(labelArg)
+				.executesPlayer((sender, args) -> {
+					forceRespawn(sender, args.getByArgument(labelArg));
+				})
+				.register();
 
 		new CommandAPICommand(command)
 				.withPermission(perms)
@@ -39,7 +41,8 @@ public class ForceConquerRespawn {
 		try {
 			RespawnManager.getInstance().forceConquerRespawn(label);
 		} catch (Exception e) {
-			sender.sendMessage(ChatColor.RED + "Got error while attempting to force respawn on structure: " + e.getMessage());
+			sender.sendMessage(Component.text("Got error while attempting to force respawn on structure: " + e.getMessage(), NamedTextColor.RED));
+			MessagingUtils.sendStackTrace(sender, e);
 		}
 	}
 }

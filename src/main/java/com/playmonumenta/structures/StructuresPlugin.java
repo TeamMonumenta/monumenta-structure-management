@@ -33,7 +33,6 @@ public class StructuresPlugin extends JavaPlugin {
 
 	private static @Nullable StructuresPlugin INSTANCE = null;
 
-	private @Nullable File mConfigFile = null;
 	private @Nullable YamlConfiguration mConfig = null;
 	private @Nullable CustomLogger mLogger = null;
 
@@ -102,27 +101,18 @@ public class StructuresPlugin extends JavaPlugin {
 		INSTANCE = null;
 	}
 
-	@Override
-	public void reloadConfig() {
-		// Do not save first
-		if (mRespawnManager != null) {
-			mRespawnManager.cleanup();
-			mRespawnManager = null;
-		}
+	public File getConfigFile() {
+		File configFile = new File(getDataFolder(), "config.yml");
 
-		if (mConfigFile == null) {
-			mConfigFile = new File(getDataFolder(), "config.yml");
-		}
-
-		if (!mConfigFile.exists()) {
+		if (!configFile.exists()) {
 			try {
 				// Create parent directories if they do not exist
-				if (!mConfigFile.getParentFile().mkdirs()) {
+				if (!configFile.getParentFile().mkdirs()) {
 					throw new IOException();
 				}
 
 				// Create the file if it does not exist
-				if (!mConfigFile.createNewFile()) {
+				if (!configFile.createNewFile()) {
 					throw new IOException();
 				}
 			} catch (IOException ex) {
@@ -132,7 +122,20 @@ public class StructuresPlugin extends JavaPlugin {
 			// TODO: Put sample config file in here also
 		}
 
-		mConfig = YamlConfiguration.loadConfiguration(mConfigFile);
+		return configFile;
+	}
+
+	@Override
+	public void reloadConfig() {
+		// Do not save first
+		if (mRespawnManager != null) {
+			mRespawnManager.cleanup();
+			mRespawnManager = null;
+		}
+
+		File configFile = getConfigFile();
+
+		mConfig = YamlConfiguration.loadConfiguration(configFile);
 
 		/* TODO: Non-hardcoded worlds! These should be saved into the respawning structure */
 		mRespawnManager = new RespawnManager(this, Bukkit.getWorlds().get(0), mConfig);
@@ -141,11 +144,12 @@ public class StructuresPlugin extends JavaPlugin {
 	@Override
 	public void saveConfig() {
 		if (mRespawnManager != null) {
+			File configFile = getConfigFile();
 			try {
 				mConfig = mRespawnManager.getConfig();
-				mConfig.save(mConfigFile);
+				mConfig.save(configFile);
 			} catch (Exception ex) {
-				getLogger().log(Level.SEVERE, "Could not save config to " + mConfigFile, ex);
+				getLogger().log(Level.SEVERE, "Could not save config to " + configFile, ex);
 			}
 		}
 	}
