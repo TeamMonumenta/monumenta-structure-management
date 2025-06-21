@@ -45,9 +45,9 @@ public class RespawningStructure implements Comparable<RespawningStructure> {
 		}
 
 		public boolean within(Vector vec) {
-			return vec.getX() >= mLowerCorner.getX() && vec.getX() <= mUpperCorner.getX() &&
-					vec.getY() >= mLowerCorner.getY() && vec.getY() <= mUpperCorner.getY() &&
-					vec.getZ() >= mLowerCorner.getZ() && vec.getZ() <= mUpperCorner.getZ();
+			return vec.getBlockX() >= mLowerCorner.getBlockX() && vec.getBlockX() <= mUpperCorner.getBlockX() &&
+					vec.getBlockY() >= mLowerCorner.getBlockY() && vec.getBlockY() <= mUpperCorner.getBlockY() &&
+					vec.getBlockZ() >= mLowerCorner.getBlockZ() && vec.getBlockZ() <= mUpperCorner.getBlockZ();
 		}
 	}
 
