@@ -35,8 +35,8 @@ public class EventListener implements Listener {
 		Player player = event.getPlayer();
 		ItemStack item = event.getItem();
 
-		// Sneak + right click with compass tells player info about nearby respawning structures
-		if ((action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) &&
+		// Sneak + left click with compass tells player info about nearby respawning structures
+		if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK) &&
 			item != null && item.getType() == Material.COMPASS && player.isSneaking()) {
 
 			StructuresPlugin.getRespawnManager().tellNearbyRespawnTimes(player);
