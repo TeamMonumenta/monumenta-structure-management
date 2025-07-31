@@ -451,10 +451,8 @@ public class StructuresAPI {
 
 								if (newBlockType == null || !newBlockType.equals(BlockTypes.STRUCTURE_VOID)) {
 									// This position is not in structure void in the clipboard
-									if (!noLoadPositions.contains(compressToLong(position.getBlockX(), position.getBlockY(), position.getBlockZ()))) {
-										// This position is not in the list of blocks that should not be overwritten
-										return true;
-									}
+									// This position is not in the list of blocks that should not be overwritten
+									return !noLoadPositions.contains(compressToLong(position.getBlockX(), position.getBlockY(), position.getBlockZ()));
 								}
 
 								// Don't overwrite by default
@@ -471,13 +469,13 @@ public class StructuresAPI {
 						MSLog.finer(() -> "Loading structure took " + (System.currentTimeMillis() - pasteTime) + " milliseconds (async)"); // STOP -->
 
 						/* Add a 5 tick delay until the next task for shifting */
-						Bukkit.getScheduler().runTaskLater(plugin, () -> signal.complete(null), 5);
+						Bukkit.getScheduler().runTaskLater(plugin, () -> signal.complete(null), 0);
 
 						/* 6s later, signal caller that loading is complete */
-						Bukkit.getScheduler().runTaskLater(plugin, () -> future.complete(null), 120);
+						Bukkit.getScheduler().runTaskLater(plugin, () -> future.complete(null), 0);
 
 						/* 10s later, unmark all chunks as force loaded */
-						Bukkit.getScheduler().runTaskLater(plugin, () -> unmarkChunksAsync(world, shiftedRegion), 200);
+						Bukkit.getScheduler().runTaskLater(plugin, () -> unmarkChunksAsync(world, shiftedRegion), 0);
 
 					});
 				}
