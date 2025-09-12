@@ -97,8 +97,8 @@ public class StructuresAPI {
 	 * @param path Relative path under the structures/ folder of the structure to load, not including the extension
 	 *
 	 * @return Returns a future which will be completed on the main thread when loading is complete or an error occurs.
-	 *         Suggest chaining on .whenComplete((clipboard, ex) -> your code) to consume the result on the main thread
-	 *         clipboard will be non-null on success, otherwise ex will be a non-null exception if something went wrong
+	 *		 Suggest chaining on .whenComplete((clipboard, ex) -> your code) to consume the result on the main thread
+	 *		 clipboard will be non-null on success, otherwise ex will be a non-null exception if something went wrong
 	 */
 	public static CompletableFuture<BlockArrayClipboard> loadStructure(@Nonnull String path) {
 		CompletableFuture<BlockArrayClipboard> future = new CompletableFuture<>();
@@ -157,8 +157,8 @@ public class StructuresAPI {
 	 * @param loc2 The opposite corner
 	 *
 	 * @return Returns a future which will be completed on the main thread when the operation is complete or an error occurs.
-	 *         Suggest chaining on .whenComplete((unused, ex) -> your code) to continue after the operation is complete
-	 *         unused will always be null, ex will be a non-null exception if something went wrong
+	 *		 Suggest chaining on .whenComplete((unused, ex) -> your code) to continue after the operation is complete
+	 *		 unused will always be null, ex will be a non-null exception if something went wrong
 	 */
 	public static CompletableFuture<Void> copyAreaAndSaveStructure(@Nonnull String path, @Nonnull Location loc1, @Nonnull Location loc2) {
 		MSLog.fine("copyAreaAndSaveStructure: Started copying '" + path + "' at " +
@@ -365,41 +365,41 @@ public class StructuresAPI {
 			/* Set of positions (relative to the clipboard / origin) that should not be overwritten when pasting */
 			final LongSet noLoadPositions = new LongOpenHashSet();
 
-            // filter for preprocessing chunks
+			// filter for preprocessing chunks
 			final Consumer<Chunk> chunkConsumer = (final Chunk chunk) -> {
-                // filter shulker boxes
+				// filter shulker boxes
 				for (final BlockState state : chunk.getTileEntities(true)) {
-                    if (!(state instanceof ShulkerBox)) {
-                        continue;
-                    }
+					if (!(state instanceof ShulkerBox)) {
+						continue;
+					}
 
-                    final Location sLoc = state.getLocation();
-                    final var relPos = BlockVector3.at(sLoc.getBlockX(), sLoc.getBlockY(), sLoc.getBlockZ())
-                        .subtract(to)
-                        .add(clipboardAddOffset);
+					final Location sLoc = state.getLocation();
+					final var relPos = BlockVector3.at(sLoc.getBlockX(), sLoc.getBlockY(), sLoc.getBlockZ())
+						.subtract(to)
+						.add(clipboardAddOffset);
 
-                    if (!box.contains(sLoc.toVector()) || clipboard.getBlock(relPos).getBlockType().equals(BlockTypes.STRUCTURE_VOID)) {
-                        continue;
-                    }
+					if (!box.contains(sLoc.toVector()) || clipboard.getBlock(relPos).getBlockType().equals(BlockTypes.STRUCTURE_VOID)) {
+						continue;
+					}
 
-                    final int relX = state.getX() - to.getX();
-                    final int relY = state.getY() - to.getY();
-                    final int relZ = state.getZ() - to.getZ();
-                    noLoadPositions.add(compressToLong(relX, relY, relZ));
-                }
+					final int relX = state.getX() - to.getX();
+					final int relY = state.getY() - to.getY();
+					final int relZ = state.getZ() - to.getZ();
+					noLoadPositions.add(compressToLong(relX, relY, relZ));
+				}
 
 				if (includeEntities) {
 					for (final Entity entity : chunk.getEntities()) {
-                        if (!box.contains(entity.getLocation().toVector()) || !entityShouldBeRemoved(entity)) {
-                            continue;
-                        }
+						if (!box.contains(entity.getLocation().toVector()) || !entityShouldBeRemoved(entity)) {
+							continue;
+						}
 
-                        final Vector relPos = entity.getLocation().toVector().subtract(pos1).add(clipboardAddOffsetVec);
+						final Vector relPos = entity.getLocation().toVector().subtract(pos1).add(clipboardAddOffsetVec);
 
-                        if (!clipboard.getBlock(BlockVector3.at(relPos.getBlockX(), relPos.getBlockY(), relPos.getBlockZ())).getBlockType().equals(BlockTypes.STRUCTURE_VOID)) {
-                            entity.remove();
-                        }
-                    }
+						if (!clipboard.getBlock(BlockVector3.at(relPos.getBlockX(), relPos.getBlockY(), relPos.getBlockZ())).getBlockType().equals(BlockTypes.STRUCTURE_VOID)) {
+							entity.remove();
+						}
+					}
 				}
 			};
 
