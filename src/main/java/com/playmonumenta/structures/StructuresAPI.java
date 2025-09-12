@@ -24,13 +24,14 @@ import com.sk89q.worldedit.util.io.Closer;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldedit.world.block.BlockType;
 import com.sk89q.worldedit.world.block.BlockTypes;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -44,21 +45,13 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
-import org.bukkit.block.BrewingStand;
-import org.bukkit.block.Chest;
-import org.bukkit.block.CreatureSpawner;
-import org.bukkit.block.Furnace;
 import org.bukkit.block.ShulkerBox;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Tameable;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.BoundingBox;
@@ -370,53 +363,43 @@ public class StructuresAPI {
 			shiftedRegion.shift(to);
 
 			/* Set of positions (relative to the clipboard / origin) that should not be overwritten when pasting */
-			final Set<Long> noLoadPositions = new HashSet<>();
+			final LongSet noLoadPositions = new LongOpenHashSet();
 
-			/* This chunk consumer removes entities and sets spawners/brewing stands/furnaces to air */
+            // filter for preprocessing chunks
 			final Consumer<Chunk> chunkConsumer = (final Chunk chunk) -> {
+                // filter shulker boxes
 				for (final BlockState state : chunk.getTileEntities(true)) {
-					if (state instanceof CreatureSpawner || state instanceof BrewingStand || state instanceof Furnace || state instanceof Chest || state instanceof ShulkerBox) {
-						final Location sLoc = state.getLocation();
-						final BlockVector3 relPos = BlockVector3.at(sLoc.getBlockX(), sLoc.getBlockY(), sLoc.getBlockZ()).subtract(to).add(clipboardAddOffset);
-						if (box.contains(sLoc.toVector()) && !clipboard.getBlock(relPos).getBlockType().equals(BlockTypes.STRUCTURE_VOID)) {
-							if (state instanceof CreatureSpawner || state instanceof BrewingStand || state instanceof Furnace) {
-								// TODO: Work around a bug in FAWE that corrupts these blocks if they're not removed first
-								final Block block = state.getBlock();
+                    if (!(state instanceof ShulkerBox)) {
+                        continue;
+                    }
 
-								/* Set block to air and then dirt... which works around somehow the tile entity data being left behind */
-								if (state instanceof BrewingStand || state instanceof Furnace) {
-									Inventory inv;
-									if (state instanceof BrewingStand) {
-										inv = ((BrewingStand)state).getInventory();
-									} else {
-										inv = ((Furnace)state).getInventory();
-									}
-									for (int i = 0; i < inv.getSize(); i++) {
-										inv.setItem(i, new ItemStack(Material.AIR));
-									}
-								}
-								block.setType(Material.AIR);
-								block.setType(Material.DIRT);
-							} else if (state instanceof ShulkerBox) {
-								/* Never overwrite shulker boxes */
-								final int relX = state.getX() - to.getX();
-								final int relY = state.getY() - to.getY();
-								final int relZ = state.getZ() - to.getZ();
-								noLoadPositions.add(compressToLong(relX, relY, relZ));
-							}
-						}
-					}
-				}
+                    final Location sLoc = state.getLocation();
+                    final var relPos = BlockVector3.at(sLoc.getBlockX(), sLoc.getBlockY(), sLoc.getBlockZ())
+                        .subtract(to)
+                        .add(clipboardAddOffset);
+
+                    if (!box.contains(sLoc.toVector()) || clipboard.getBlock(relPos).getBlockType().equals(BlockTypes.STRUCTURE_VOID)) {
+                        continue;
+                    }
+
+                    final int relX = state.getX() - to.getX();
+                    final int relY = state.getY() - to.getY();
+                    final int relZ = state.getZ() - to.getZ();
+                    noLoadPositions.add(compressToLong(relX, relY, relZ));
+                }
 
 				if (includeEntities) {
 					for (final Entity entity : chunk.getEntities()) {
-						if (box.contains(entity.getLocation().toVector()) && entityShouldBeRemoved(entity)) {
-							final Vector relPos = entity.getLocation().toVector().subtract(pos1).add(clipboardAddOffsetVec);
-							if (!clipboard.getBlock(BlockVector3.at(relPos.getBlockX(), relPos.getBlockY(), relPos.getBlockZ())).getBlockType().equals(BlockTypes.STRUCTURE_VOID)) {
-								entity.remove();
-							}
-						}
-					}
+                        if (!box.contains(entity.getLocation().toVector()) || !entityShouldBeRemoved(entity)) {
+                            continue;
+                        }
+
+                        final Vector relPos = entity.getLocation().toVector().subtract(pos1).add(clipboardAddOffsetVec);
+
+                        if (!clipboard.getBlock(BlockVector3.at(relPos.getBlockX(), relPos.getBlockY(), relPos.getBlockZ())).getBlockType().equals(BlockTypes.STRUCTURE_VOID)) {
+                            entity.remove();
+                        }
+                    }
 				}
 			};
 
@@ -691,7 +674,7 @@ public class StructuresAPI {
 		return true;
 	}
 
-	private static Long compressToLong(final int x, final int y, final int z) {
+	private static long compressToLong(final int x, final int y, final int z) {
 		return (((long) (x & ((1 << 24) - 1))) << 40) |
 				(((long) (y & ((1 << 16) - 1))) << 24) |
 				((long) (z & ((1 << 24) - 1)));
