@@ -97,8 +97,8 @@ public class StructuresAPI {
 	 * @param path Relative path under the structures/ folder of the structure to load, not including the extension
 	 *
 	 * @return Returns a future which will be completed on the main thread when loading is complete or an error occurs.
-	 *		 Suggest chaining on .whenComplete((clipboard, ex) -> your code) to consume the result on the main thread
-	 *		 clipboard will be non-null on success, otherwise ex will be a non-null exception if something went wrong
+	 * Suggest chaining on .whenComplete((clipboard, ex) -> your code) to consume the result on the main thread
+	 * clipboard will be non-null on success, otherwise ex will be a non-null exception if something went wrong
 	 */
 	public static CompletableFuture<BlockArrayClipboard> loadStructure(@Nonnull String path) {
 		CompletableFuture<BlockArrayClipboard> future = new CompletableFuture<>();
@@ -157,8 +157,8 @@ public class StructuresAPI {
 	 * @param loc2 The opposite corner
 	 *
 	 * @return Returns a future which will be completed on the main thread when the operation is complete or an error occurs.
-	 *		 Suggest chaining on .whenComplete((unused, ex) -> your code) to continue after the operation is complete
-	 *		 unused will always be null, ex will be a non-null exception if something went wrong
+	 * Suggest chaining on .whenComplete((unused, ex) -> your code) to continue after the operation is complete
+	 * unused will always be null, ex will be a non-null exception if something went wrong
 	 */
 	public static CompletableFuture<Void> copyAreaAndSaveStructure(@Nonnull String path, @Nonnull Location loc1, @Nonnull Location loc2) {
 		MSLog.fine("copyAreaAndSaveStructure: Started copying '" + path + "' at " +
